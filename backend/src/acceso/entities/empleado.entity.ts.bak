@@ -1,0 +1,163 @@
+import { Entity, Column, PrimaryColumn, Index, UpdateDateColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { OrganizacionNodoRh } from './organizacion-nodo-rh.entity';
+
+/**
+ * p_empleados - Tabla normalizada de empleados
+ * PK = carnet (string único)
+ * 
+ * Campos basados en SIGHO1.dbo.EMP2024
+ * Se actualiza via:
+ * - API POST /acceso/empleados/importar (JSON)
+ * - Excel upload
+ */
+@Entity({ name: 'p_empleados' })
+export class Empleado {
+    // =========================================
+    // IDENTIFICACIÓN
+    // =========================================
+
+    @PrimaryColumn({ name: 'carnet', type: 'varchar', length: 100 })
+    carnet: string;
+
+    @Column({ name: 'cedula', type: 'varchar', length: 50, nullable: true })
+    cedula: string | null;
+
+    @Column({ name: 'nombre_completo', type: 'varchar', length: 250, nullable: true })
+    nombreCompleto: string | null;
+
+    @Index({ unique: true })
+    @Column({ name: 'correo', type: 'varchar', length: 150, nullable: true })
+    correo: string | null;
+
+    @Column({ name: 'telefono', type: 'varchar', length: 50, nullable: true })
+    telefono: string | null;
+
+    // =========================================
+    // UBICACIÓN ORGANIZACIONAL
+    // =========================================
+
+    @Index()
+    @Column({ name: 'idorg', type: 'bigint', nullable: true })
+    idOrg: string | null; // bigint -> string para evitar overflow en JS
+
+    @ManyToOne(() => OrganizacionNodoRh, { nullable: true })
+    @JoinColumn({ name: 'idorg', referencedColumnName: 'idOrg' })
+    organizacion: OrganizacionNodoRh | null;
+
+    @Column({ name: 'cargo', type: 'varchar', length: 200, nullable: true })
+    cargo: string | null;
+
+    @Index()
+    @Column({ name: 'departamento', type: 'varchar', length: 200, nullable: true })
+    departamento: string | null;
+
+    @Column({ name: 'area', type: 'varchar', length: 200, nullable: true })
+    area: string | null;
+
+    @Column({ name: 'gerencia', type: 'varchar', length: 200, nullable: true })
+    gerencia: string | null;
+
+    @Column({ name: 'direccion', type: 'varchar', length: 200, nullable: true })
+    direccion: string | null;
+
+    @Column({ name: 'empresa', type: 'varchar', length: 150, nullable: true })
+    empresa: string | null;
+
+    @Column({ name: 'ubicacion', type: 'varchar', length: 200, nullable: true })
+    ubicacion: string | null;
+
+    @Column({ name: 'pais', type: 'varchar', length: 50, nullable: true, default: 'NI' })
+    pais: string | null;
+
+    // =========================================
+    // NIVELES ORGANIZACIONALES (texto)
+    // =========================================
+
+    @Column({ name: 'primer_nivel', type: 'varchar', length: 200, nullable: true })
+    primerNivel: string | null;
+
+    @Column({ name: 'segundo_nivel', type: 'varchar', length: 200, nullable: true })
+    segundoNivel: string | null;
+
+    @Column({ name: 'tercer_nivel', type: 'varchar', length: 200, nullable: true })
+    tercerNivel: string | null;
+
+    @Column({ name: 'cuarto_nivel', type: 'varchar', length: 200, nullable: true })
+    cuartoNivel: string | null;
+
+    @Column({ name: 'quinto_nivel', type: 'varchar', length: 200, nullable: true })
+    quintoNivel: string | null;
+
+    @Column({ name: 'sexto_nivel', type: 'varchar', length: 200, nullable: true })
+    sextoNivel: string | null;
+
+    // =========================================
+    // JEFATURA (carnet de jefes)
+    // =========================================
+
+    @Index()
+    @Column({ name: 'carnet_jefe1', type: 'varchar', length: 100, nullable: true })
+    carnetJefe1: string | null;
+
+    @Column({ name: 'carnet_jefe2', type: 'varchar', length: 100, nullable: true })
+    carnetJefe2: string | null;
+
+    @Column({ name: 'carnet_jefe3', type: 'varchar', length: 100, nullable: true })
+    carnetJefe3: string | null;
+
+    @Column({ name: 'carnet_jefe4', type: 'varchar', length: 100, nullable: true })
+    carnetJefe4: string | null;
+
+    @Column({ name: 'jefe1_nombre', type: 'varchar', length: 250, nullable: true })
+    jefe1Nombre: string | null;
+
+    @Column({ name: 'jefe1_correo', type: 'varchar', length: 150, nullable: true })
+    jefe1Correo: string | null;
+
+    // =========================================
+    // NIVELES Y PERMISOS
+    // =========================================
+
+    @Column({ name: 'user_level', type: 'int', nullable: true })
+    userLevel: number | null;
+
+    @Column({ name: 'manager_level', type: 'varchar', length: 100, nullable: true })
+    managerLevel: string | null;
+
+    @Column({ name: 'tipo_empleado', type: 'varchar', length: 50, nullable: true })
+    tipoEmpleado: string | null;
+
+    @Column({ name: 'tipo_contrato', type: 'varchar', length: 100, nullable: true })
+    tipoContrato: string | null;
+
+    // =========================================
+    // FECHAS Y ESTADO
+    // =========================================
+
+    @Column({ name: 'fecha_ingreso', type: 'timestamp', nullable: true })
+    fechaIngreso: Date | null;
+
+    @Column({ name: 'fecha_baja', type: 'timestamp', nullable: true })
+    fechaBaja: Date | null;
+
+    @Index()
+    @Column({ name: 'activo', type: 'boolean', default: true })
+    activo: boolean;
+
+    // =========================================
+    // AUDITORÍA
+    // =========================================
+
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+    createdAt: Date;
+
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+    updatedAt: Date;
+
+    @Column({ name: 'importado_por', type: 'varchar', length: 100, nullable: true })
+    importadoPor: string | null;
+
+    @Column({ name: 'fuente', type: 'varchar', length: 50, nullable: true, default: 'MANUAL' })
+    fuente: string | null; // EXCEL, API, SIGHO1, MANUAL
+}
+

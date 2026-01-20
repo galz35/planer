@@ -1,0 +1,4 @@
+﻿
+> backend@0.0.1 test
+> jest src/clarity/clarity.controller.spec.ts
+

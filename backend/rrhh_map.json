@@ -1,0 +1,602 @@
+[
+  {
+    "carnet": "USR-1647",
+    "nombre_completo": "BRYAN ISRRAEL PEREZ URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-131",
+    "nombre_completo": "MILDRED LUCIA CHAVEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-162",
+    "nombre_completo": "CINTHYA CAROLINA IZAGUIRRE REYES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-178",
+    "nombre_completo": "DEYNA BRITCHELL URBINA CHAVARRIA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-197",
+    "nombre_completo": "ARLIN VIDELIA LARIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-200",
+    "nombre_completo": "RAFAEL DE JESUS GODINEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-209",
+    "nombre_completo": "GRICELD DEL SOCORRO ESPINOZA AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-210",
+    "nombre_completo": "IXCHEL ALEJANDRA FLORES CERDA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-212",
+    "nombre_completo": "OLIVER ANTONIO SANDOVAL AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-258",
+    "nombre_completo": "ALVIN ANTONIO AGUIRRE RUIZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-260",
+    "nombre_completo": "ADAN JOSE MORALES FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-325",
+    "nombre_completo": "KATHERINE VANESSA PRADO FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-350",
+    "nombre_completo": "ANA KARINA DIAZ AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-393",
+    "nombre_completo": "ROGER DANILO VALVERDE URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-383",
+    "nombre_completo": "ALEXANDER JOSE CERDA TORUÑO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-423",
+    "nombre_completo": "ALEX ANTONIO CARDENAS URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-475",
+    "nombre_completo": "DAVID JOSHUA JIMENEZ URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-516",
+    "nombre_completo": "JOSHUA EMMANUEL FLORES GOMEZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-522",
+    "nombre_completo": "OSMAN ADRIAN FLORES BONILLA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-527",
+    "nombre_completo": "ELIZABETH DEL CARMEN URBINA OSORIO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-597",
+    "nombre_completo": "ANA VICTORIA TAPIA URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-563",
+    "nombre_completo": "MARIA ILIANA IZAGUIRRE REYES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-592",
+    "nombre_completo": "ANIBAL GIOVANNY BAEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-598",
+    "nombre_completo": "EDGAR RAMIRO TORUÑO DIAZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-616",
+    "nombre_completo": "SERGIO BENITO ROQUE FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-645",
+    "nombre_completo": "ANDRES ALEJANDRO HENRIQUEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-655",
+    "nombre_completo": "LUZ NATHALIA RIOS MARENCO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-657",
+    "nombre_completo": "CESAR GABRIEL FLORES ZELAYA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-698",
+    "nombre_completo": "JHONY JOSE BLAS AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-729",
+    "nombre_completo": "KAREN YAEL VANEGAS BERRIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-747",
+    "nombre_completo": "JORGE ALEXANDER FLORES CABALLERO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-756",
+    "nombre_completo": "CARLOS ELIEZER FLORES HERNANDEZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-723",
+    "nombre_completo": "CRISTINA ELIZABETH FLORES ROCHA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-800",
+    "nombre_completo": "MAYNOR ARIEL AGUIRRE RIZO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-793",
+    "nombre_completo": "IRVING ANTONIO AGUIRRE GAGO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-801",
+    "nombre_completo": "JORDANY ALEXIS MORAZAN BERRIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-820",
+    "nombre_completo": "JOSE AUGUSTO URROZ RIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-739",
+    "nombre_completo": "ENRIQUE ANTONIO REYES AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-849",
+    "nombre_completo": "DENNY HELI MUÑOZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-861",
+    "nombre_completo": "ELIZABETH MERCEDES FLORES BRENES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-878",
+    "nombre_completo": "JOEL ADRIAN ARANA AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-826",
+    "nombre_completo": "ALEXANDER JOEL URBINA SILVA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-923",
+    "nombre_completo": "JOHNNY EMMANUEL FLORES MORENO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-925",
+    "nombre_completo": "MARIA GABRIELA BATRES RIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-959",
+    "nombre_completo": "EMELY CARELY TORREZ AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-986",
+    "nombre_completo": "WALING NALLELYS URBINA ESPINOZA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-988",
+    "nombre_completo": "JAIME NATANAEL SUAREZ URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1008",
+    "nombre_completo": "JOSE OBEL CAJINA URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1015",
+    "nombre_completo": "EINERD JOSE RIOS GUEVARA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-996",
+    "nombre_completo": "YAHOSKA VANESSA MORALES LARIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1046",
+    "nombre_completo": "YAMIL ANTONIO LOPEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1069",
+    "nombre_completo": "KATHERINE CELENIA FLORES PEÑA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1084",
+    "nombre_completo": "MIGUEL ANGEL RUIZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1086",
+    "nombre_completo": "JOSE ENMANUEL URBINA FIERRO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1097",
+    "nombre_completo": "NAZARIA DEL CARMEN FLORES LANZAS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1128",
+    "nombre_completo": "ANGEL MAURICIO MERCADO AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1130",
+    "nombre_completo": "YANERINA LEOCELY FLORES GARCIA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1133",
+    "nombre_completo": "KARLA PATRICIA PERALTA LARIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1144",
+    "nombre_completo": "YAMIL REYNALDO CANALES LARIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1149",
+    "nombre_completo": "WILLIAM GEOVANNI FLORES SACASA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1152",
+    "nombre_completo": "RICARDO LEONEL BERRIOS NAVARRO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1153",
+    "nombre_completo": "JULISSA SUJEY RIOS ZAMORA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1161",
+    "nombre_completo": "EDDISON FRANCISCO HERNANDEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1164",
+    "nombre_completo": "JOSE MIGUEL ARCEDA FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1127",
+    "nombre_completo": "ZORAYDA ELIZABETH VALDIVIA URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1150",
+    "nombre_completo": "LINDA RASHEL URBINA ZEPEDA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1247",
+    "nombre_completo": "DANILO DE DOLORES FLORES AVERRUZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1261",
+    "nombre_completo": "MICHAEL ANTONIO URBINA TIJERINO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1283",
+    "nombre_completo": "JHONY MICHEL GALEANO FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1291",
+    "nombre_completo": "IZAMARA ALEJANDRA RIOS LOPEZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1292",
+    "nombre_completo": "MARCELA LALESKA MOLINA AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1304",
+    "nombre_completo": "KAREL TATIANA SAAVEDRA BERRIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1316",
+    "nombre_completo": "YADER JOSE CASTRO URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1328",
+    "nombre_completo": "KATHERIN ILEANA PORRAS FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1228",
+    "nombre_completo": "ROBERTO LEON MATAMOROS RIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1357",
+    "nombre_completo": "JUAN RAMON CENTENO RIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1406",
+    "nombre_completo": "HEYLIN YAHOSKA ARTEAGA AGUIRRES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1416",
+    "nombre_completo": "JOSE MANUEL AGUIRRE CARDOZA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1431",
+    "nombre_completo": "ANA CLEMENTINA JIMENEZ RIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1445",
+    "nombre_completo": "CHEYSA JOSSELIM OCANO URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1465",
+    "nombre_completo": "JOSE XAVIER PEREZ RIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1467",
+    "nombre_completo": "ROBERTO CARLOS FLORES MORALES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1468",
+    "nombre_completo": "AUDOMAR ENRIQUE AGUIRRE ARAUZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1412",
+    "nombre_completo": "OSCAR ISAAC ZELAYA TORUÑO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1486",
+    "nombre_completo": "MARIA ISELLA ESCOBAR BARRIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1496",
+    "nombre_completo": "KEVIN ANGEL BERRIOS SELVA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1504",
+    "nombre_completo": "ANALLANCYS PALACIOS AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1506",
+    "nombre_completo": "DONALD JOAN RAMIREZ URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1522",
+    "nombre_completo": "KENNETH ANTONIO SILVA URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1538",
+    "nombre_completo": "HEYDI VANESSA ALTAMIRANO URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1478",
+    "nombre_completo": "TERLY ELIEZER FLORES JIMENEZ",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1570",
+    "nombre_completo": "ROSITA MARIA OROZCO AGUIRRE",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1589",
+    "nombre_completo": "ALEYDA MARGARITA FLORES BRENES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1597",
+    "nombre_completo": "GRETHEL MASSIEL SANDINO URBINA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1599",
+    "nombre_completo": "MAGDIEL OSMAR AGUIRRES MOJICA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1608",
+    "nombre_completo": "JOSE BISMARCK RIOS GRANJA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1615",
+    "nombre_completo": "JUAN CARLOS BERMUDEZ FLORES",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1545",
+    "nombre_completo": "JULIO BENITO REYES BERRIOS",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1631",
+    "nombre_completo": "PABLO SEBASTIAN RIOS OROZCO",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-1643",
+    "nombre_completo": "MICHAEL JOSE FLORES GARCIA",
+    "carnet_jefe1": null,
+    "cargo": "Usuario del Sistema"
+  }
+]

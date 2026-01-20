@@ -1,0 +1,9 @@
+{
+  "id": 23,
+  "email": "gustavo.lira@claro.com.ni",
+  "rolGlobal": "Admin",
+  "rolId": 1,
+  "rolName": "Admin"
+}
+User Config (Custom Menu): null
+Role Config (Default Menu): null

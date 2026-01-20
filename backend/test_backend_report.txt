@@ -1,0 +1,212 @@
+
+══════════════════════════════════════════════════════════════════════
+🧪 TEST PROFESIONAL COMPLETO - BACKEND API
+══════════════════════════════════════════════════════════════════════
+📅 Fecha: 2026-01-17T04:57:25.431Z
+🌐 URL Base: http://localhost:3000/api
+══════════════════════════════════════════════════════════════════════
+
+📦 MÓDULO 1: AUTH (Autenticación)
+──────────────────────────────────────────────────
+  ❌ POST /auth/login: fetch failed
+  ❌ POST /auth/login (credenciales inválidas): fetch failed
+  ❌ POST /auth/login (campo faltante): fetch failed
+  ❌ POST /auth/refresh: No hay tokens
+  ❌ GET /acceso/empleados: fetch failed
+  ❌ GET /acceso/empleado/:carnet: fetch failed
+  ❌ GET /acceso/empleado/:carnet (no existe): fetch failed
+  ❌ GET /acceso/empleados/buscar: fetch failed
+  ❌ GET /acceso/empleado/email/:correo: fetch failed
+  ❌ GET /acceso/importar/estadisticas: fetch failed
+  ❌ GET /acceso/importar/plantilla: fetch failed
+  ❌ POST /acceso/importar/empleados (validación): fetch failed
+  ❌ POST /acceso/importar/empleados (MERGE): fetch failed
+  ❌ GET /acceso/importar/empleados/exportar: fetch failed
+  ❌ GET /acceso/permiso-area: fetch failed
+  ❌ GET /acceso/permiso-empleado: fetch failed
+  ❌ GET /acceso/delegacion: fetch failed
+  ❌ GET /visibilidad/:carnet: fetch failed
+  ❌ GET /visibilidad/:carnet/empleados: fetch failed
+  ❌ GET /visibilidad/:carnet/actores: fetch failed
+  ❌ GET /visibilidad/:carnet/quien-puede-verme: fetch failed
+  ❌ GET /config: fetch failed
+  ❌ GET /mi-dia: fetch failed
+  ❌ GET /tareas/mias: fetch failed
+  ❌ GET /equipo/hoy: fetch failed
+  ❌ GET /equipo/bloqueos: fetch failed
+  ❌ GET /equipo/backlog: fetch failed
+  ❌ GET /foco: fetch failed
+  ❌ GET /foco/estadisticas: fetch failed
+  ❌ GET /reportes/productividad: fetch failed
+  ❌ GET /reportes/bloqueos-trend: fetch failed
+  ❌ GET /reportes/equipo-performance: fetch failed
+  ❌ GET /proyectos: fetch failed
+  ❌ GET /admin/usuarios: fetch failed
+  ❌ GET /admin/roles: fetch failed
+  ❌ GET /admin/organigrama: fetch failed
+  ❌ GET /admin/logs: fetch failed
+  ❌ GET /reset-passwords: fetch failed
+  ❌ GET /tareas/mias (sin auth): fetch failed
+  ❌ GET /config (token inválido): fetch failed
+  ❌ GET /admin/usuarios (usuario no admin): fetch failed
+  ❌ GET /planning/pending: fetch failed
+
+══════════════════════════════════════════════════════════════════════
+📊 RESUMEN DE RESULTADOS
+══════════════════════════════════════════════════════════════════════
+
+📈 Por Módulo:
+──────────────────────────────────────────────────
+  ⚠️ AUTH            0/4 (0%)
+  ⚠️ ACCESO          0/5 (0%)
+  ⚠️ IMPORTACIÓN     0/5 (0%)
+  ⚠️ PERMISOS        0/3 (0%)
+  ⚠️ VISIBILIDAD     0/4 (0%)
+  ⚠️ CLARITY         0/12 (0%)
+  ⚠️ ADMIN           0/4 (0%)
+  ⚠️ HEALTH          0/1 (0%)
+  ⚠️ SECURITY        0/3 (0%)
+  ⚠️ PLANNING        0/1 (0%)
+
+📊 Totales:
+──────────────────────────────────────────────────
+  ✅ Passed:  0
+  ❌ Failed:  42
+  ⏭️ Skipped: 0
+  📋 Total:   42
+  ⏱️ Tiempo:  378ms
+  📊 Tasa:    0.0%
+
+❌ TESTS FALLIDOS:
+──────────────────────────────────────────────────
+
+  📛 AUTH - POST /auth/login
+     Error: fetch failed
+
+  📛 AUTH - POST /auth/login (credenciales inválidas)
+     Error: fetch failed
+
+  📛 AUTH - POST /auth/login (campo faltante)
+     Error: fetch failed
+
+  📛 AUTH - POST /auth/refresh
+     Error: No hay tokens
+
+  📛 ACCESO - GET /acceso/empleados
+     Error: fetch failed
+
+  📛 ACCESO - GET /acceso/empleado/:carnet
+     Error: fetch failed
+
+  📛 ACCESO - GET /acceso/empleado/:carnet (no existe)
+     Error: fetch failed
+
+  📛 ACCESO - GET /acceso/empleados/buscar
+     Error: fetch failed
+
+  📛 ACCESO - GET /acceso/empleado/email/:correo
+     Error: fetch failed
+
+  📛 IMPORTACIÓN - GET /acceso/importar/estadisticas
+     Error: fetch failed
+
+  📛 IMPORTACIÓN - GET /acceso/importar/plantilla
+     Error: fetch failed
+
+  📛 IMPORTACIÓN - POST /acceso/importar/empleados (validación)
+     Error: fetch failed
+
+  📛 IMPORTACIÓN - POST /acceso/importar/empleados (MERGE)
+     Error: fetch failed
+
+  📛 IMPORTACIÓN - GET /acceso/importar/empleados/exportar
+     Error: fetch failed
+
+  📛 PERMISOS - GET /acceso/permiso-area
+     Error: fetch failed
+
+  📛 PERMISOS - GET /acceso/permiso-empleado
+     Error: fetch failed
+
+  📛 PERMISOS - GET /acceso/delegacion
+     Error: fetch failed
+
+  📛 VISIBILIDAD - GET /visibilidad/:carnet
+     Error: fetch failed
+
+  📛 VISIBILIDAD - GET /visibilidad/:carnet/empleados
+     Error: fetch failed
+
+  📛 VISIBILIDAD - GET /visibilidad/:carnet/actores
+     Error: fetch failed
+
+  📛 VISIBILIDAD - GET /visibilidad/:carnet/quien-puede-verme
+     Error: fetch failed
+
+  📛 CLARITY - GET /config
+     Error: fetch failed
+
+  📛 CLARITY - GET /mi-dia
+     Error: fetch failed
+
+  📛 CLARITY - GET /tareas/mias
+     Error: fetch failed
+
+  📛 CLARITY - GET /equipo/hoy
+     Error: fetch failed
+
+  📛 CLARITY - GET /equipo/bloqueos
+     Error: fetch failed
+
+  📛 CLARITY - GET /equipo/backlog
+     Error: fetch failed
+
+  📛 CLARITY - GET /foco
+     Error: fetch failed
+
+  📛 CLARITY - GET /foco/estadisticas
+     Error: fetch failed
+
+  📛 CLARITY - GET /reportes/productividad
+     Error: fetch failed
+
+  📛 CLARITY - GET /reportes/bloqueos-trend
+     Error: fetch failed
+
+  📛 CLARITY - GET /reportes/equipo-performance
+     Error: fetch failed
+
+  📛 CLARITY - GET /proyectos
+     Error: fetch failed
+
+  📛 ADMIN - GET /admin/usuarios
+     Error: fetch failed
+
+  📛 ADMIN - GET /admin/roles
+     Error: fetch failed
+
+  📛 ADMIN - GET /admin/organigrama
+     Error: fetch failed
+
+  📛 ADMIN - GET /admin/logs
+     Error: fetch failed
+
+  📛 HEALTH - GET /reset-passwords
+     Error: fetch failed
+
+  📛 SECURITY - GET /tareas/mias (sin auth)
+     Error: fetch failed
+
+  📛 SECURITY - GET /config (token inválido)
+     Error: fetch failed
+
+  📛 SECURITY - GET /admin/usuarios (usuario no admin)
+     Error: fetch failed
+
+  📛 PLANNING - GET /planning/pending
+     Error: fetch failed
+
+══════════════════════════════════════════════════════════════════════
+⚠️ 42 TESTS FALLARON - Revisar errores arriba
+══════════════════════════════════════════════════════════════════════
+

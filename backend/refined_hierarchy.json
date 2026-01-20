@@ -1,0 +1,89 @@
+[
+  {
+    "carnet": "300042",
+    "nombre": "JUAN CARLOS ORTUÑO PADILLA",
+    "correo": "juan.ortuno@claro.com.ni",
+    "cargo": "GERENTE GENERAL RRHH",
+    "idorg": "3.00E+14",
+    "jefe1": "NULL",
+    "jefe2": "NULL",
+    "subs": [
+      {
+        "carnet": "1005898",
+        "nombre": "TANIA AUXILIADORA AGUIRRE AGUILAR",
+        "cargo": "ESPECIALISTA RECURSOS HUMANOS B"
+      },
+      {
+        "carnet": "500269",
+        "nombre": "JOSUE GABRIEL GARCIA BUSTO",
+        "cargo": "ESPECIALISTA RECURSOS HUMANOS A"
+      },
+      {
+        "carnet": "300034",
+        "nombre": "NELSON ENRIQUE PEREZ FONSECA",
+        "cargo": "SUBGERENTE RELACIONES LABORALES"
+      },
+      {
+        "carnet": "1008937",
+        "nombre": "AURORA DEL SOCORRO ESPINOZA DIAZ",
+        "cargo": "SUBGERENTE DE COMPENSACIONES"
+      },
+      {
+        "carnet": "402178",
+        "nombre": "ALI ADOLFO RODRIGUEZ URIARTE",
+        "cargo": "SUPERVISOR FLOTA AUTOMOTRIZ"
+      },
+      {
+        "carnet": "772",
+        "nombre": "CANDIDA JAZMINA SANCHEZ LOPEZ",
+        "cargo": "COORDINADOR SOPORTE A LA OPERACION"
+      },
+      {
+        "carnet": "400850",
+        "nombre": "SERGIO ALEXANDER MARTINEZ ESPINOZA",
+        "cargo": "SUBGERENTE CAPACITACION Y DESARROLLO"
+      },
+      {
+        "carnet": "229354",
+        "nombre": "JAVIER ANTONIO TORUÑO MENDOZA",
+        "cargo": "COORDINADOR RRHH"
+      }
+    ]
+  },
+  {
+    "carnet": "772",
+    "nombre": "CANDIDA JAZMINA SANCHEZ LOPEZ",
+    "correo": "candida.sanchez@claro.com.ni",
+    "cargo": "COORDINADOR SOPORTE A LA OPERACION",
+    "idorg": "3.00E+14",
+    "jefe1": "300042",
+    "jefe2": "300048",
+    "subs": [
+      {
+        "carnet": "500708",
+        "nombre": "GUSTAVO ADOLFO LIRA SALAZAR",
+        "cargo": "ANALISTA DE SOPORTE RH"
+      }
+    ]
+  },
+  {
+    "carnet": "666",
+    "nombre": "SCARLETH VANESSA VIVAS PEREZ",
+    "correo": "scarleth.vivas@claro.com.ni",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS A",
+    "idorg": "3.00E+14",
+    "jefe1": "300048",
+    "jefe2": "NULL",
+    "subs": []
+  },
+  {
+    "carnet": "1005898",
+    "nombre": "TANIA AUXILIADORA AGUIRRE AGUILAR",
+    "correo": "taniaa.aguirre@claro.com.ni",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS B",
+    "idorg": "3.00E+14",
+    "jefe1": "300042",
+    "jefe2": "300048",
+    "subs": []
+  }
+]

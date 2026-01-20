@@ -1,0 +1,23 @@
+
+const axios = require('axios');
+
+async function run() {
+    try {
+        console.log('Sending request to revalidar task 109...');
+        // Mocking the request sent by frontend
+        // Assuming no auth needed for this local test if I can bypass Guard? 
+        // No, I need auth. I'll rely on the existing token or try to login first if I had credentials.
+        // Actually, logging in as a script might be hard without valid credentials.
+        // I'll try to use the debug-task script's approach of DB access to check DTO? No DTO is runtime check.
+
+        // Better idea: Modify the backend code to LOG the validation error in GlobalExceptionFilter or ValidationPipe (but those are libs).
+        // Or I can temporary modify the controller to console.log the body before validation... wait, validation happens BEFORE controller.
+
+        // I will assume the DTO change didn't take effect or cached? 
+        // Let's force a file change in DTO that is trivial to force recompile.
+        
+    } catch (e) {
+        console.error(e);
+    }
+}
+// Checking DTO file content again

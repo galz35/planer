@@ -1,0 +1,4 @@
+﻿[dotenv@17.2.3] injecting env (9) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+DATA_START
+{"candida":[{"carnet":"USR-1353","nombre_completo":"CANDIDA SANCHEZ","idorg":null}],"gustavo":[{"carnet":"EMP899","nombre_completo":"GUSTAVO ADOLFO LIRA SALAZAR","carnet_jefe1":null,"carnet_jefe2":null,"idorg":null}],"candidaUser":[{"rolGlobal":"Admin"}]}
+DATA_END

@@ -1,0 +1,34 @@
+[
+  {
+    "carnet": "300042",
+    "nombre": "JUAN CARLOS ORTUÑO PADILLA",
+    "cargo": "juan.ortuno@claro.com.ni",
+    "idorg": "NI GERENCIA DE RECURSOS HUMANOS",
+    "jefe1": "85454888",
+    "subordinates": []
+  },
+  {
+    "carnet": "772",
+    "nombre": "CANDIDA JAZMINA SANCHEZ LOPEZ",
+    "cargo": "candida.sanchez@claro.com.ni",
+    "idorg": "NI COORD. DE SOPORTE A LA OPERACION",
+    "jefe1": "86243957",
+    "subordinates": []
+  },
+  {
+    "carnet": "666",
+    "nombre": "SCARLETH VANESSA VIVAS PEREZ",
+    "cargo": "scarleth.vivas@claro.com.ni",
+    "idorg": "NI GERENCIA DE RECURSOS HUMANOS",
+    "jefe1": "86524725",
+    "subordinates": []
+  },
+  {
+    "carnet": "1005898",
+    "nombre": "TANIA AUXILIADORA AGUIRRE AGUILAR",
+    "cargo": "taniaa.aguirre@claro.com.ni",
+    "idorg": "NI SUBGERENCIA DE RECURSOS HUMANOS",
+    "jefe1": "NULL",
+    "subordinates": []
+  }
+]

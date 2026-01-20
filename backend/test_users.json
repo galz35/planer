@@ -1,0 +1,52 @@
+[
+  {
+    "carnet": "EMP001",
+    "nombre_completo": "Juan Perez Garcia",
+    "cargo": "Desarrollador Senior"
+  },
+  {
+    "carnet": "EMP002",
+    "nombre_completo": "Maria Lopez Hernandez",
+    "cargo": "Analista"
+  },
+  {
+    "carnet": "JEFE001",
+    "nombre_completo": "Carlos Martinez Rivera",
+    "cargo": "Gerente TI"
+  },
+  {
+    "carnet": "TEST001",
+    "nombre_completo": "Test Usuario 1",
+    "cargo": null
+  },
+  {
+    "carnet": "TEST002",
+    "nombre_completo": "Test Usuario 2",
+    "cargo": null
+  },
+  {
+    "carnet": "USR-1991",
+    "nombre_completo": "Ms. Brooke Kuhn",
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-271",
+    "nombre_completo": "ERVIN DANILO MARTINEZ CHAVARRIA",
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-337",
+    "nombre_completo": "BRADLEY ALDAIR COULSON MARTINEZ",
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-396",
+    "nombre_completo": "GERSON YAHIR GUIDO HERNANDEZ",
+    "cargo": "Usuario del Sistema"
+  },
+  {
+    "carnet": "USR-469",
+    "nombre_completo": "MYNOR BENITO RAMIREZ RUIZ",
+    "cargo": "Usuario del Sistema"
+  }
+]

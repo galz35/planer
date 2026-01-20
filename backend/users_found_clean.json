@@ -1,0 +1,122 @@
+[
+  {
+    "carnet": "1005898",
+    "nombre": "TANIA AUXILIADORA AGUIRRE AGUILAR",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS B",
+    "jefeCarnet": "300042",
+    "jefeName": "JUAN CARLOS ORTUÑO PADILLA",
+    "area": "NI SUBGERENCIA DE RECURSOS HUMANOS"
+  },
+  {
+    "carnet": "256412",
+    "nombre": "MARLENE DE LA CONCEPCION ROSALES SERRANO",
+    "cargo": "ESPECIALISTA LABORAL",
+    "jefeCarnet": "300034",
+    "jefeName": "NELSON ENRIQUE PEREZ FONSECA",
+    "area": "NI SUBGCIA DE RELACIONES LABORALES Y SEGURIDAD INDUSTRIAL"
+  },
+  {
+    "carnet": "1008937",
+    "nombre": "AURORA DEL SOCORRO ESPINOZA DIAZ",
+    "cargo": "SUBGERENTE DE COMPENSACIONES",
+    "jefeCarnet": "300042",
+    "jefeName": "JUAN CARLOS ORTUÑO PADILLA",
+    "area": "NI SUBGERENCIA DE COMPENSACIONES"
+  },
+  {
+    "carnet": "1011898",
+    "nombre": "KEVIN JOSSETH TORREZ RIVERA",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS A",
+    "jefeCarnet": "1008937",
+    "jefeName": "AURORA DEL SOCORRO ESPINOZA DIAZ",
+    "area": "NI SUBGERENCIA DE COMPENSACIONES"
+  },
+  {
+    "carnet": "1009828",
+    "nombre": "EDGARDO JOSE SABALLOS VELAZQUEZ",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS B",
+    "jefeCarnet": "402178",
+    "jefeName": "ALI ADOLFO RODRIGUEZ URIARTE",
+    "area": "NI COORD. DE TRANSPORTE"
+  },
+  {
+    "carnet": "249859",
+    "nombre": "PEDRO JAVIER CASTILLO MENDEZ",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS B",
+    "jefeCarnet": "402178",
+    "jefeName": "ALI ADOLFO RODRIGUEZ URIARTE",
+    "area": "NI COORD. DE TRANSPORTE"
+  },
+  {
+    "carnet": "402035",
+    "nombre": "JILMA CAROLINA ZELAYA GARCIA",
+    "cargo": "ESPECIALISTA DE BIENESTAR SOCIAL",
+    "jefeCarnet": "400850",
+    "jefeName": "SERGIO ALEXANDER MARTINEZ ESPINOZA",
+    "area": "NI SUBGCIA CAPACITACION Y DESARROLLO"
+  },
+  {
+    "carnet": "401992",
+    "nombre": "MILCY CAROLINA VELASQUEZ QUINTANILLA",
+    "cargo": "ESPECIALISTA RECURSOS HUMANOS A",
+    "jefeCarnet": "400850",
+    "jefeName": "SERGIO ALEXANDER MARTINEZ ESPINOZA",
+    "area": "NI SUBGCIA CAPACITACION Y DESARROLLO"
+  },
+  {
+    "carnet": "400850",
+    "nombre": "SERGIO ALEXANDER MARTINEZ ESPINOZA",
+    "cargo": "SUBGERENTE CAPACITACION Y DESARROLLO",
+    "jefeCarnet": "300042",
+    "jefeName": "JUAN CARLOS ORTUÑO PADILLA",
+    "area": "NI SUBGCIA CAPACITACION Y DESARROLLO"
+  },
+  {
+    "carnet": "401633",
+    "nombre": "ARLEN CRISTINA RIVERA ESCOTO",
+    "cargo": "ESPECIALISTA DE RECLUTAMIENTO Y SELECCION B",
+    "jefeCarnet": "400103",
+    "jefeName": "YESENIA DE JESUS MANZANAREZ ALVARADO",
+    "area": "NI COORD. DE RECLUTAMIENTO Y SELECCION"
+  },
+  {
+    "carnet": "402336",
+    "nombre": "FRANCIS MARIA VILLARREAL TORRES",
+    "cargo": "ESPECIALISTA DE RECLUTAMIENTO Y SELECCION B",
+    "jefeCarnet": "400103",
+    "jefeName": "YESENIA DE JESUS MANZANAREZ ALVARADO",
+    "area": "NI COORD. DE RECLUTAMIENTO Y SELECCION"
+  },
+  {
+    "carnet": "500358",
+    "nombre": "KEVIN EDUARDO BARAHONA LOPEZ",
+    "cargo": "ESPECIALISTA DE RECLUTAMIENTO Y SELECCION A",
+    "jefeCarnet": "400103",
+    "jefeName": "YESENIA DE JESUS MANZANAREZ ALVARADO",
+    "area": "NI COORD. DE RECLUTAMIENTO Y SELECCION"
+  },
+  {
+    "carnet": "400103",
+    "nombre": "YESENIA DE JESUS MANZANAREZ ALVARADO",
+    "cargo": "COORDINADOR RECLUTAMIENTO Y SELECCION",
+    "jefeCarnet": "1008937",
+    "jefeName": "AURORA DEL SOCORRO ESPINOZA DIAZ",
+    "area": "NI COORD. DE RECLUTAMIENTO Y SELECCION"
+  },
+  {
+    "carnet": "229354",
+    "nombre": "JAVIER ANTONIO TORUÑO MENDOZA",
+    "cargo": "COORDINADOR RRHH",
+    "jefeCarnet": "300042",
+    "jefeName": "JUAN CARLOS ORTUÑO PADILLA",
+    "area": "NI COORD. DE RECURSOS HUMANOS"
+  },
+  {
+    "carnet": "500313",
+    "nombre": "MARIO ALBERTO RIOS GUILLEN",
+    "cargo": "ESPECIALISTA DE NOMINA",
+    "jefeCarnet": "229354",
+    "jefeName": "JAVIER ANTONIO TORUÑO MENDOZA",
+    "area": "NI COORD. DE RECURSOS HUMANOS"
+  }
+]

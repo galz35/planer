@@ -1,0 +1,32 @@
+[
+  {
+    "idRol": 1,
+    "nombre": "Admin",
+    "descripcion": "Acceso total al sistema",
+    "reglas": "[]"
+  },
+  {
+    "idRol": 2,
+    "nombre": "Gerente",
+    "descripcion": "Visibilidad de reportes y gestión",
+    "reglas": "[]"
+  },
+  {
+    "idRol": 3,
+    "nombre": "Coordinador",
+    "descripcion": "Gestión de equipos y asignación",
+    "reglas": "[]"
+  },
+  {
+    "idRol": 4,
+    "nombre": "Empleado",
+    "descripcion": "Rol base para colaboradores",
+    "reglas": "[]"
+  },
+  {
+    "idRol": 5,
+    "nombre": "Colaborador",
+    "descripcion": "Personal base",
+    "reglas": "[]"
+  }
+]

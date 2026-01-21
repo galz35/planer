@@ -5,6 +5,7 @@ export * from './auth/entities/usuario-credenciales.entity';
 export * from './auth/entities/usuario-config.entity';
 export * from './auth/entities/organizacion-nodo.entity';
 export * from './auth/entities/usuario-organizacion.entity';
+export * from './auth/entities/seguridad-perfil.entity';
 
 // --- Planning Module ---
 export * from './planning/entities/proyecto.entity';

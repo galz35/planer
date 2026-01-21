@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clarityService } from '../../services/clarity.service';
+import { planningService } from '../../services/planning.service';
 import type { Proyecto } from '../../types/modelos';
 import { format } from 'date-fns';
 import {
@@ -65,9 +66,39 @@ export const ProyectosPage: React.FC = () => {
                 ...filters
             });
             if (result) {
-                setProjects(result.items || []);
-                setTotal(result.total || 0);
-                setLastPage(result.lastPage || 1);
+                let items = result.items || [];
+                let totalItems = result.total || 0;
+                let finalLastPage = result.lastPage || 1;
+
+                // Si no hay resultados y no hay filtros activos, intentamos con la API de visibilidad
+                if (items.length === 0 && !searchTerm && !filters.estado && !filters.gerencia) {
+                    try {
+                        const myProjects = await planningService.getMyProjects();
+                        if (myProjects && myProjects.length > 0) {
+                            // Mapear al formato de Proyecto si es necesario
+                            items = myProjects.map(p => ({
+                                idProyecto: p.id,
+                                nombre: p.nombre,
+                                tipo: p.tipo,
+                                gerencia: p.gerencia,
+                                subgerencia: p.subgerencia,
+                                area: p.area,
+                                estado: p.estado,
+                                fechaInicio: p.fechaInicio,
+                                fechaFin: p.fechaFin,
+                                progreso: p.progress
+                            }));
+                            totalItems = items.length;
+                            finalLastPage = 1;
+                        }
+                    } catch (pError) {
+                        console.error('Error fetching fallback projects in ProyectosPage:', pError);
+                    }
+                }
+
+                setProjects(items);
+                setTotal(totalItems);
+                setLastPage(finalLastPage);
                 if (p) setPage(p);
             }
         } catch (error) {

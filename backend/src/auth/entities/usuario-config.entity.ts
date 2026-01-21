@@ -20,7 +20,7 @@ export class UsuarioConfig {
     rutinas: string;
 
     @Column({ type: 'text', nullable: true })
-    customMenu: string;
+    customMenu: string | null;
 
     @UpdateDateColumn()
     fechaActualizacion: Date;

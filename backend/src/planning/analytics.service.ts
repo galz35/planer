@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { PlanTrabajo } from './entities/plan-trabajo.entity';
 import { Tarea } from './entities/tarea.entity';
 import { UsuarioOrganizacion } from '../auth/entities/usuario-organizacion.entity';
 import { Usuario } from '../auth/entities/usuario.entity';
 import { Proyecto } from './entities/proyecto.entity';
 import { Bloqueo } from '../clarity/entities/bloqueo.entity';
+import { VisibilidadService } from '../acceso/visibilidad.service';
 
 @Injectable()
 export class AnalyticsService {
@@ -17,21 +18,37 @@ export class AnalyticsService {
         @InjectRepository(Usuario) private userRepo: Repository<Usuario>,
         @InjectRepository(Proyecto) private proyectoRepo: Repository<Proyecto>,
         @InjectRepository(Bloqueo) private bloqueoRepo: Repository<Bloqueo>,
+        private visibilidadService: VisibilidadService,
     ) { }
 
     async getDashboardStats(managerId: number, month: number, year: number) {
-        // En una implementación real, filtraríamos por la jerarquía del managerId.
-        // Por ahora, asumimos Global (Admin).
+        // Obtener el usuario que solicita
+        const requestingUser = await this.userRepo.findOne({ where: { idUsuario: managerId } });
+        const isAdmin = ['Admin', 'Administrador', 'SuperAdmin'].includes(requestingUser?.rolGlobal || '');
 
-        // 1. Plan Adoption (Coverage)
+        // Obtener IDs de usuarios visibles (subordinados + él mismo)
+        let visibleUserIds: number[] = [];
+        if (isAdmin) {
+            // Admin ve todo
+            const allUsers = await this.userRepo.find({ where: { activo: true }, select: ['idUsuario'] });
+            visibleUserIds = allUsers.map(u => u.idUsuario);
+        } else if (requestingUser?.carnet) {
+            // Líder ve a sus subordinados
+            const visibles = await this.visibilidadService.obtenerEmpleadosVisibles(requestingUser.carnet);
+            visibleUserIds = visibles.map(v => v.idUsuario);
+        } else {
+            // Usuario normal solo se ve a sí mismo
+            visibleUserIds = [managerId];
+        }
+
+        // 1. Plan Adoption (Coverage) - Solo planes de usuarios visibles
         const plans = await this.planRepo.find({
-            where: { mes: month, anio: year },
+            where: { mes: month, anio: year, idUsuario: In(visibleUserIds) },
             relations: ['usuario']
         });
 
-        // Calculate Users without Plan
-        const allUsersRaw = await this.userRepo.find({ where: { activo: true } });
-        // Filter out Test users (Gustavo Test) to clean dashboard
+        // Calculate Users without Plan (solo de usuarios visibles)
+        const allUsersRaw = await this.userRepo.find({ where: { activo: true, idUsuario: In(visibleUserIds) } });
         const allUsers = allUsersRaw.filter(u => !u.nombre.toLowerCase().includes('gustavo test'));
 
         const usersWithPlanIds = new Set(plans.map(p => p.idUsuario));
@@ -50,18 +67,57 @@ export class AnalyticsService {
         });
 
         // 2. Task Completion & Hierarchy Analysis
-        // Find tasks in Plan OR tasks with Target Date in range
+        // Find tasks in Plan OR tasks with Target Date in range - SOLO DE USUARIOS VISIBLES
         const lastDay = new Date(year, month, 0).getDate();
         const startStr = `${year}-${month.toString().padStart(2, '0')}-01`;
         const endStr = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
 
+        // Primera consulta: tareas del mes seleccionado
         let tasks = await this.tareaRepo.find({
             where: [
-                { plan: { mes: month, anio: year } },
+                { plan: { mes: month, anio: year, idUsuario: In(visibleUserIds) } },
                 { fechaObjetivo: Between(startStr, endStr) }
             ],
-            relations: ['plan', 'plan.usuario', 'proyecto']
+            relations: ['plan', 'plan.usuario', 'proyecto', 'asignados', 'asignados.usuario']
         });
+
+        // Filtrar tareas: solo las de planes de usuarios visibles O asignadas a usuarios visibles
+        tasks = tasks.filter(t => {
+            const planUserId = t.plan?.idUsuario;
+            const assignedUserIds = t.asignados?.map(a => a.idUsuario) || [];
+            return visibleUserIds.includes(planUserId) || assignedUserIds.some(id => visibleUserIds.includes(id));
+        });
+
+        // FALLBACK: Si no hay tareas en el mes, buscar TODAS las tareas activas de usuarios visibles
+        if (tasks.length === 0) {
+            console.log('[AnalyticsService] No hay tareas en el mes, buscando todas las tareas activas...');
+            tasks = await this.tareaRepo.find({
+                where: {
+                    estado: In(['Pendiente', 'EnCurso', 'Bloqueada']),
+                    asignados: { idUsuario: In(visibleUserIds) }
+                },
+                relations: ['plan', 'plan.usuario', 'proyecto', 'asignados', 'asignados.usuario']
+            });
+
+            // Agregar también tareas completadas recientemente (últimos 30 días)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const completedTasks = await this.tareaRepo.find({
+                where: {
+                    estado: 'Hecha',
+                    asignados: { idUsuario: In(visibleUserIds) }
+                },
+                relations: ['plan', 'plan.usuario', 'proyecto', 'asignados', 'asignados.usuario']
+            });
+
+            // Concatenar y eliminar duplicados
+            const allTaskIds = new Set(tasks.map(t => t.idTarea));
+            completedTasks.forEach(t => {
+                if (!allTaskIds.has(t.idTarea)) {
+                    tasks.push(t);
+                }
+            });
+        }
 
         // Filter tasks from test user
         tasks = tasks.filter(t => !t.plan?.usuario?.nombre.toLowerCase().includes('gustavo test'));
@@ -152,14 +208,56 @@ export class AnalyticsService {
             .sort((a, b) => b.diasAtraso - a.diasAtraso)
             .slice(0, 15);
 
-        // 4. Project List with Progress
+        // 4. Project List with Progress - FILTRADO POR USUARIOS VISIBLES
         const activeProjects = await this.proyectoRepo.find({
             where: { estado: 'Activo' },
-            relations: ['tareas']
+            relations: ['tareas', 'tareas.asignados']
         });
 
-        const projectsStats = activeProjects.map(p => {
-            const pTasks = p.tareas || [];
+        // Filtrar proyectos: solo los que tienen tareas asignadas a usuarios visibles
+        let filteredProjectsSorted = activeProjects.filter(p => {
+            if (!p.tareas || p.tareas.length === 0) return false;
+            // El proyecto es visible si al menos una tarea tiene un asignado en visibleUserIds
+            return p.tareas.some(t =>
+                t.asignados?.some(a => visibleUserIds.includes(a.idUsuario))
+            );
+        });
+
+        // FALLBACK: Si no hay proyectos por asignación directa, buscar por gerencia/departamento
+        if (filteredProjectsSorted.length === 0 && !isAdmin) {
+            const gerenciasVisibles = new Set<string>();
+            if (requestingUser?.departamento) {
+                gerenciasVisibles.add(requestingUser.departamento.toUpperCase());
+            }
+
+            const subordinados = await this.userRepo.find({
+                where: { idUsuario: In(visibleUserIds) },
+                select: ['departamento', 'cargo']
+            });
+            subordinados.forEach(s => {
+                if (s.departamento) gerenciasVisibles.add(s.departamento.toUpperCase());
+                if (s.cargo?.toUpperCase().includes('RECURSOS HUMANOS')) {
+                    gerenciasVisibles.add('RECURSOS HUMANOS');
+                }
+            });
+
+            if (gerenciasVisibles.size > 0) {
+                filteredProjectsSorted = activeProjects.filter(p => {
+                    const proyGerencia = (p.gerencia || '').toUpperCase();
+                    const proySubgerencia = (p.subgerencia || '').toUpperCase();
+                    return Array.from(gerenciasVisibles).some(g =>
+                        proyGerencia.includes(g) || proySubgerencia.includes(g) ||
+                        (g.includes('RECURSOS HUMANOS') && proyGerencia.includes('RECURSOS HUMANOS'))
+                    );
+                });
+            }
+        }
+
+        const projectsStats = filteredProjectsSorted.map(p => {
+            // Filtrar solo las tareas de usuarios visibles dentro del proyecto
+            const pTasks = (p.tareas || []).filter(t =>
+                t.asignados?.some(a => visibleUserIds.includes(a.idUsuario))
+            );
             const total = pTasks.length;
             const done = pTasks.filter(t => t.estado === 'Hecha').length;
             const inProgress = pTasks.filter(t => t.estado === 'EnCurso').length;
@@ -167,16 +265,51 @@ export class AnalyticsService {
             const atrasadas = pTasks.filter(t => t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today).length;
             const bloqueadas = pTasks.filter(t => t.estado === 'Bloqueada').length;
 
+            // Calcular progreso esperado basado en cronograma
+            let expectedProgress = 0;
+            if (p.fechaInicio && p.fechaFin) {
+                const startDate = new Date(p.fechaInicio);
+                const endDate = new Date(p.fechaFin);
+                const totalMs = endDate.getTime() - startDate.getTime();
+                const elapsedMs = today.getTime() - startDate.getTime();
+
+                if (totalMs > 0) {
+                    if (today < startDate) expectedProgress = 0;
+                    else if (today > endDate) expectedProgress = 100;
+                    else expectedProgress = Math.round((elapsedMs / totalMs) * 100);
+                }
+            } else if (pTasks.length > 0) {
+                // Fallback por fechas de tareas
+                const tasksWithDates = pTasks.filter(t => t.fechaInicioPlanificada && t.fechaObjetivo);
+                if (tasksWithDates.length > 0) {
+                    const taskStarts = tasksWithDates.map(t => new Date(t.fechaInicioPlanificada!).getTime());
+                    const taskEnds = tasksWithDates.map(t => new Date(t.fechaObjetivo!).getTime());
+                    const earliestStart = Math.min(...taskStarts);
+                    const latestEnd = Math.max(...taskEnds);
+                    const totalMs = latestEnd - earliestStart;
+                    const elapsedMs = today.getTime() - earliestStart;
+                    if (totalMs > 0 && elapsedMs >= 0) {
+                        expectedProgress = Math.min(Math.round((elapsedMs / totalMs) * 100), 100);
+                    }
+                }
+            }
+
+            const deviation = progress - expectedProgress;
+
             return {
                 id: p.idProyecto,
                 nombre: p.nombre,
                 gerencia: p.gerencia,
                 subgerencia: p.subgerencia,
                 area: p.area,
+                fechaInicio: p.fechaInicio,
+                fechaFin: p.fechaFin,
                 progress,
+                expectedProgress,  // NUEVO
+                deviation,         // NUEVO
                 totalTasks: total,
-                hechas: done,     // Nuevo campo
-                enCurso: inProgress, // Nuevo campo
+                hechas: done,
+                enCurso: inProgress,
                 atrasadas,
                 bloqueadas,
                 tareas: pTasks.map(t => ({
@@ -188,9 +321,9 @@ export class AnalyticsService {
                     fechaInicio: t.fechaInicioPlanificada,
                     fechaObjetivo: t.fechaObjetivo,
                     atrasada: t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today
-                })).slice(0, 50) // Limit to avoid massive payload
+                })).slice(0, 50)
             };
-        }).sort((a, b) => a.progress - b.progress);
+        }).sort((a, b) => a.deviation - b.deviation); // Ordenar por mayor atraso primero
 
         // 5. Blockers Detail
         const activeBlockers = await this.bloqueoRepo.find({

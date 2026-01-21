@@ -9,6 +9,7 @@ import {
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clarityService } from '../../services/clarity.service';
+import { planningService } from '../../services/planning.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useEquipo } from '../../hooks/useEquipo';
@@ -88,6 +89,27 @@ export const ManagerDashboard: React.FC = () => {
         setLoading(true);
         try {
             const data = await clarityService.getDashboardStats(period.month, period.year);
+
+            // Si no hay proyectos o es un array vacío, intentamos con la API de proyectos por visibilidad (Mi Jerarquía)
+            if (!data.projectsStats || data.projectsStats.length === 0) {
+                console.log('Dashboard stats returned 0 projects. Attempting fallback with getMyProjects...');
+                try {
+                    const projects = await planningService.getMyProjects();
+                    if (projects && projects.length > 0) {
+                        data.projectsStats = projects;
+
+                        // Si globalCompletion es 0, recalculamos basándonos en los proyectos encontrados
+                        if (!data.globalCompletion || data.globalCompletion === 0) {
+                            const total = projects.reduce((acc: number, p: any) => acc + (p.totalTasks || 0), 0);
+                            const done = projects.reduce((acc: number, p: any) => acc + (p.hechas || 0), 0);
+                            data.globalCompletion = total > 0 ? Math.round((done / total) * 100) : 0;
+                        }
+                    }
+                } catch (pError) {
+                    console.error('Error fetching fallback projects:', pError);
+                }
+            }
+
             setStats(data);
         } catch (error) {
             showToast('Error cargando analítica', 'error');
@@ -147,6 +169,22 @@ export const ManagerDashboard: React.FC = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={7} className="text-center py-8 text-slate-400">Cargando...</td></tr>
+                            ) : hierarchyData.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-12">
+                                        <div className="text-slate-400 space-y-3">
+                                            <p className="text-sm">No hay tareas registradas en el período seleccionado ({period.month}/{period.year}).</p>
+                                            {projectsStats.length > 0 && (
+                                                <button
+                                                    onClick={() => setActiveTab('projects')}
+                                                    className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 transition-colors"
+                                                >
+                                                    Ver {projectsStats.length} proyectos activos →
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : hierarchyData.map((row: any) => (
                                 <tr key={row.name} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                                     <td className="px-4 py-4 font-bold text-slate-700">{row.name}</td>
@@ -204,6 +242,8 @@ export const ManagerDashboard: React.FC = () => {
                                 <th className="px-6 py-4 whitespace-nowrap">Proyecto</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Área</th>
                                 <th className="px-6 py-4 text-center whitespace-nowrap">Progreso</th>
+                                <th className="px-6 py-4 text-center whitespace-nowrap text-purple-600">% Esperado</th>
+                                <th className="px-6 py-4 text-center whitespace-nowrap">Desviación</th>
                                 <th className="px-6 py-4 text-center whitespace-nowrap text-sky-600">En Curso</th>
                                 <th className="px-6 py-4 text-center whitespace-nowrap text-emerald-600">Hechas</th>
                                 <th className="px-6 py-4 text-center whitespace-nowrap">Total</th>
@@ -211,36 +251,54 @@ export const ManagerDashboard: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredProjects.map((p: any) => (
-                                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-slate-800">{p.nombre}</div>
-                                        <div className="text-xs text-slate-400 mt-0.5">ID: {p.id}</div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-slate-700 font-medium">{p.subgerencia || 'General'}</div>
-                                        <div className="text-xs text-slate-500">{p.area || '-'}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`text-sm font-black ${p.progress >= 80 ? 'text-emerald-600' : p.progress >= 30 ? 'text-indigo-600' : 'text-slate-500'}`}>
-                                            {p.progress}%
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center font-bold text-sky-600">{p.enCurso || 0}</td>
-                                    <td className="px-6 py-4 text-center font-bold text-emerald-600">{p.hechas || 0}</td>
-                                    <td className="px-6 py-4 text-center font-bold text-slate-600">{p.totalTasks}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => setSelectedProject(p)}
-                                            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors"
-                                        >
-                                            Ver Detalle
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {filteredProjects.map((p: any) => {
+                                const deviation = p.deviation ?? (p.progress - (p.expectedProgress || 0));
+                                const deviationColor = deviation >= 0 ? 'text-emerald-600 bg-emerald-50'
+                                    : deviation >= -10 ? 'text-amber-600 bg-amber-50'
+                                        : 'text-rose-600 bg-rose-50';
+                                const deviationIcon = deviation >= 0 ? '↑' : '↓';
+
+                                return (
+                                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-slate-800">{p.nombre}</div>
+                                            <div className="text-xs text-slate-400 mt-0.5">ID: {p.id}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-700 font-medium">{p.subgerencia || 'General'}</div>
+                                            <div className="text-xs text-slate-500">{p.area || '-'}</div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`text-sm font-black ${p.progress >= 80 ? 'text-emerald-600' : p.progress >= 30 ? 'text-indigo-600' : 'text-slate-500'}`}>
+                                                {p.progress}%
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-sm font-bold text-purple-600">
+                                                {p.expectedProgress ?? 0}%
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`px-2 py-1 rounded-lg text-xs font-black ${deviationColor}`}>
+                                                {deviationIcon} {Math.abs(deviation)}%
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center font-bold text-sky-600">{p.enCurso || 0}</td>
+                                        <td className="px-6 py-4 text-center font-bold text-emerald-600">{p.hechas || 0}</td>
+                                        <td className="px-6 py-4 text-center font-bold text-slate-600">{p.totalTasks}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => setSelectedProject(p)}
+                                                className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors"
+                                            >
+                                                Ver Detalle
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                             {filteredProjects.length === 0 && (
-                                <tr><td colSpan={7} className="text-center py-12 text-slate-400">No se encontraron proyectos con ese criterio.</td></tr>
+                                <tr><td colSpan={9} className="text-center py-12 text-slate-400">No se encontraron proyectos con ese criterio.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -366,6 +424,8 @@ export const ManagerDashboard: React.FC = () => {
                         <tr>
                             <th className="px-6 py-3 font-semibold">Colaborador</th>
                             <th className="px-6 py-3 font-semibold">Estado de Ánimo</th>
+                            <th className="px-6 py-3 text-center font-semibold text-indigo-600">Hoy</th>
+                            <th className="px-6 py-3 text-center font-semibold text-sky-600">En Curso</th>
                             <th className="px-6 py-3 text-center font-semibold">Retrasos</th>
                             <th className="px-6 py-3 text-center font-semibold">Bloqueos</th>
                             <th className="px-6 py-3 text-right font-semibold">Acción</th>
@@ -380,7 +440,7 @@ export const ManagerDashboard: React.FC = () => {
                             const totalPages = Math.ceil(filtered.length / itemsPerPage);
                             const paginated = filtered.slice((teamPage - 1) * itemsPerPage, teamPage * itemsPerPage);
 
-                            if (paginated.length === 0) return <tr><td colSpan={5} className="text-center py-12 text-slate-400 italic">No se encontraron miembros.</td></tr>;
+                            if (paginated.length === 0) return <tr><td colSpan={7} className="text-center py-12 text-slate-400 italic">No se encontraron miembros.</td></tr>;
 
                             return (
                                 <>
@@ -405,6 +465,20 @@ export const ManagerDashboard: React.FC = () => {
                                                 ) : (
                                                     <span className="text-slate-400 text-xs italic">Sin reporte</span>
                                                 )}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {(m.tareasHoy || 0) > 0 ? (
+                                                    <span className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-black animate-pulse">
+                                                        {m.tareasHoy}
+                                                    </span>
+                                                ) : (
+                                                    <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-xs font-bold">✓</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={`font-bold ${(m.tareasEnCurso || 0) > 0 ? 'text-sky-600' : 'text-slate-300'}`}>
+                                                    {m.tareasEnCurso || 0}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <span className={`font-bold ${m.tareasVencidas > 0 ? 'text-rose-600' : 'text-slate-400'}`}>

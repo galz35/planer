@@ -67,7 +67,7 @@ export class Usuario {
     @Column({ type: 'varchar', nullable: true })
     jefeCorreo: string | null;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ type: 'datetime', nullable: true })
     fechaIngreso: Date | null;
 
     @Column({ type: 'varchar', nullable: true })

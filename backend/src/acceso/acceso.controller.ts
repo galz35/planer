@@ -156,6 +156,24 @@ export class AccesoController {
         return this.accesoService.buscarNodosOrganizacion(termino);
     }
 
+    @Get('organizacion/tree')
+    async getNodosTree() {
+        return this.accesoService.getNodosTree();
+    }
+
+    @Get('organizacion/nodo/:idOrg')
+    async getNodo(@Param('idOrg') idOrg: string) {
+        return this.accesoService.getNodo(idOrg);
+    }
+
+    @Get('organizacion/nodo/:idOrg/preview')
+    async previewEmpleadosPorNodo(
+        @Param('idOrg') idOrg: string,
+        @Query('alcance') alcance: 'SUBARBOL' | 'SOLO_NODO' = 'SUBARBOL'
+    ) {
+        return this.accesoService.previewEmpleadosPorNodo(idOrg, alcance);
+    }
+
     @Get('debug-raw-data')
     async debugRawData() {
         return this.accesoService.getDebugRawData();

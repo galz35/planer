@@ -7,7 +7,7 @@ import { useToast } from '../../../context/ToastContext';
 import type { CheckinUpsertDto } from '../../../types/modelos';
 
 export const ExecutionView: React.FC = () => {
-    const { loading, checkin, arrastrados, bloqueos, bloqueosMeCulpan, allDisponibles, backlog, fetchMiDia, userId, today } = useMiDiaContext();
+    const { loading, checkin, bloqueos, bloqueosMeCulpan, allDisponibles, fetchMiDia, userId, today } = useMiDiaContext();
     const { showToast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
 

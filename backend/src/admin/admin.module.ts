@@ -1,25 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
-import { AdminGuard } from './admin.guard';
-import { ImportController } from './import.controller';
-import { ImportService } from './import.service';
-import { Usuario, UsuarioCredenciales, UsuarioOrganizacion, OrganizacionNodo, Rol, UsuarioConfig } from '../entities';
+import { AdminSecurityController } from './admin-security.controller';
+import { AdminSecurityService } from './admin-security.service';
+import { Usuario } from '../auth/entities/usuario.entity';
+import { UsuarioConfig } from '../auth/entities/usuario-config.entity';
+import { SeguridadPerfil } from '../auth/entities/seguridad-perfil.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([
-            Usuario,
-            UsuarioCredenciales,
-            UsuarioOrganizacion,
-            OrganizacionNodo,
-            Rol,
-            UsuarioConfig
-        ]),
+        TypeOrmModule.forFeature([Usuario, UsuarioConfig, SeguridadPerfil])
     ],
-    controllers: [AdminController, ImportController],
-    providers: [AdminService, AdminGuard, ImportService],
-    exports: [AdminService, ImportService],
+    controllers: [AdminSecurityController],
+    providers: [AdminSecurityService],
+    exports: [AdminSecurityService]
 })
 export class AdminModule { }

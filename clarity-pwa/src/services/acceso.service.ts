@@ -215,6 +215,29 @@ export const accesoService = {
         return api.get<ApiResponse<any[]>>(`/acceso/organizacion/buscar?q=${encodeURIComponent(q)}`);
     },
 
+    /**
+     * Obtener árbol jerárquico de nodos con conteo de empleados
+     */
+    getNodosTree: async () => {
+        return api.get<ApiResponse<any[]>>('/acceso/organizacion/tree');
+    },
+
+    /**
+     * Obtener información de un nodo específico
+     */
+    getNodo: async (idOrg: string) => {
+        return api.get<ApiResponse<any>>(`/acceso/organizacion/nodo/${encodeURIComponent(idOrg)}`);
+    },
+
+    /**
+     * Previsualizar empleados afectados por un permiso de área
+     */
+    previewEmpleadosPorNodo: async (idOrg: string, alcance: 'SUBARBOL' | 'SOLO_NODO' = 'SUBARBOL') => {
+        return api.get<ApiResponse<{ idOrgRaiz: string; alcance: string; total: number; muestra: any[] }>>(
+            `/acceso/organizacion/nodo/${encodeURIComponent(idOrg)}/preview?alcance=${alcance}`
+        );
+    },
+
     // Legacy or Removed methods (getSubarbol, imports) commented out to ensure clean build
 };
 

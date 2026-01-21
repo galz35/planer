@@ -32,7 +32,7 @@ export class PermisoEmpleado {
     @JoinColumn({ name: 'carnet_objetivo', referencedColumnName: 'carnet' })
     empleadoObjetivo: Usuario;
 
-    @Column({ name: 'activo', type: 'boolean', default: true })
+    @Column({ name: 'activo', default: true })
     activo: boolean;
 
     @Column({ name: 'fecha_inicio', type: 'date', nullable: true })
@@ -44,7 +44,7 @@ export class PermisoEmpleado {
     @Column({ name: 'motivo', type: 'varchar', length: 300, nullable: true })
     motivo: string | null;
 
-    @CreateDateColumn({ name: 'creado_en', type: 'timestamp' })
+    @CreateDateColumn({ name: 'creado_en' })
     creadoEn: Date;
 
     @Column({ name: 'tipo_acceso', type: 'varchar', length: 20, default: 'ALLOW' })

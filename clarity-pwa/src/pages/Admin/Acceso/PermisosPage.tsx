@@ -7,8 +7,9 @@
  * 3. Delegaciones - Heredar visibilidad de otro usuario
  */
 import React, { useState, useEffect } from 'react';
-import { KeyRound, Building2, User, Users2, Plus, Trash2, Search, RefreshCw } from 'lucide-react';
+import { KeyRound, Building2, User, Users2, Plus, Trash2, Search, RefreshCw, Eye } from 'lucide-react';
 import { accesoService } from '../../../services/acceso.service';
+import { NodoSelector } from '../../../components/acceso/NodoSelector';
 import type {
     PermisoArea,
     PermisoEmpleado,
@@ -40,6 +41,7 @@ export const PermisosPage: React.FC = () => {
         tipoPermiso: 'SUBARBOL',
         motivo: ''
     });
+    const [previewEmpleados, setPreviewEmpleados] = useState<{ total: number; muestra: any[] } | null>(null);
 
     const [formPermisoEmpleado, setFormPermisoEmpleado] = useState<CrearPermisoEmpleadoDto>({
         carnetRecibe: '',
@@ -346,26 +348,62 @@ export const PermisosPage: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">ID Org Raíz *</label>
-                                        <input
-                                            type="text"
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Seleccionar Área/Nodo Organizacional *</label>
+                                        <NodoSelector
                                             value={formPermisoArea.idOrgRaiz}
-                                            onChange={(e) => setFormPermisoArea({ ...formPermisoArea, idOrgRaiz: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="Ej: 1001"
+                                            onChange={(idOrg, _nodo) => {
+                                                setFormPermisoArea({ ...formPermisoArea, idOrgRaiz: idOrg });
+                                                // Auto-cargar preview
+                                                if (idOrg) {
+                                                    accesoService.previewEmpleadosPorNodo(idOrg, formPermisoArea.tipoPermiso || 'SUBARBOL')
+                                                        .then(res => {
+                                                            const d = res.data as any;
+                                                            if (d) setPreviewEmpleados({ total: d.total || 0, muestra: d.muestra || [] });
+                                                        })
+                                                        .catch(() => setPreviewEmpleados(null));
+                                                }
+                                            }}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Alcance</label>
                                         <select
                                             value={formPermisoArea.tipoPermiso}
-                                            onChange={(e) => setFormPermisoArea({ ...formPermisoArea, tipoPermiso: e.target.value as 'SUBARBOL' | 'SOLO_NODO' })}
+                                            onChange={(e) => {
+                                                const alcance = e.target.value as 'SUBARBOL' | 'SOLO_NODO';
+                                                setFormPermisoArea({ ...formPermisoArea, tipoPermiso: alcance });
+                                                // Actualizar preview con nuevo alcance
+                                                if (formPermisoArea.idOrgRaiz) {
+                                                    accesoService.previewEmpleadosPorNodo(formPermisoArea.idOrgRaiz, alcance)
+                                                        .then(res => {
+                                                            const d = res.data as any;
+                                                            if (d) setPreviewEmpleados({ total: d.total || 0, muestra: d.muestra || [] });
+                                                        })
+                                                        .catch(() => setPreviewEmpleados(null));
+                                                }
+                                            }}
                                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         >
-                                            <option value="SUBARBOL">SUBARBOL (incluye hijos)</option>
-                                            <option value="SOLO_NODO">SOLO_NODO (sin hijos)</option>
+                                            <option value="SUBARBOL">SUBÁRBOL (incluye hijos)</option>
+                                            <option value="SOLO_NODO">SOLO ESTE NODO (sin hijos)</option>
                                         </select>
                                     </div>
+                                    {previewEmpleados && (
+                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                            <div className="flex items-center gap-2 text-blue-700 font-medium text-sm mb-2">
+                                                <Eye size={16} />
+                                                El receptor podrá ver <strong>{previewEmpleados.total}</strong> empleados
+                                            </div>
+                                            {previewEmpleados.muestra.length > 0 && (
+                                                <div className="text-xs text-blue-600 max-h-24 overflow-y-auto">
+                                                    {previewEmpleados.muestra.slice(0, 5).map((e: any, i: number) => (
+                                                        <div key={i}>{e.nombreCompleto || e.nombre} - {e.cargo}</div>
+                                                    ))}
+                                                    {previewEmpleados.total > 5 && <div className="italic">...y {previewEmpleados.total - 5} más</div>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Motivo</label>
                                         <input

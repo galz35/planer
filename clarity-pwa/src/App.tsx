@@ -33,11 +33,11 @@ const ImportPage = React.lazy(() => import('./pages/Admin/Import/ImportPage').th
 // Acceso Module Pages
 const PermisosPage = React.lazy(() => import('./pages/Admin/Acceso/PermisosPage').then(module => ({ default: module.PermisosPage })));
 const VisibilidadPage = React.lazy(() => import('./pages/Admin/Acceso/VisibilidadPage').then(module => ({ default: module.VisibilidadPage })));
+const SecurityManagementPage = React.lazy(() => import('./pages/Admin/SecurityManagementPage'));
 
 // NEW ALTERNATIVE DASHBOARD
 import { ManagerDashboard } from './pages/Equipo/ManagerDashboard';
 import { MemberAgendaPage } from './pages/Equipo/MemberAgendaPage';
-
 import { MiEquipoPage } from './pages/Equipo/MiEquipoPage';
 import { MeetingNotesPage } from './pages/Notes/MeetingNotesPage';
 import { ProjectSimulationPage } from './pages/Planning/ProjectSimulationPage';
@@ -46,12 +46,19 @@ import { ApprovalsPage } from './pages/Planning/ApprovalsPage';
 import { PlanTrabajoPage } from './pages/Planning/PlanTrabajoPage';
 import { ProyectosPage } from './pages/Planning/ProyectosPage';
 import { TutorialPage } from './pages/Tutorial/TutorialPage';
-// import { AutomationPage } from './pages/Automation/AutomationPage';
+import { AlertsView } from './pages/Hoy/views/AlertsView';
+import { BlockersView } from './pages/Hoy/views/BlockersView';
+import { MetricsView } from './pages/Hoy/views/MetricsView';
+import { TeamView } from './pages/Hoy/views/TeamView';
+import { VisibilidadView } from './pages/Hoy/views/VisibilidadView';
+import { AutomationPage } from './pages/Automation/AutomationPage';
 
 // Components
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { CommandPalette } from './components/ui/CommandPalette';
+import { OnboardingWizard, useOnboarding } from './components/ui/OnboardingWizard';
 
 // Protected Route Component
 const ProtectedRoute = () => {
@@ -61,9 +68,6 @@ const ProtectedRoute = () => {
 
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
-
-import { CommandPalette } from './components/ui/CommandPalette';
-import { OnboardingWizard, useOnboarding } from './components/ui/OnboardingWizard';
 
 const AppLayout = () => {
   const { isSidebarCollapsed } = useUI();
@@ -113,8 +117,12 @@ function App() {
                           <Route path="matrix" element={<MatrixView />} />
                           <Route path="calendario" element={<CalendarView />} />
                           <Route path="bitacora" element={<TimelineView />} />
-
                           <Route path="kpis" element={<ExecutiveView />} />
+                          <Route path="alertas" element={<AlertsView />} />
+                          <Route path="bloqueos" element={<BlockersView />} />
+                          <Route path="metricas" element={<MetricsView />} />
+                          <Route path="equipo" element={<TeamView />} />
+                          <Route path="visibilidad" element={<VisibilidadView />} />
                         </Route>
                         <Route path="pendientes" element={<PendientesPage />} />
 
@@ -128,11 +136,10 @@ function App() {
 
                         <Route path="equipo" element={<ManagerDashboard />} />
                         <Route path="equipo/hoy" element={<ManagerDashboard />} />
-
                         <Route path="equipo/planning/:userId" element={<TeamPlanningPage />} />
                         <Route path="equipo/bloqueos" element={<EquipoBloqueosPage />} />
-
                         <Route path="equipo/mi-equipo" element={<MiEquipoPage />} />
+
                         <Route path="planning/approvals" element={<ApprovalsPage />} />
                         <Route path="planning/timeline" element={<TimelinePage />} />
                         <Route path="planning/roadmap" element={<RoadmapPage />} />
@@ -144,11 +151,10 @@ function App() {
                         {/* Notas */}
                         <Route path="notas" element={<MeetingNotesPage />} />
 
-                        {/* Reporting */}
                         {/* Reporting & Intelligence */}
                         <Route path="reports" element={<ReportsPage />} />
                         <Route path="help" element={<TutorialPage />} />
-                        {/* <Route path="automation" element={<AutomationPage />} /> */}
+                        <Route path="automation" element={<AutomationPage />} />
 
                         {/* Admin Routes - Protected by RoleGuard */}
                         <Route element={<RoleRoute allowedRoles={['Admin', 'Administrador']} />}>
@@ -159,6 +165,7 @@ function App() {
                           <Route path="admin/logs" element={<LogsPage />} />
                           <Route path="admin/audit" element={<AuditLogsPage />} />
                           <Route path="admin/import" element={<ImportPage />} />
+                          <Route path="admin/seguridad" element={<SecurityManagementPage />} />
                         </Route>
 
                         {/* Historial */}
@@ -171,13 +178,12 @@ function App() {
                     <Route path="*" element={<Navigate to="/app/hoy" replace />} />
                   </Routes>
                 </BrowserRouter>
-
               </UIProvider>
             </ToastProvider>
           </CountryProvider>
         </AuthProvider>
       </ThemeProvider>
-    </ErrorBoundary >
+    </ErrorBoundary>
   );
 }
 

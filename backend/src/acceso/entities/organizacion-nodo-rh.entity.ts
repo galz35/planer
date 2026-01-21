@@ -33,6 +33,6 @@ export class OrganizacionNodoRh {
     @Column({ name: 'nivel', type: 'varchar', length: 200, nullable: true })
     nivel: string | null;
 
-    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }

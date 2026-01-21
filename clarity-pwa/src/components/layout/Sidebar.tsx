@@ -95,14 +95,30 @@ export const Sidebar: React.FC = () => {
         if ((user as any)?.menuConfig) {
             try {
                 const dynamicMenu = (user as any).menuConfig;
-                // Map string icons back to components
-                return dynamicMenu.map((g: any) => ({
-                    ...g,
-                    items: g.items.map((i: any) => ({
-                        ...i,
-                        icon: iconMap[i.icon] || FileText // Fallback icon
-                    }))
-                }));
+
+                // Nuevo: Si es un objeto con profileType (en lugar de array)
+                if (dynamicMenu.profileType) {
+                    const baseMenu = rawMenuGroups;
+
+                    if (dynamicMenu.profileType === 'LEADER') {
+                        // Líder: Mostrar todo excepto Administración
+                        return baseMenu.filter(group => group.group !== 'Administración');
+                    } else if (dynamicMenu.profileType === 'EMPLOYEE') {
+                        // Empleado: Solo "Mi Espacio"
+                        return baseMenu.filter(group => group.group === 'Mi Espacio');
+                    }
+                }
+
+                // Antiguo: Si es un array (customMenu manual)
+                if (Array.isArray(dynamicMenu)) {
+                    return dynamicMenu.map((g: any) => ({
+                        ...g,
+                        items: g.items.map((i: any) => ({
+                            ...i,
+                            icon: iconMap[i.icon] || FileText // Fallback icon
+                        }))
+                    }));
+                }
             } catch (e) {
                 console.error("Error loading dynamic menu", e);
             }

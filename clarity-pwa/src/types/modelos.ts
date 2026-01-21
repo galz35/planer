@@ -77,7 +77,7 @@ export interface SolicitudCambio {
 export type Prioridad = 'Alta' | 'Media' | 'Baja';
 export type Esfuerzo = 'S' | 'M' | 'L';
 export type EstadoTarea = 'Pendiente' | 'EnCurso' | 'Pausa' | 'Bloqueada' | 'Revision' | 'Hecha' | 'Descartada';
-export type TipoTarea = 'Logistica' | 'Administrativa' | 'Estrategica' | 'AMX' | 'Otros';
+export type TipoTarea = 'Logistica' | 'Administrativa' | 'Estrategica' | 'AMX' | 'Otros' | 'Operativo';
 export type AlcanceTarea = 'Local' | 'Regional' | 'AMX';
 
 export interface Tarea {

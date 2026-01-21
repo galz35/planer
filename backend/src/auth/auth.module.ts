@@ -8,11 +8,12 @@ import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuario, UsuarioCredenciales, UsuarioConfig } from '../entities';
+import { SeguridadPerfil } from './entities/seguridad-perfil.entity';
 // import { Empleado } from '../acceso/entities/empleado.entity'; // Removed
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Usuario, UsuarioCredenciales, UsuarioConfig]), // Removed Empleado
+        TypeOrmModule.forFeature([Usuario, UsuarioCredenciales, UsuarioConfig, SeguridadPerfil]), // Added SeguridadPerfil
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],

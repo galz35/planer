@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { APP_MENU, ICON_MAP } from '../../constants/appMenu';
-import { Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface MenuBuilderProps {
     initialJson: string;

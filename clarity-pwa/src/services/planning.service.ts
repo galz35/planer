@@ -35,15 +35,23 @@ export const planningService = {
      * Obtiene las solicitudes pendientes (para Jefes).
      */
     getPendingRequests: async (): Promise<SolicitudCambio[]> => {
-        const response = await api.get('/planning/pending');
+        const response = await api.get('/planning/approvals');
         return response.data.data;
     },
 
     /**
      * Resuelve una solicitud (Aprobar/Rechazar).
      */
-    resolveRequest: async (idSolicitud: number, accion: 'Aprobar' | 'Rechazar'): Promise<SolicitudCambio> => {
-        const response = await api.post('/planning/resolve', { idSolicitud, accion });
+    resolveRequest: async (idSolicitud: number, accion: 'Aprobar' | 'Rechazar', comentario?: string): Promise<SolicitudCambio> => {
+        const response = await api.post(`/planning/approvals/${idSolicitud}/resolve`, { accion, comentario });
+        return response.data.data;
+    },
+
+    /**
+     * Obtiene los proyectos visibles según jerarquía.
+     */
+    getMyProjects: async (): Promise<any[]> => {
+        const response = await api.get('/planning/my-projects');
         return response.data.data;
     }
 };

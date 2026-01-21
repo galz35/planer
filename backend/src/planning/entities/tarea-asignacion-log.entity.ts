@@ -64,7 +64,7 @@ export class TareaAsignacionLog {
     @CreateDateColumn({ name: 'fecha_inicio' })
     fechaInicio: Date;
 
-    @Column({ name: 'fecha_fin', type: 'timestamp', nullable: true })
+    @Column({ name: 'fecha_fin', type: 'datetime', nullable: true })
     fechaFin: Date | null; // null = asignación activa
 
     @Column({ default: true })

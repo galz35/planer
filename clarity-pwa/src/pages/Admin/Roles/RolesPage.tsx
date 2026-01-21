@@ -22,7 +22,7 @@ export const RolesPage: React.FC = () => {
     const [roles, setRoles] = useState<ExtendedRoleDefinition[]>([]);
     const [selectedRole, setSelectedRole] = useState<ExtendedRoleDefinition | null>(null);
     const [defaultMenuJson, setDefaultMenuJson] = useState('');
-    const [jsonError, setJsonError] = useState<string | null>(null);
+    const [, setJsonError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();

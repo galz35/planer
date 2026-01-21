@@ -1,0 +1,27 @@
+﻿Ô£à Login exitoso para juan.ortuno
+Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb3JyZW8iO...
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+­ƒôè RESPUESTA DE /planning/my-projects
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+Ô£à Proyectos encontrados: 4
+
+1. Reclutamiento-Objetivo 2026
+   Progreso: 0%
+   Tareas: 0/9 hechas
+   Atrasadas: 0
+
+2.  Control Organizacional, Compensaciones y Descripciones de puestos:
+   Progreso: 0%
+   Tareas: 0/6 hechas
+   Atrasadas: 0
+
+3. Descripciones/Perfiles de Puestos basados en Competencias Laborales
+   Progreso: 0%
+   Tareas: 0/4 hechas
+   Atrasadas: 0
+
+4. Proyecto de Reutilizaci├│n y Reciclaje de Activos (Mobiliario) 
+   Progreso: 0%
+   Tareas: 0/3 hechas
+   Atrasadas: 0

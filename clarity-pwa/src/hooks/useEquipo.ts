@@ -7,6 +7,8 @@ export interface EquipoMemberStatus {
     checkin: Checkin | null;
     bloqueosActivos: number;
     tareasVencidas: number;
+    tareasHoy: number;       // NUEVO: Tareas que vencen hoy
+    tareasEnCurso: number;   // NUEVO: Tareas en progreso
     estado: 'Pending' | 'AlDia' | 'ConBloqueos';
 }
 

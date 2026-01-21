@@ -36,7 +36,7 @@ export class PermisoArea {
     @Column({ name: 'alcance', type: 'varchar', length: 20, default: 'SUBARBOL' })
     alcance: 'SUBARBOL' | 'SOLO_NODO';
 
-    @Column({ name: 'activo', type: 'boolean', default: true })
+    @Column({ name: 'activo', default: true })
     activo: boolean;
 
     @Column({ name: 'fecha_inicio', type: 'date', nullable: true })
@@ -48,6 +48,6 @@ export class PermisoArea {
     @Column({ name: 'motivo', type: 'varchar', length: 300, nullable: true })
     motivo: string | null;
 
-    @CreateDateColumn({ name: 'creado_en', type: 'timestamp' })
+    @CreateDateColumn({ name: 'creado_en' })
     creadoEn: Date;
 }

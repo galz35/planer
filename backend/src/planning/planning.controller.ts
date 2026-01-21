@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, UseGuards, Request, Query, Param, Delete } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { PlanningService } from './planning.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -77,6 +78,12 @@ export class PlanningController {
     @Get('team')
     async getMyTeam(@Request() req: any) {
         return await this.planningService.getMyTeam(req.user.userId);
+    }
+
+    @Get('my-projects')
+    @ApiOperation({ summary: 'Obtiene proyectos visibles según jerarquía del usuario' })
+    async getMyProjects(@Request() req: any) {
+        return await this.planningService.getMyProjects(req.user.userId);
     }
 
     @Post('tasks/:id/clone')

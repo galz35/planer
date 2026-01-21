@@ -14,6 +14,7 @@ import { AuditModule } from './common/audit.module';
 import {
   Usuario, Rol, UsuarioCredenciales, OrganizacionNodo, UsuarioOrganizacion,
   Proyecto, Tarea, TareaAsignado, TareaAsignacionLog, Checkin, CheckinTarea, Bloqueo, TareaAvance, UsuarioConfig, Nota, LogSistema, AuditLog, SolicitudCambio, FocoDiario, PlanTrabajo,
+  SeguridadPerfil,
   // Módulo Acceso (Permisos/Visibilidad)
   // Empleado, // Removed
   OrganizacionNodoRh, PermisoArea, PermisoEmpleado, DelegacionVisibilidad
@@ -46,7 +47,7 @@ import {
         // Entidades comunes para ambas bases de datos
         const entities = [
           // Auth
-          Usuario, Rol, UsuarioCredenciales, OrganizacionNodo, UsuarioOrganizacion, UsuarioConfig,
+          Usuario, Rol, UsuarioCredenciales, OrganizacionNodo, UsuarioOrganizacion, UsuarioConfig, SeguridadPerfil,
           // Planning
           Proyecto, Tarea, TareaAsignado, TareaAsignacionLog, TareaAvance, SolicitudCambio, PlanTrabajo,
           // Clarity
@@ -73,8 +74,13 @@ import {
               trustServerCertificate: config.get('MSSQL_TRUST_CERT') === 'true',
             },
             entities,
-            synchronize: true, // AUTO-CREATE TABLES
+            synchronize: false, // No usar con SQL Server
             dropSchema: false,
+            logging: false, // Desactivar para producción
+            extra: {
+              connectionTimeout: 60000,
+              requestTimeout: 60000,
+            },
           };
         }
 

@@ -42,6 +42,7 @@ export const APP_MENU = [
             { path: '/app/admin/roles', label: 'Roles y Permisos', icon: 'Shield' },
             { path: '/app/admin/permisos', label: 'Control de Acceso', icon: 'KeyRound' },
             { path: '/app/admin/visibilidad', label: 'Visibilidad', icon: 'Eye' },
+            { path: '/app/admin/seguridad', label: 'Seguridad y Accesos', icon: 'ShieldCheck' },
             { path: '/app/admin/audit', label: 'Auditar Acciones', icon: 'ShieldCheck' },
             { path: '/app/admin/import', label: 'Importar Datos', icon: 'Database' },
             { path: '/app/admin/logs', label: 'Monitor Sistema', icon: 'Terminal' }

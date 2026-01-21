@@ -610,4 +610,184 @@ export class PlanningService {
 
         return saved;
     }
+
+    /**
+     * Obtiene los proyectos visibles para el usuario basándose en:
+     * 1. Proyectos con tareas asignadas a usuarios en su jerarquía
+     * 2. Fallback: Proyectos de la misma gerencia si no hay tareas asignadas
+     */
+    async getMyProjects(requesterId: number) {
+        const solicitante = await this.usuarioRepo.findOne({ where: { idUsuario: requesterId } });
+        if (!solicitante) return [];
+
+        const isAdmin = ['Admin', 'Administrador', 'SuperAdmin'].includes(solicitante.rolGlobal || '');
+
+        // 1. Obtener IDs de usuarios visibles
+        let visibleUserIds: number[] = [];
+        if (isAdmin) {
+            const allUsers = await this.usuarioRepo.find({ where: { activo: true }, select: ['idUsuario'] });
+            visibleUserIds = allUsers.map(u => u.idUsuario);
+        } else if (solicitante.carnet) {
+            const visibles = await this.visibilidadService.obtenerEmpleadosVisibles(solicitante.carnet);
+            visibleUserIds = visibles.map((v: any) => v.idUsuario);
+        } else {
+            visibleUserIds = [requesterId];
+        }
+
+        console.log(`[PlanningService.getMyProjects] Usuario ${requesterId}, visibles: ${visibleUserIds.length}`);
+
+        // 2. Buscar proyectos con tareas asignadas a esos usuarios
+        const activeProjects = await this.proyectoRepo.find({
+            where: { estado: 'Activo' },
+            relations: ['tareas', 'tareas.asignados']
+        });
+
+        const today = new Date();
+
+        // Filtrar proyectos por tareas asignadas a usuarios visibles
+        let filteredProjects = activeProjects.filter(p => {
+            if (!p.tareas || p.tareas.length === 0) return false;
+            return p.tareas.some(t =>
+                t.asignados?.some(a => visibleUserIds.includes(a.idUsuario))
+            );
+        });
+
+        console.log(`[PlanningService.getMyProjects] Proyectos por asignación: ${filteredProjects.length}`);
+
+        // 3. FALLBACK: Si no hay proyectos por asignación, buscar por gerencia
+        if (filteredProjects.length === 0 && !isAdmin) {
+            console.log(`[PlanningService.getMyProjects] Aplicando fallback por gerencia...`);
+
+            // Obtener gerencia del solicitante o de sus subordinados
+            const gerenciasVisibles = new Set<string>();
+
+            // Agregar gerencia del solicitante
+            if (solicitante.departamento) {
+                gerenciasVisibles.add(solicitante.departamento.toUpperCase());
+            }
+
+            // Obtener departamentos de subordinados
+            const subordinados = await this.usuarioRepo.find({
+                where: { idUsuario: In(visibleUserIds) },
+                select: ['departamento', 'cargo']
+            });
+            subordinados.forEach(s => {
+                if (s.departamento) gerenciasVisibles.add(s.departamento.toUpperCase());
+                // También agregar por cargo que contenga palabras clave
+                if (s.cargo?.toUpperCase().includes('RECURSOS HUMANOS')) {
+                    gerenciasVisibles.add('RECURSOS HUMANOS');
+                }
+            });
+
+            console.log(`[PlanningService.getMyProjects] Gerencias para fallback:`, Array.from(gerenciasVisibles));
+
+            // Filtrar proyectos que coincidan con alguna gerencia
+            filteredProjects = activeProjects.filter(p => {
+                const proyGerencia = (p.gerencia || '').toUpperCase();
+                const proySubgerencia = (p.subgerencia || '').toUpperCase();
+
+                return Array.from(gerenciasVisibles).some(g =>
+                    proyGerencia.includes(g) || proySubgerencia.includes(g) ||
+                    g.includes('RECURSOS HUMANOS') && proyGerencia.includes('RECURSOS HUMANOS')
+                );
+            });
+
+            console.log(`[PlanningService.getMyProjects] Proyectos por fallback gerencia: ${filteredProjects.length}`);
+        }
+
+        // 4. Mapear a formato de respuesta
+        return filteredProjects.map(p => {
+            // Filtrar tareas solo de usuarios visibles (si aplica)
+            const relevantTasks = isAdmin
+                ? (p.tareas || [])
+                : (p.tareas || []).filter(t =>
+                    t.asignados?.some(a => visibleUserIds.includes(a.idUsuario))
+                );
+
+            const total = relevantTasks.length;
+            const done = relevantTasks.filter(t => t.estado === 'Hecha').length;
+            const inProgress = relevantTasks.filter(t => t.estado === 'EnCurso').length;
+            const atrasadas = relevantTasks.filter(t =>
+                t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today
+            ).length;
+            const bloqueadas = relevantTasks.filter(t => t.estado === 'Bloqueada').length;
+            const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+
+            // Calcular progreso esperado basado en cronograma del proyecto
+            let expectedProgress = 0;
+            let deviation = 0;
+
+            if (p.fechaInicio && p.fechaFin) {
+                const startDate = new Date(p.fechaInicio);
+                const endDate = new Date(p.fechaFin);
+                const totalMs = endDate.getTime() - startDate.getTime();
+                const elapsedMs = today.getTime() - startDate.getTime();
+
+                if (totalMs > 0) {
+                    // Si aún no ha iniciado, expectedProgress = 0
+                    if (today < startDate) {
+                        expectedProgress = 0;
+                    }
+                    // Si ya pasó la fecha fin, expectedProgress = 100
+                    else if (today > endDate) {
+                        expectedProgress = 100;
+                    }
+                    // Si está en medio, calcular proporcionalmente
+                    else {
+                        expectedProgress = Math.round((elapsedMs / totalMs) * 100);
+                    }
+                }
+            } else if (relevantTasks.length > 0) {
+                // Fallback: Si no hay fechas de proyecto, calcular por tareas
+                const tasksWithDates = relevantTasks.filter(t => t.fechaInicioPlanificada && t.fechaObjetivo);
+                if (tasksWithDates.length > 0) {
+                    // Usar la fecha más temprana y más tardía de las tareas
+                    const taskStarts = tasksWithDates.map(t => new Date(t.fechaInicioPlanificada!).getTime());
+                    const taskEnds = tasksWithDates.map(t => new Date(t.fechaObjetivo!).getTime());
+                    const earliestStart = Math.min(...taskStarts);
+                    const latestEnd = Math.max(...taskEnds);
+                    const totalMs = latestEnd - earliestStart;
+                    const elapsedMs = today.getTime() - earliestStart;
+
+                    if (totalMs > 0 && elapsedMs >= 0) {
+                        expectedProgress = Math.min(Math.round((elapsedMs / totalMs) * 100), 100);
+                    }
+                }
+            }
+
+            // Calcular desviación (positivo = adelantado, negativo = atrasado)
+            deviation = progress - expectedProgress;
+
+            return {
+                id: p.idProyecto,
+                nombre: p.nombre,
+                tipo: p.tipo,
+                gerencia: p.gerencia,
+                subgerencia: p.subgerencia,
+                area: p.area,
+                estado: p.estado,
+                fechaInicio: p.fechaInicio,
+                fechaFin: p.fechaFin,
+                progress,
+                expectedProgress,  // NUEVO: Progreso esperado según cronograma
+                deviation,         // NUEVO: Desviación (progress - expectedProgress)
+                totalTasks: total,
+                hechas: done,
+                enCurso: inProgress,
+                atrasadas,
+                bloqueadas,
+                tareas: relevantTasks.slice(0, 50).map(t => ({
+                    id: t.idTarea,
+                    titulo: t.titulo,
+                    estado: t.estado,
+                    prioridad: t.prioridad,
+                    progreso: t.progreso || 0,
+                    fechaInicio: t.fechaInicioPlanificada,
+                    fechaObjetivo: t.fechaObjetivo,
+                    atrasada: t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today
+                }))
+            };
+        }).sort((a, b) => a.deviation - b.deviation); // Ordenar por mayor atraso primero (deviation más negativa)
+    }
 }
+

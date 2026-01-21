@@ -26,7 +26,7 @@ export class DelegacionVisibilidad {
     @JoinColumn({ name: 'carnet_delegado', referencedColumnName: 'carnet' })
     empleadoDelegado: Usuario; // La secretaria
 
-    @Column({ name: 'activo', type: 'boolean', default: true })
+    @Column({ name: 'activo', default: true })
     activo: boolean;
 
     @Column({ name: 'fecha_inicio', type: 'date', nullable: true })
@@ -38,6 +38,6 @@ export class DelegacionVisibilidad {
     @Column({ name: 'motivo', type: 'varchar', length: 300, nullable: true })
     motivo: string | null;
 
-    @CreateDateColumn({ name: 'creado_en', type: 'timestamp' })
+    @CreateDateColumn({ name: 'creado_en' })
     creadoEn: Date;
 }

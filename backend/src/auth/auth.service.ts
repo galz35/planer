@@ -17,6 +17,7 @@ export class AuthService {
     ) { }
 
     async validateUser(identifier: string, pass: string): Promise<any> {
+        console.log('[DEBUG] validateUser called with:', identifier);
         const user = await this.userRepo.findOne({
             where: [
                 { correo: identifier, activo: true },
@@ -24,13 +25,19 @@ export class AuthService {
             ],
             relations: ['rol']
         });
+        console.log('[DEBUG] User found:', user ? user.idUsuario : 'NULL');
         if (!user) return null;
 
         const creds = await this.credsRepo.findOne({ where: { idUsuario: user.idUsuario } });
-        if (creds && await bcrypt.compare(pass, creds.passwordHash)) {
-            creds.ultimoLogin = new Date();
-            await this.credsRepo.save(creds);
-            return user;
+        console.log('[DEBUG] Creds found:', creds ? 'YES' : 'NULL');
+        if (creds) {
+            const match = await bcrypt.compare(pass, creds.passwordHash);
+            console.log('[DEBUG] Password match:', match);
+            if (match) {
+                creds.ultimoLogin = new Date();
+                await this.credsRepo.save(creds);
+                return user;
+            }
         }
         return null;
     }
@@ -48,6 +55,11 @@ export class AuthService {
             idOrg = parseInt(user.idOrg, 10);
         }
 
+        // Calcular subordinados de forma asíncrona (optimizado)
+        const subordinateCount = await this.userRepo.count({
+            where: { jefeCarnet: user.carnet, activo: true }
+        });
+
         return {
             ...tokens,
             user: {
@@ -61,7 +73,8 @@ export class AuthService {
                 idOrg: idOrg,
                 cargo: user.cargo,
                 departamento: user.departamento,
-                menuConfig: await this.resolveMenu(user)
+                subordinateCount, // Nuevo: conteo de gente a cargo
+                menuConfig: await this.resolveMenu(user, subordinateCount)
             }
         };
     }
@@ -106,26 +119,37 @@ export class AuthService {
         const hashedRt = await bcrypt.hash(rt, 10);
         await this.credsRepo.update({ idUsuario: userId }, { refreshTokenHash: hashedRt });
     }
-    private async resolveMenu(user: Usuario): Promise<any> {
+    private async resolveMenu(user: Usuario, subordinateCount: number): Promise<any> {
         // 0. Safety override: Admins always get full menu (fallback to frontend constant)
         const isAdmin = user.rolGlobal === 'Admin' || user.rol?.nombre === 'Admin' || user.rol?.nombre === 'Administrador';
-        if (isAdmin) return null;
+        if (isAdmin) return null; // Frontend usará menú completo
 
-        // 1. Try Custom Menu
+        // 1. Try Custom Menu (Manual Override - Máxima Prioridad)
         const config = await this.configRepo.findOne({ where: { idUsuario: user.idUsuario } });
         if (config && config.customMenu) {
             try {
                 return JSON.parse(config.customMenu);
-            } catch (e) { console.error('Error parsing custom menu', e); }
+            } catch (e) {
+                console.error('Error parsing custom menu', e);
+            }
         }
 
-        // 2. Try Default Role Menu
+        // 2. Detección Automática: Si tiene gente a cargo, es Líder
+        if (subordinateCount > 0) {
+            // Retornar identificador de perfil en lugar de JSON completo (más eficiente)
+            return { profileType: 'LEADER', subordinateCount };
+        }
+
+        // 3. Try Default Role Menu
         if (user.rol && user.rol.defaultMenu) {
             try {
                 return JSON.parse(user.rol.defaultMenu);
-            } catch (e) { console.error('Error parsing role menu', e); }
+            } catch (e) {
+                console.error('Error parsing role menu', e);
+            }
         }
 
-        return null; // Frontend will use default hardcoded
+        // 4. Fallback: Empleado Base
+        return { profileType: 'EMPLOYEE' };
     }
 }

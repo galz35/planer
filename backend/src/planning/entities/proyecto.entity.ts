@@ -38,7 +38,7 @@ export class Proyecto {
     @Column({ default: false })
     requiereAprobacion: boolean;
 
-    @Column({ name: 'enllavado', type: 'boolean', default: false })
+    @Column({ name: 'enllavado', default: false })
     enllavado: boolean;
 
     @Column({ nullable: true })

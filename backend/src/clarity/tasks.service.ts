@@ -419,18 +419,25 @@ export class TasksService {
         const cambiandoFechas = cambioFechaObjetivo || cambioFechaInicio;
 
         if (cambiandoFechas) {
-            const requiereAprobacion = await this.verificarRequiereAprobacion(tarea);
+            // Verificar si el usuario es Admin para bypass
+            const user = await this.userRepo.findOne({ where: { idUsuario }, relations: ['rol'] });
+            const isAdmin = ['Admin', 'Administrador', 'SuperAdmin'].includes(user?.rol?.nombre || '') ||
+                ['Admin', 'Administrador', 'SuperAdmin'].includes((user as any).rolGlobal || '');
 
-            if (requiereAprobacion) {
-                // Crear solicitud de cambio en lugar de aplicar directamente
-                const solicitud = await this.crearSolicitudCambioAutomatica(
-                    tarea, dto, idUsuario, cambioFechaObjetivo ? 'fechaObjetivo' : 'fechaInicioPlanificada'
-                );
-                return {
-                    requiresApproval: true,
-                    solicitudId: solicitud.idSolicitud,
-                    message: 'El cambio de fecha ha sido enviado para aprobación.'
-                };
+            if (!isAdmin) {
+                const requiereAprobacion = await this.verificarRequiereAprobacion(tarea);
+
+                if (requiereAprobacion) {
+                    // Crear solicitud de cambio en lugar de aplicar directamente
+                    const solicitud = await this.crearSolicitudCambioAutomatica(
+                        tarea, dto, idUsuario, cambioFechaObjetivo ? 'fechaObjetivo' : 'fechaInicioPlanificada'
+                    );
+                    return {
+                        requiresApproval: true,
+                        solicitudId: solicitud.idSolicitud,
+                        message: 'El cambio de fecha ha sido enviado para aprobación.'
+                    };
+                }
             }
         }
 
@@ -774,11 +781,42 @@ export class TasksService {
         const vencidasMap: any = {};
         vencidasRaw.forEach(r => vencidasMap[r.id] = parseInt(r.count, 10));
 
+        // NUEVO: Tareas con fechaObjetivo = HOY y estado != 'Hecha'
+        const tareasHoyRaw = await this.tareaRepo.createQueryBuilder('t')
+            .innerJoin('t.asignados', 'ta')
+            .select('ta.idUsuario', 'id')
+            .addSelect('COUNT(*)', 'count')
+            .where('ta.idUsuario IN (:...ids)', { ids: teamIds })
+            .andWhere('ta.tipo = :tipo', { tipo: 'Responsable' })
+            .andWhere('t.estado NOT IN (:...estados)', { estados: ['Hecha', 'Descartada'] })
+            .andWhere('t.fechaObjetivo = :hoy', { hoy: fecha })
+            .groupBy('ta.idUsuario')
+            .getRawMany();
+
+        const tareasHoyMap: any = {};
+        tareasHoyRaw.forEach(r => tareasHoyMap[r.id] = parseInt(r.count, 10));
+
+        // NUEVO: Tareas en curso (estado = 'EnCurso')
+        const tareasEnCursoRaw = await this.tareaRepo.createQueryBuilder('t')
+            .innerJoin('t.asignados', 'ta')
+            .select('ta.idUsuario', 'id')
+            .addSelect('COUNT(*)', 'count')
+            .where('ta.idUsuario IN (:...ids)', { ids: teamIds })
+            .andWhere('ta.tipo = :tipo', { tipo: 'Responsable' })
+            .andWhere('t.estado = :estado', { estado: 'EnCurso' })
+            .groupBy('ta.idUsuario')
+            .getRawMany();
+
+        const tareasEnCursoMap: any = {};
+        tareasEnCursoRaw.forEach(r => tareasEnCursoMap[r.id] = parseInt(r.count, 10));
+
         const result: any[] = [];
         for (const u of usuarios) {
             const chk = checkins.find(c => c.idUsuario === u.idUsuario);
             const b = bloqueosMap[u.idUsuario] || 0;
             const v = vencidasMap[u.idUsuario] || 0;
+            const tareasHoy = tareasHoyMap[u.idUsuario] || 0;
+            const tareasEnCurso = tareasEnCursoMap[u.idUsuario] || 0;
             const org = orgMap[u.idUsuario] || { nodo: '', tipo: '', rol: 'Miembro' };
 
             result.push({
@@ -792,6 +830,8 @@ export class TasksService {
                 checkin: chk || null,
                 bloqueosActivos: b,
                 tareasVencidas: v,
+                tareasHoy,          // NUEVO: Tareas que vencen hoy
+                tareasEnCurso,      // NUEVO: Tareas en progreso
                 estado: chk ? (b > 0 ? 'ConBloqueos' : 'AlDia') : 'Pendiente'
             });
         }

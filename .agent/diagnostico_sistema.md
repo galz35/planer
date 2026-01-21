@@ -297,8 +297,8 @@ VISTAS IMPLEMENTADAS PERO NO ACCESIBLES:
 
 ### 🟡 ALTAS (Esta semana)
 
-- [ ] **HIGH-001:** Registrar vistas huérfanas en App.tsx (AlertsView, BlockersView, etc.)
-- [ ] **HIGH-002:** Habilitar AutomationPage o eliminarla
+- [x] **HIGH-001:** Registrar vistas huérfanas en App.tsx (DONE)
+- [x] **HIGH-002:** Habilitar AutomationPage (DONE)
 - [ ] **HIGH-003:** Eliminar import `Map` no usado en PlanTrabajoPage
 - [ ] **HIGH-004:** Refactorizar ManagerDashboard.tsx (72KB es muy grande)
 - [ ] **HIGH-005:** Refactorizar PlanTrabajoPage.tsx (118KB es excesivo)

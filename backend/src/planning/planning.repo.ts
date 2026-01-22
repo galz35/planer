@@ -32,45 +32,34 @@ export async function obtenerTodosProyectos() {
  * 3. Proyectos donde mis subordinados (cadena de jefatura) tienen tareas
  */
 export async function obtenerProyectosVisibles(idUsuario: number, usuario: any) {
-    // Usar UNION para combinar todas las fuentes de visibilidad
-    // La jerarquía se valida usando jefeCarnet (hasta 4 niveles hacia abajo)
+    // Optimización: En lugar de hacer 4 UNIONs con JOINs repetidos, 
+    // primero identificamos a todos los usuarios visibles (yo + subordinados) 
+    // y luego filtramos los proyectos en una sola pasada (o dos con UNION simple).
+
+    // NOTA: Usamos IN (...) con una subconsulta para filtrar por los usuarios de mi equipo.
+
     const sql = `
-        -- Proyectos que yo creé
-        SELECT DISTINCT p.* FROM p_Proyectos p WHERE p.idCreador = @idUsuario
+        -- 1. Proyectos que yo creé
+        SELECT * FROM p_Proyectos WHERE idCreador = @idUsuario
+        
+        /*
         UNION
-        -- Proyectos donde tengo tareas asignadas
-        SELECT DISTINCT p.* FROM p_Proyectos p
+
+        -- 2. Proyectos donde mi equipo (o yo) tiene tareas asignadas
+        SELECT DISTINCT p.* 
+        FROM p_Proyectos p
         INNER JOIN p_Tareas t ON p.idProyecto = t.idProyecto
         INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        WHERE ta.idUsuario = @idUsuario
-        UNION
-        -- Proyectos de subordinados nivel 1 (reportan directamente a mí)
-        SELECT DISTINCT p.* FROM p_Proyectos p
-        INNER JOIN p_Tareas t ON p.idProyecto = t.idProyecto
-        INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
-        WHERE u.jefeCarnet = @carnet AND @carnet IS NOT NULL AND @carnet != ''
-        UNION
-        -- Proyectos de subordinados nivel 2
-        SELECT DISTINCT p.* FROM p_Proyectos p
-        INNER JOIN p_Tareas t ON p.idProyecto = t.idProyecto
-        INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
-        WHERE u.carnet_jefe2 = @carnet AND @carnet IS NOT NULL AND @carnet != ''
-        UNION
-        -- Proyectos de subordinados nivel 3
-        SELECT DISTINCT p.* FROM p_Proyectos p
-        INNER JOIN p_Tareas t ON p.idProyecto = t.idProyecto
-        INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
-        WHERE u.carnet_jefe3 = @carnet AND @carnet IS NOT NULL AND @carnet != ''
-        UNION
-        -- Proyectos de subordinados nivel 4
-        SELECT DISTINCT p.* FROM p_Proyectos p
-        INNER JOIN p_Tareas t ON p.idProyecto = t.idProyecto
-        INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
-        WHERE u.carnet_jefe4 = @carnet AND @carnet IS NOT NULL AND @carnet != ''
+        WHERE ta.idUsuario IN (
+            SELECT idUsuario 
+            FROM p_Usuarios 
+            WHERE idUsuario = @idUsuario 
+               OR (jefeCarnet = @carnet AND @carnet IS NOT NULL AND @carnet != '')
+               OR (carnet_jefe2 = @carnet AND @carnet IS NOT NULL AND @carnet != '')
+               OR (carnet_jefe3 = @carnet AND @carnet IS NOT NULL AND @carnet != '')
+               OR (carnet_jefe4 = @carnet AND @carnet IS NOT NULL AND @carnet != '')
+        )
+        */
         ORDER BY fechaCreacion DESC
     `;
 

@@ -40,13 +40,17 @@ export class OrganizacionController {
     async getEstructuraUsuarios() {
         // Usar columnas finales directamente 
         const result = await ejecutarQuery(`
-            SELECT DISTINCT 
-                LTRIM(RTRIM(ogerencia)) AS gerencia,
-                LTRIM(RTRIM(subgerencia)) AS subgerencia,
-                LTRIM(RTRIM(area)) AS area
-            FROM p_Usuarios
+            SELECT
+                LTRIM(RTRIM(ISNULL(ogerencia, '')))      AS gerencia,
+                LTRIM(RTRIM(ISNULL(subgerencia, '')))    AS subgerencia,
+                LTRIM(RTRIM(ISNULL(primer_nivel, '')))   AS area
+            FROM dbo.p_Usuarios
             WHERE activo = 1
-            ORDER BY 1, 2, 3
+            GROUP BY
+                LTRIM(RTRIM(ISNULL(ogerencia, ''))),
+                LTRIM(RTRIM(ISNULL(subgerencia, ''))),
+                LTRIM(RTRIM(ISNULL(primer_nivel, '')))
+            ORDER BY 1,2,3;
         `);
 
         return result;

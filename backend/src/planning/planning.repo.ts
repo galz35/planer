@@ -32,35 +32,31 @@ export async function obtenerTodosProyectos() {
  * 3. Proyectos donde mis subordinados (cadena de jefatura) tienen tareas
  */
 export async function obtenerProyectosVisibles(idUsuario: number, usuario: any) {
-    // Optimización: En lugar de hacer 4 UNIONs con JOINs repetidos, 
-    // primero identificamos a todos los usuarios visibles (yo + subordinados) 
-    // y luego filtramos los proyectos en una sola pasada (o dos con UNION simple).
-
-    // NOTA: Usamos IN (...) con una subconsulta para filtrar por los usuarios de mi equipo.
-
     const sql = `
-        -- 1. Proyectos que yo creé
-        SELECT * FROM p_Proyectos WHERE idCreador = @idUsuario
-        
-        /*
-        UNION
-
-        -- 2. Proyectos donde mi equipo (o yo) tiene tareas asignadas
-        SELECT DISTINCT p.* 
-        FROM p_Proyectos p
-        INNER JOIN p_Tareas t ON p.idProyecto = t.idProyecto
-        INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        WHERE ta.idUsuario IN (
-            SELECT idUsuario 
-            FROM p_Usuarios 
-            WHERE idUsuario = @idUsuario 
-               OR (jefeCarnet = @carnet AND @carnet IS NOT NULL AND @carnet != '')
-               OR (carnet_jefe2 = @carnet AND @carnet IS NOT NULL AND @carnet != '')
-               OR (carnet_jefe3 = @carnet AND @carnet IS NOT NULL AND @carnet != '')
-               OR (carnet_jefe4 = @carnet AND @carnet IS NOT NULL AND @carnet != '')
+        ;WITH Equipo AS (
+            SELECT u.idUsuario
+            FROM p_Usuarios u
+            WHERE u.idUsuario = @idUsuario
+               OR (
+                    @carnet IS NOT NULL AND @carnet <> '' AND
+                    (u.jefeCarnet   = @carnet OR
+                     u.carnet_jefe2 = @carnet OR
+                     u.carnet_jefe3 = @carnet OR
+                     u.carnet_jefe4 = @carnet)
+                  )
         )
-        */
-        ORDER BY fechaCreacion DESC
+        SELECT p.*
+        FROM p_Proyectos p
+        WHERE
+            p.idCreador = @idUsuario
+            OR EXISTS (
+                SELECT 1
+                FROM p_Tareas t
+                INNER JOIN p_TareaAsignados ta ON ta.idTarea = t.idTarea
+                INNER JOIN Equipo e ON e.idUsuario = ta.idUsuario
+                WHERE t.idProyecto = p.idProyecto
+            )
+        ORDER BY p.fechaCreacion DESC;
     `;
 
     return await ejecutarQuery<ProyectoDb>(sql, {

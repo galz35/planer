@@ -1,41 +1,33 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Usuario } from './entities/usuario.entity';
-import { UsuarioCredenciales } from './entities/usuario-credenciales.entity';
-import { UsuarioConfig } from './entities/usuario-config.entity';
+import * as authRepo from './auth.repo';
+import { AuditService, AccionAudit, RecursoAudit } from '../common/audit.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private jwtService: JwtService,
-        @InjectRepository(Usuario) private userRepo: Repository<Usuario>,
-        @InjectRepository(UsuarioCredenciales) private credsRepo: Repository<UsuarioCredenciales>,
-        @InjectRepository(UsuarioConfig) private configRepo: Repository<UsuarioConfig>,
+        private auditService: AuditService
     ) { }
 
     async validateUser(identifier: string, pass: string): Promise<any> {
-        console.log('[DEBUG] validateUser called with:', identifier);
-        const user = await this.userRepo.findOne({
-            where: [
-                { correo: identifier, activo: true },
-                { carnet: identifier, activo: true }
-            ],
-            relations: ['rol']
-        });
-        console.log('[DEBUG] User found:', user ? user.idUsuario : 'NULL');
+        console.log('[Auth] Validando usuario:', identifier);
+        // Usar repo SQL Server
+        const user = await authRepo.obtenerUsuarioPorIdentificador(identifier);
+
+        console.log('[Auth] Usuario encontrado ID:', user ? user.idUsuario : 'NULL');
         if (!user) return null;
 
-        const creds = await this.credsRepo.findOne({ where: { idUsuario: user.idUsuario } });
-        console.log('[DEBUG] Creds found:', creds ? 'YES' : 'NULL');
+        const creds = await authRepo.obtenerCredenciales(user.idUsuario);
+        console.log('[Auth] Credenciales encontradas:', creds ? 'YES' : 'NULL');
+
         if (creds) {
             const match = await bcrypt.compare(pass, creds.passwordHash);
-            console.log('[DEBUG] Password match:', match);
+            console.log('[Auth] Contraseña correcta:', match);
             if (match) {
-                creds.ultimoLogin = new Date();
-                await this.credsRepo.save(creds);
+                // Actualizar último login de forma asíncrona (no bloqueante)
+                authRepo.actualizarUltimoLogin(user.idUsuario).catch(e => console.error('Error updating last login', e));
                 return user;
             }
         }
@@ -43,22 +35,32 @@ export class AuthService {
     }
 
     async login(user: any) {
-        // User object comes from validateUser (which is the Entity)
+        // Registrar Auditoría
+        await this.auditService.log({
+            idUsuario: user.idUsuario,
+            accion: AccionAudit.USUARIO_LOGIN,
+            recurso: RecursoAudit.USUARIO,
+            recursoId: user.idUsuario.toString(),
+            detalles: { correo: user.correo, ip: 'IP_MOCK' }
+        });
+
+        // Generar tokens
         const tokens = await this.generateTokens(user);
+
+        // Guardar refresh token
         await this.updateRefreshToken(user.idUsuario, tokens.refresh_token);
 
-        // SYNC REMOVED: Usuario table now holds all info (Unified)
-
         let idOrg: number | undefined;
-        // Parse idOrg if valid string (RRHH data)
-        if (user.idOrg && /^\d+$/.test(user.idOrg)) {
-            idOrg = parseInt(user.idOrg, 10);
+        // Parse idOrg si es data válida de RRHH
+        if (user.idOrg && /^\d+$/.test(user.idOrg.toString())) {
+            idOrg = parseInt(user.idOrg.toString(), 10);
         }
 
-        // Calcular subordinados de forma asíncrona (optimizado)
-        const subordinateCount = await this.userRepo.count({
-            where: { jefeCarnet: user.carnet, activo: true }
-        });
+        // Calcular subordinados (para determinar si es líder)
+        const subordinateCount = user.carnet ? await authRepo.contarSubordinados(user.carnet) : 0;
+
+        // Resolver menú
+        const menuConfig = await this.resolveMenu(user, subordinateCount);
 
         return {
             ...tokens,
@@ -67,26 +69,26 @@ export class AuthService {
                 nombre: user.nombre,
                 correo: user.correo,
                 carnet: user.carnet,
-                rol: user.rol,
+                rol: user.rol, // Objeto Rol completo
                 rolGlobal: user.rolGlobal,
                 pais: user.pais,
                 idOrg: idOrg,
                 cargo: user.cargo,
                 departamento: user.departamento,
-                subordinateCount, // Nuevo: conteo de gente a cargo
-                menuConfig: await this.resolveMenu(user, subordinateCount)
+                subordinateCount,
+                menuConfig
             }
         };
     }
 
     async refreshTokens(userId: number, refreshToken: string) {
-        const creds = await this.credsRepo.findOne({ where: { idUsuario: userId } });
+        const creds = await authRepo.obtenerCredenciales(userId);
         if (!creds || !creds.refreshTokenHash) throw new UnauthorizedException('Access Denied');
 
         const isMatch = await bcrypt.compare(refreshToken, creds.refreshTokenHash);
         if (!isMatch) throw new UnauthorizedException('Access Denied');
 
-        const user = await this.userRepo.findOne({ where: { idUsuario: userId }, relations: ['rol'] });
+        const user = await authRepo.obtenerUsuarioPorId(userId);
         if (!user) throw new UnauthorizedException('User no longer exists');
 
         const tokens = await this.generateTokens(user);
@@ -105,7 +107,7 @@ export class AuthService {
         };
 
         const [at, rt] = await Promise.all([
-            this.jwtService.signAsync(payload, { expiresIn: '1h' }),
+            this.jwtService.signAsync(payload, { expiresIn: '12h' }),
             this.jwtService.signAsync(payload, { expiresIn: '7d' })
         ]);
 
@@ -117,26 +119,26 @@ export class AuthService {
 
     private async updateRefreshToken(userId: number, rt: string) {
         const hashedRt = await bcrypt.hash(rt, 10);
-        await this.credsRepo.update({ idUsuario: userId }, { refreshTokenHash: hashedRt });
+        await authRepo.actualizarRefreshToken(userId, hashedRt);
     }
-    private async resolveMenu(user: Usuario, subordinateCount: number): Promise<any> {
+
+    private async resolveMenu(user: any, subordinateCount: number): Promise<any> {
         // 0. Safety override: Admins always get full menu (fallback to frontend constant)
         const isAdmin = user.rolGlobal === 'Admin' || user.rol?.nombre === 'Admin' || user.rol?.nombre === 'Administrador';
         if (isAdmin) return null; // Frontend usará menú completo
 
         // 1. Try Custom Menu (Manual Override - Máxima Prioridad)
-        const config = await this.configRepo.findOne({ where: { idUsuario: user.idUsuario } });
-        if (config && config.customMenu) {
-            try {
+        try {
+            const config = await authRepo.obtenerConfigUsuario(user.idUsuario);
+            if (config && config.customMenu) {
                 return JSON.parse(config.customMenu);
-            } catch (e) {
-                console.error('Error parsing custom menu', e);
             }
+        } catch (e) {
+            console.error('Error parsing custom menu', e);
         }
 
         // 2. Detección Automática: Si tiene gente a cargo, es Líder
         if (subordinateCount > 0) {
-            // Retornar identificador de perfil en lugar de JSON completo (más eficiente)
             return { profileType: 'LEADER', subordinateCount };
         }
 

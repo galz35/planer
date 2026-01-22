@@ -7,6 +7,7 @@ import {
 import { clarityService } from '../../services/clarity.service';
 import { planningService } from '../../services/planning.service';
 import { SolicitudCambioModal } from './SolicitudCambioModal';
+import { TaskABCSection } from './TaskABCSection';
 
 interface Props {
     task: Tarea;
@@ -19,7 +20,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
     const [progreso, setProgreso] = useState(task.progreso || 0);
     const [descripcion, setDescripcion] = useState(task.descripcion || '');
     const [fechaObjetivo, setFechaObjetivo] = useState(task.fechaObjetivo ? task.fechaObjetivo.split('T')[0] : '');
-    const [fechaInicioPlanificada] = useState(task.fechaInicioPlanificada ? task.fechaInicioPlanificada.split('T')[0] : '');
+    const [fechaInicioPlanificada, setFechaInicioPlanificada] = useState(task.fechaInicioPlanificada ? task.fechaInicioPlanificada.split('T')[0] : '');
     const [comentario, setComentario] = useState('');
 
     // Planning Intelligence State
@@ -249,7 +250,10 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+        <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
             <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
                 {/* Header */}
@@ -291,6 +295,35 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                     {view === 'Main' && (
                         <>
                             <div className="grid grid-cols-2 gap-4">
+                                {/* Fecha Inicio */}
+                                <div className={'space-y-1 p-3 rounded-lg border ' + (isLocked ? 'bg-slate-50 border-slate-200' : 'bg-white border-transparent')}>
+                                    <label className="text-xs font-bold text-slate-400 uppercase flex items-center justify-between">
+                                        <span className="flex items-center gap-1"><Calendar size={12} /> Fecha Inicio</span>
+                                        {isLocked && <Lock size={10} className="text-slate-400" />}
+                                    </label>
+
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="date"
+                                            value={fechaInicioPlanificada}
+                                            onChange={(e) => setFechaInicioPlanificada(e.target.value)}
+                                            disabled={isLocked}
+                                            className={'w-full text-sm font-bold text-slate-700 outline-none py-1 bg-transparent ' + (isLocked ? 'cursor-not-allowed opacity-60' : 'border-b-2 border-slate-200 focus:border-blue-500')}
+                                        />
+
+                                        {isLocked && (
+                                            <button
+                                                onClick={() => { setRequestField('fechaInicioPlanificada'); setView('RequestChange'); }}
+                                                className="p-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs hover:bg-purple-100"
+                                                title="Solicitar cambio de fecha"
+                                            >
+                                                <FileSignature size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Fecha Objetivo */}
                                 <div className={'space-y-1 p-3 rounded-lg border ' + (isLocked ? 'bg-slate-50 border-slate-200' : 'bg-white border-transparent')}>
                                     <label className="text-xs font-bold text-slate-400 uppercase flex items-center justify-between">
                                         <span className="flex items-center gap-1"><Calendar size={12} /> Fecha Objetivo</span>
@@ -317,15 +350,15 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                                         )}
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="space-y-1 p-3">
-                                    <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><Users size={12} /> Responsable</label>
-                                    <div className="text-sm font-bold text-slate-700 py-1 flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px]">
-                                            {(task.asignados?.find(a => a.tipo === 'Responsable')?.usuario?.nombre || 'Yo').substring(0, 2)}
-                                        </div>
-                                        <span>{task.asignados?.find(a => a.tipo === 'Responsable')?.usuario?.nombre || 'Yo (Asignado)'}</span>
+                            <div className="space-y-1 p-3">
+                                <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><Users size={12} /> Responsable</label>
+                                <div className="text-sm font-bold text-slate-700 py-1 flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px]">
+                                        {(task.asignados?.find(a => a.tipo === 'Responsable')?.usuario?.nombre || 'Yo').substring(0, 2)}
                                     </div>
+                                    <span>{task.asignados?.find(a => a.tipo === 'Responsable')?.usuario?.nombre || 'Yo (Asignado)'}</span>
                                 </div>
                             </div>
 
@@ -367,6 +400,9 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                                 />
                             </div>
 
+                            {/* Sección ABC: Recurrencia / Avance Mensual / Fases */}
+                            <TaskABCSection task={task} onUpdate={onUpdate} />
+
                             <button
                                 onClick={handleSaveProgress}
                                 disabled={submitting}
@@ -383,7 +419,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                                     {auditLogs.length === 0 ? (
                                         <div className="text-xs text-slate-400 italic pl-4">No hay actividad registrada reciente.</div>
                                     ) : (
-                                        auditLogs.map((log: any) => (
+                                        auditLogs.slice(0, 3).map((log: any) => (
                                             <div key={log.idAuditLog} className="relative pl-4 text-xs group">
                                                 <div className={getDotClass(log)} />
 

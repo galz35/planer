@@ -22,8 +22,8 @@ export interface SecurityProfile {
 
 export const adminService = {
     getUsersAccess: async (): Promise<UserAccessInfo[]> => {
-        const { data } = await api.get<UserAccessInfo[]>('/admin/security/users-access');
-        return data;
+        const { data } = await api.get<any>('/admin/security/users-access');
+        return data.data;
     },
 
     assignMenu: async (idUsuario: number, customMenu: string | null): Promise<void> => {
@@ -35,7 +35,7 @@ export const adminService = {
     },
 
     getProfiles: async (): Promise<SecurityProfile[]> => {
-        const { data } = await api.get<SecurityProfile[]>('/admin/security/profiles');
-        return data;
+        const { data } = await api.get<any>('/admin/security/profiles');
+        return data.data;
     }
 };

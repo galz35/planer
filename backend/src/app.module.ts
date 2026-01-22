@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
@@ -11,18 +10,17 @@ import { AdminModule } from './admin/admin.module';
 import { PlanningModule } from './planning/planning.module';
 import { AccesoModule } from './acceso/acceso.module';
 import { AuditModule } from './common/audit.module';
-import {
-  Usuario, Rol, UsuarioCredenciales, OrganizacionNodo, UsuarioOrganizacion,
-  Proyecto, Tarea, TareaAsignado, TareaAsignacionLog, Checkin, CheckinTarea, Bloqueo, TareaAvance, UsuarioConfig, Nota, LogSistema, AuditLog, SolicitudCambio, FocoDiario, PlanTrabajo,
-  SeguridadPerfil,
-  // Módulo Acceso (Permisos/Visibilidad)
-  // Empleado, // Removed
-  OrganizacionNodoRh, PermisoArea, PermisoEmpleado, DelegacionVisibilidad
-} from './entities';
+import { DbModule } from './db/db.module';
+import { DiagnosticoModule } from './diagnostico/diagnostico.module';
+import { SoftwareModule } from './software/software.module';
+
+// TypeORM y Entidades han sido totalmente eliminadas de AppModule
+// Ahora toda la aplicación usa DbModule (SQL Server directo)
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    DbModule, // Pool SQL Server directo
 
     // Rate Limiting - Protección contra abuso
     ThrottlerModule.forRoot([{
@@ -39,69 +37,7 @@ import {
       limit: 100,   // 100 requests por minuto
     }]),
 
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => {
-        const dbType = config.get('DB_TYPE') || 'postgres';
-
-        // Entidades comunes para ambas bases de datos
-        const entities = [
-          // Auth
-          Usuario, Rol, UsuarioCredenciales, OrganizacionNodo, UsuarioOrganizacion, UsuarioConfig, SeguridadPerfil,
-          // Planning
-          Proyecto, Tarea, TareaAsignado, TareaAsignacionLog, TareaAvance, SolicitudCambio, PlanTrabajo,
-          // Clarity
-          Checkin, CheckinTarea, Bloqueo, Nota, FocoDiario,
-          // Common
-          LogSistema, AuditLog,
-          // Acceso (Permisos/Visibilidad)
-          // Empleado, // Removed
-          OrganizacionNodoRh, PermisoArea, PermisoEmpleado, DelegacionVisibilidad,
-        ];
-
-        // Configuración para SQL Server (mssql)
-        if (dbType === 'mssql') {
-          console.log('🔷 Conectando a SQL Server...');
-          return {
-            type: 'mssql',
-            host: config.get('MSSQL_HOST') || 'localhost',
-            port: parseInt(config.get('MSSQL_PORT') || '1433'),
-            username: config.get('MSSQL_USER'),
-            password: config.get('MSSQL_PASSWORD'),
-            database: config.get('MSSQL_DATABASE'),
-            options: {
-              encrypt: config.get('MSSQL_ENCRYPT') === 'true',
-              trustServerCertificate: config.get('MSSQL_TRUST_CERT') === 'true',
-            },
-            entities,
-            synchronize: false, // No usar con SQL Server
-            dropSchema: false,
-            logging: false, // Desactivar para producción
-            extra: {
-              connectionTimeout: 60000,
-              requestTimeout: 60000,
-            },
-          };
-        }
-
-        // Configuración para PostgreSQL (Supabase u otro)
-        console.log('🐘 Conectando a PostgreSQL (Supabase)...');
-        return {
-          type: 'postgres',
-          host: config.get('DB_HOST'),
-          port: parseInt(config.get('DB_PORT') || '5432'),
-          username: config.get('DB_USER'),
-          password: config.get('DB_PASSWORD'),
-          database: config.get('DB_NAME'),
-          ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
-          entities,
-          synchronize: true, // AUTO-CREATE TABLES
-          dropSchema: false,
-        };
-      },
-      inject: [ConfigService],
-    }),
-    TypeOrmModule.forFeature([Usuario]),
+    // Módulos de la aplicación (Migrados a SQL Directo)
     AuthModule,
     ClarityModule,
     AdminModule,
@@ -109,6 +45,9 @@ import {
     AccesoModule,
     // Módulo de Auditoría Global
     AuditModule,
+    // Módulo de Diagnóstico (SQL Server directo)
+    DiagnosticoModule,
+    SoftwareModule,
   ],
   controllers: [AppController],
   providers: [

@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { MiDiaProvider, useMiDiaContext } from './context/MiDiaContext';
 import { TopBar } from '../../components/layout/TopBar';
-import { LayoutGrid, List, Calendar, BookOpen, BarChart3, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { List, Calendar, BookOpen, BarChart3, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 
 const MiDiaContent: React.FC = () => {
     const { allDisponibles, today, setToday } = useMiDiaContext();
@@ -62,10 +62,10 @@ const MiDiaContent: React.FC = () => {
                             <List size={14} />
                             Ejecutar
                         </NavLink>
-                        <NavLink to="matrix" className={linkClass}>
+                        {/* <NavLink to="matrix" className={linkClass}>
                             <LayoutGrid size={14} />
                             Matriz
-                        </NavLink>
+                        </NavLink> */}
                         <NavLink to="calendario" className={linkClass}>
                             <Calendar size={14} />
                             Calendario

@@ -228,8 +228,8 @@ export const Sidebar: React.FC = () => {
                     <div onClick={toggleSidebar} className="cursor-pointer flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <img src="/momentus-logo2.png" alt="Momentus" className="h-12 w-auto" />
                         <div className="animate-fade-in overflow-hidden">
-                            <h1 className="font-black text-xl text-slate-900 tracking-tight leading-tight">MOMENTUS</h1>
-                            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest leading-none">Sistema</p>
+                            <h1 className="font-black text-xl text-slate-900 tracking-tight leading-tight uppercase">PLANER-CLARO</h1>
+                            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest leading-none">es hoy y futuro</p>
                         </div>
                     </div>
                 )}

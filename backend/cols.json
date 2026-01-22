@@ -1,0 +1,131 @@
+[
+  {
+    "COLUMN_NAME": "idUsuario"
+  },
+  {
+    "COLUMN_NAME": "nombre"
+  },
+  {
+    "COLUMN_NAME": "nombreCompleto"
+  },
+  {
+    "COLUMN_NAME": "correo"
+  },
+  {
+    "COLUMN_NAME": "activo"
+  },
+  {
+    "COLUMN_NAME": "rolGlobal"
+  },
+  {
+    "COLUMN_NAME": "idRol"
+  },
+  {
+    "COLUMN_NAME": "carnet"
+  },
+  {
+    "COLUMN_NAME": "cargo"
+  },
+  {
+    "COLUMN_NAME": "departamento"
+  },
+  {
+    "COLUMN_NAME": "orgDepartamento"
+  },
+  {
+    "COLUMN_NAME": "orgGerencia"
+  },
+  {
+    "COLUMN_NAME": "idOrg"
+  },
+  {
+    "COLUMN_NAME": "jefeCarnet"
+  },
+  {
+    "COLUMN_NAME": "jefeNombre"
+  },
+  {
+    "COLUMN_NAME": "jefeCorreo"
+  },
+  {
+    "COLUMN_NAME": "fechaIngreso"
+  },
+  {
+    "COLUMN_NAME": "genero"
+  },
+  {
+    "COLUMN_NAME": "primer_nivel"
+  },
+  {
+    "COLUMN_NAME": "gerencia"
+  },
+  {
+    "COLUMN_NAME": "ogerencia"
+  },
+  {
+    "COLUMN_NAME": "subgerencia"
+  },
+  {
+    "COLUMN_NAME": "pais"
+  },
+  {
+    "COLUMN_NAME": "telefono"
+  },
+  {
+    "COLUMN_NAME": "fechaCreacion"
+  },
+  {
+    "COLUMN_NAME": "username"
+  },
+  {
+    "COLUMN_NAME": "cedula"
+  },
+  {
+    "COLUMN_NAME": "area"
+  },
+  {
+    "COLUMN_NAME": "direccion"
+  },
+  {
+    "COLUMN_NAME": "empresa"
+  },
+  {
+    "COLUMN_NAME": "ubicacion"
+  },
+  {
+    "COLUMN_NAME": "tipo_empleado"
+  },
+  {
+    "COLUMN_NAME": "tipo_contrato"
+  },
+  {
+    "COLUMN_NAME": "fuente_datos"
+  },
+  {
+    "COLUMN_NAME": "segundo_nivel"
+  },
+  {
+    "COLUMN_NAME": "tercer_nivel"
+  },
+  {
+    "COLUMN_NAME": "cuarto_nivel"
+  },
+  {
+    "COLUMN_NAME": "quinto_nivel"
+  },
+  {
+    "COLUMN_NAME": "sexto_nivel"
+  },
+  {
+    "COLUMN_NAME": "carnet_jefe2"
+  },
+  {
+    "COLUMN_NAME": "carnet_jefe3"
+  },
+  {
+    "COLUMN_NAME": "carnet_jefe4"
+  },
+  {
+    "COLUMN_NAME": "fechaActualizacion"
+  }
+]

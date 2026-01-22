@@ -11,7 +11,6 @@ import { RoleRoute } from './components/auth/RoleRoute';
 import { LoginPage } from './pages/LoginPage';
 import { MiDiaPage } from './pages/Hoy/MiDiaPage';
 import { ExecutionView } from './pages/Hoy/views/ExecutionView';
-import { MatrixView } from './pages/Hoy/views/MatrixView';
 import { CalendarView } from './pages/Hoy/views/CalendarView';
 import { TimelineView } from './pages/Hoy/views/TimelineView';
 import { ExecutiveView } from './pages/Hoy/views/ExecutiveView';
@@ -35,8 +34,8 @@ const PermisosPage = React.lazy(() => import('./pages/Admin/Acceso/PermisosPage'
 const VisibilidadPage = React.lazy(() => import('./pages/Admin/Acceso/VisibilidadPage').then(module => ({ default: module.VisibilidadPage })));
 const SecurityManagementPage = React.lazy(() => import('./pages/Admin/SecurityManagementPage'));
 
-// NEW ALTERNATIVE DASHBOARD
 import { ManagerDashboard } from './pages/Equipo/ManagerDashboard';
+import { DashboardManager } from './pages/Equipo/DashboardManager';
 import { MemberAgendaPage } from './pages/Equipo/MemberAgendaPage';
 import { MiEquipoPage } from './pages/Equipo/MiEquipoPage';
 import { MeetingNotesPage } from './pages/Notes/MeetingNotesPage';
@@ -114,7 +113,7 @@ function App() {
                         <Route path="planning/proyectos" element={<ProyectosPage />} />
                         <Route path="hoy" element={<MiDiaPage />}>
                           <Route index element={<ExecutionView />} />
-                          <Route path="matrix" element={<MatrixView />} />
+                          {/* <Route path="matrix" element={<MatrixView />} /> */}
                           <Route path="calendario" element={<CalendarView />} />
                           <Route path="bitacora" element={<TimelineView />} />
                           <Route path="kpis" element={<ExecutiveView />} />
@@ -129,13 +128,14 @@ function App() {
                         {/* Rutas de Gerencia */}
                         <Route path="agenda/:userId" element={<MemberAgendaPage />}>
                           <Route index element={<ExecutionView />} />
-                          <Route path="matrix" element={<MatrixView />} />
+                          {/* <Route path="matrix" element={<MatrixView />} /> */}
                           <Route path="calendario" element={<CalendarView />} />
                           <Route path="bitacora" element={<TimelineView />} />
                         </Route>
 
                         <Route path="equipo" element={<ManagerDashboard />} />
                         <Route path="equipo/hoy" element={<ManagerDashboard />} />
+                        <Route path="software/dashboard" element={<DashboardManager />} />
                         <Route path="equipo/planning/:userId" element={<TeamPlanningPage />} />
                         <Route path="equipo/bloqueos" element={<EquipoBloqueosPage />} />
                         <Route path="equipo/mi-equipo" element={<MiEquipoPage />} />

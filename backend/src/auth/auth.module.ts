@@ -13,7 +13,7 @@ import { SeguridadPerfil } from './entities/seguridad-perfil.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Usuario, UsuarioCredenciales, UsuarioConfig, SeguridadPerfil]), // Added SeguridadPerfil
+        // TypeOrmModule.forFeature([...]) -> REMOVED: Usando MSSQL directo
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],

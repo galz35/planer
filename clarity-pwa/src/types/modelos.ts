@@ -98,12 +98,22 @@ export interface Tarea {
     idCreador: number;
     idAsignadoPor?: number;
     asignados?: TareaAsignado[];
+    // Campos directos para responsable (alternativa a asignados[])
+    idResponsable?: number;
+    responsableNombre?: string;
+    responsableCarnet?: string;
     fechaUltActualizacion: string;
     fechaCreacion?: string;
     progreso: number; // 0-100
     orden: number;
     comentario?: string;
     motivoBloqueo?: string;
+    // Campos para tipos A/B/C
+    comportamiento?: 'SIMPLE' | 'RECURRENTE' | 'LARGA';
+    idGrupo?: number;
+    numeroParte?: number;
+    fechaInicioReal?: string;
+    fechaFinReal?: string;
 }
 
 export interface TareaRegistrarAvanceDto {
@@ -212,4 +222,77 @@ export interface PlanTrabajo {
     fechaCreacion?: string;
     fechaActualizacion?: string;
     tareas?: Tarea[];
+}
+
+// ==========================================
+// TIPOS PARA TAREAS A/B/C
+// ==========================================
+
+export type ComportamientoTarea = 'SIMPLE' | 'RECURRENTE' | 'LARGA';
+export type TipoRecurrencia = 'SEMANAL' | 'MENSUAL';
+export type EstadoInstancia = 'PENDIENTE' | 'HECHA' | 'OMITIDA' | 'REPROGRAMADA';
+
+// Configuración de recurrencia de tarea
+export interface TareaRecurrencia {
+    id: number;
+    idTarea: number;
+    tipoRecurrencia: TipoRecurrencia;
+    diasSemana?: string;  // '1,3,5' = lun, mie, vie (ISO)
+    diaMes?: number;      // 15 = día 15 del mes
+    fechaInicioVigencia: string;
+    fechaFinVigencia?: string;
+    activo: boolean;
+    fechaCreacion: string;
+    idCreador: number;
+}
+
+// Instancia de tarea recurrente (bitácora)
+export interface TareaInstancia {
+    id: number;
+    idTarea: number;
+    idRecurrencia?: number;
+    fechaProgramada: string;
+    fechaEjecucion?: string;
+    estadoInstancia: EstadoInstancia;
+    comentario?: string;
+    idUsuarioEjecutor?: number;
+    fechaRegistro: string;
+    fechaReprogramada?: string;
+    esInstanciaReal?: boolean;  // false = pendiente virtual
+}
+
+// Avance mensual de tarea larga (solo Plan de Trabajo)
+export interface TareaAvanceMensual {
+    id: number;
+    idTarea: number;
+    mes: number;
+    anio: number;
+    porcentajeMes: number;
+    porcentajeAcumulado?: number;  // Calculado
+    comentario?: string;
+    idUsuarioActualizador: number;
+    fechaActualizacion: string;
+}
+
+// DTOs para crear recurrencia e instancias
+export interface CrearRecurrenciaDto {
+    tipoRecurrencia: TipoRecurrencia;
+    diasSemana?: string;
+    diaMes?: number;
+    fechaInicioVigencia: string;
+    fechaFinVigencia?: string;
+}
+
+export interface MarcarInstanciaDto {
+    fechaProgramada: string;
+    estadoInstancia: EstadoInstancia;
+    comentario?: string;
+    fechaReprogramada?: string;
+}
+
+export interface AvanceMensualDto {
+    anio: number;
+    mes: number;
+    porcentajeMes: number;
+    comentario?: string;
 }

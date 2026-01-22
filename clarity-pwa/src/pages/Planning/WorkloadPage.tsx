@@ -154,7 +154,7 @@ export const WorkloadPage: React.FC = () => {
                     {/* Header Row */}
                     <div className="flex border-b border-slate-200 bg-slate-50/90 text-xs font-bold text-slate-500 uppercase z-10 sticky top-0">
                         <div className="w-64 p-3 border-r border-slate-200 shrink-0 sticky left-0 bg-slate-50 z-20 shadow-[1px_0_5px_rgba(0,0,0,0.05)]">
-                            Empleado / Rol
+                            Empleado / Subgerencia
                         </div>
                         {days.map(d => (
                             <div key={d.toISOString()} className={`flex-1 min-w-[120px] p-2 text-center border-r border-slate-100 ${isWeekend(d) ? 'bg-slate-100/50 text-slate-400' : ''} ${isSameDay(d, new Date()) ? 'bg-indigo-50 text-indigo-700' : ''}`}>

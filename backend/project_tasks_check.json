@@ -1,0 +1,26 @@
+[
+  {
+    "idTarea": 44,
+    "titulo": "prueba",
+    "progreso": 0,
+    "comportamiento": "SIMPLE"
+  },
+  {
+    "idTarea": 45,
+    "titulo": "a",
+    "progreso": 0,
+    "comportamiento": "SIMPLE"
+  },
+  {
+    "idTarea": 46,
+    "titulo": "f",
+    "progreso": 0,
+    "comportamiento": "LARGA"
+  },
+  {
+    "idTarea": 47,
+    "titulo": "x",
+    "progreso": 16,
+    "comportamiento": "LARGA"
+  }
+]

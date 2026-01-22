@@ -103,8 +103,9 @@ export const AgendaSemanal: React.FC<Props> = ({ onTaskComplete, onTaskCancel })
 
             // 3. Map Tasks
             if (tasks) {
-                tasks.forEach((t: Tarea) => {
-                    const taskDate = t.fechaObjetivo || t.fechaHecha;
+                tasks.forEach((t: Tarea & { fechaTrabajada?: string }) => {
+                    // Prioridad: fechaTrabajada (del check-in) > fechaHecha > fechaObjetivo > fechaCreacion
+                    const taskDate = (t as any).fechaTrabajada || t.fechaHecha || t.fechaObjetivo || t.fechaCreacion;
                     if (taskDate) {
                         const dateStr = typeof taskDate === 'string' ? taskDate.substring(0, 10) : (taskDate as any).toISOString().split('T')[0];
 

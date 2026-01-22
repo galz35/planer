@@ -1,0 +1,244 @@
+SCHEMA REPORT
+🔌 Conectando a SQL Server...
+✅ Conectado.
+
+🔍 Verificando Tablas Críticas:
+[
+  {
+    "TABLE_NAME": "p_Checkins"
+  },
+  {
+    "TABLE_NAME": "p_organizacion_nodos"
+  },
+  {
+    "TABLE_NAME": "p_OrganizacionNodos"
+  },
+  {
+    "TABLE_NAME": "p_Tareas"
+  },
+  {
+    "TABLE_NAME": "p_Usuarios"
+  }
+]
+
+🔍 Columnas en p_Tareas:
+[
+  {
+    "COLUMN_NAME": "idTarea",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "idProyecto",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "nombre",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "descripcion",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "estado",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "prioridad",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fechaCreacion",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fechaObjetivo",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fechaCompletado",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "porcentaje",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "idPadre",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "orden",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "esHito",
+    "DATA_TYPE": "bit",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "idAsignado",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "tipoTarea",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fechaActualizacion",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "idCreador",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fechaInicioPlanificada",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "tipo",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "esfuerzo",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  }
+]
+
+🔍 Columnas en p_Checkins:
+[
+  {
+    "COLUMN_NAME": "idCheckin",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "idUsuario",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "fecha",
+    "DATA_TYPE": "date",
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "prioridad1",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "prioridad2",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "prioridad3",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "estado",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "energia",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "creadoEn",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "comentarios",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "entregableTexto",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "nota",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "linkEvidencia",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "estadoAnimo",
+    "DATA_TYPE": "nvarchar",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "idNodo",
+    "DATA_TYPE": "int",
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fechaCreacion",
+    "DATA_TYPE": "datetime",
+    "IS_NULLABLE": "YES"
+  }
+]
+
+🔍 Columnas en p_organizacion_nodos:
+[
+  {
+    "TABLE_NAME": "p_OrganizacionNodos",
+    "COLUMN_NAME": "id",
+    "DATA_TYPE": "int"
+  },
+  {
+    "TABLE_NAME": "p_OrganizacionNodos",
+    "COLUMN_NAME": "nombre",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "TABLE_NAME": "p_OrganizacionNodos",
+    "COLUMN_NAME": "tipo",
+    "DATA_TYPE": "nvarchar"
+  },
+  {
+    "TABLE_NAME": "p_OrganizacionNodos",
+    "COLUMN_NAME": "idPadre",
+    "DATA_TYPE": "int"
+  },
+  {
+    "TABLE_NAME": "p_OrganizacionNodos",
+    "COLUMN_NAME": "orden",
+    "DATA_TYPE": "int"
+  },
+  {
+    "TABLE_NAME": "p_OrganizacionNodos",
+    "COLUMN_NAME": "activo",
+    "DATA_TYPE": "bit"
+  }
+]

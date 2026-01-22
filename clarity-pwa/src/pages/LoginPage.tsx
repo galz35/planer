@@ -82,11 +82,12 @@ export const LoginPage = () => {
 
                         {/* Brand name - OVERLAPPING bottom of icon */}
                         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-max z-20">
-                            <h1 className="text-7xl font-black text-white mb-2 tracking-tight leading-none drop-shadow-2xl">
-                                MOMENTUS
+                            <h1 className="text-7xl font-black text-white mb-2 tracking-tight leading-none drop-shadow-2xl uppercase">
+                                PLANER-CLARO
                             </h1>
-                            <p className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-400 font-semibold drop-shadow-lg text-center">
-                                convierte esfuerzo en progreso                            </p>
+                            <p className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-400 font-semibold drop-shadow-lg text-center uppercase">
+                                es hoy y futuro
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -104,9 +105,9 @@ export const LoginPage = () => {
                                 className="h-32 w-auto"
                             />
                             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-max">
-                                <h1 className="text-3xl font-black text-slate-900 mb-1">MOMENTUS</h1>
-                                <p className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-orange-600 font-semibold">
-                                    Impulsa tus procesos
+                                <h1 className="text-3xl font-black text-slate-900 mb-1 uppercase">PLANER-CLARO</h1>
+                                <p className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-orange-600 font-bold uppercase">
+                                    es hoy y futuro
                                 </p>
                             </div>
                         </div>

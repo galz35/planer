@@ -53,5 +53,44 @@ export const planningService = {
     getMyProjects: async (): Promise<any[]> => {
         const response = await api.get('/planning/my-projects');
         return response.data.data;
+    },
+
+    // ==========================================
+    // AVANCE MENSUAL (Tareas B - Solo Plan de Trabajo)
+    // ==========================================
+
+    registrarAvanceMensual: async (idTarea: number, dto: {
+        anio: number;
+        mes: number;
+        porcentajeMes: number;
+        comentario?: string;
+    }) => {
+        const response = await api.post(`/planning/tasks/${idTarea}/avance-mensual`, dto);
+        return response.data.data;
+    },
+
+    obtenerHistorialMensual: async (idTarea: number) => {
+        const response = await api.get(`/planning/tasks/${idTarea}/avance-mensual`);
+        return response.data.data;
+    },
+
+    // ==========================================
+    // GRUPOS / FASES (Tareas C - Solo Plan de Trabajo)
+    // ==========================================
+
+    crearGrupo: async (idTarea: number) => {
+        const response = await api.post(`/planning/tasks/${idTarea}/crear-grupo`, {});
+        return response.data.data;
+    },
+
+    agregarFase: async (idGrupo: number, idTareaNueva: number) => {
+        const response = await api.post(`/planning/tasks/${idGrupo}/agregar-fase`, { idTareaNueva });
+        return response.data.data;
+    },
+
+    obtenerGrupo: async (idGrupo: number) => {
+        const response = await api.get(`/planning/grupos/${idGrupo}`);
+        return response.data.data;
     }
 };
+

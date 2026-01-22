@@ -63,7 +63,12 @@ export const UsersPage = () => {
             ]);
 
             if (usersData) {
-                setUsers(usersData.items || []);
+                // Normalizar nombreCompleto -> nombre para compatibilidad
+                const normalizedUsers = (usersData.items || []).map((u: any) => ({
+                    ...u,
+                    nombre: u.nombre || u.nombreCompleto || 'Sin Nombre'
+                }));
+                setUsers(normalizedUsers);
                 setTotalPages(usersData.lastPage || 1);
                 setTotalItems(usersData.total || 0);
             }

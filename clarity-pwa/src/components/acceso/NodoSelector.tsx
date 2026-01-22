@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Building2, Users, Folder, FolderOpen, Search, Loader2 } from 'lucide-react';
-import { accesoService } from '../../../services/acceso.service';
+import { accesoService } from '../../services/acceso.service';
 
 interface NodoTree {
     idOrg: string;
@@ -40,7 +40,9 @@ export const NodoSelector: React.FC<NodoSelectorProps> = ({ value, onChange, onP
         setError(null);
         try {
             const response = await accesoService.getNodosTree();
-            const data = response.data;
+            const apiResponse = response.data as any; // Cast to access .data property if types are not inferred correctly
+            const data = apiResponse.data || apiResponse; // Try accessing .data, fallback to response body if it's already the array (unlikely but safe)
+
             if (Array.isArray(data)) {
                 setTree(data);
                 // Auto-expandir primer nivel
@@ -111,8 +113,8 @@ export const NodoSelector: React.FC<NodoSelectorProps> = ({ value, onChange, onP
             <div key={nodo.idOrg}>
                 <div
                     className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-lg transition-all ${isSelected
-                            ? 'bg-indigo-100 border-2 border-indigo-500'
-                            : 'hover:bg-slate-50 border-2 border-transparent'
+                        ? 'bg-indigo-100 border-2 border-indigo-500'
+                        : 'hover:bg-slate-50 border-2 border-transparent'
                         }`}
                     style={{ paddingLeft: `${level * 20 + 12}px` }}
                     onClick={() => handleSelect(nodo)}

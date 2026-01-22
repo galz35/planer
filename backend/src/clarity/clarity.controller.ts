@@ -1,50 +1,71 @@
-
 import {
-    Controller, Get, Post, Patch, Delete, Body, Query, Param, UseGuards, Request, ForbiddenException, Res, BadRequestException, ParseIntPipe
+    Controller, Get, Post, Patch, Delete, Body, Query, Param, UseGuards, Request, ForbiddenException
 } from '@nestjs/common';
-import { ClarityService } from './clarity.service';
-import { ReportsService } from './reports.service';
-import { TasksService } from './tasks.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import {
-    CheckinUpsertDto, TareaCrearRapidaDto, BloqueoCrearDto, FechaQueryDto,
-    TareaActualizarDto, TareaRevalidarDto, BloqueoResolverDto, TareaRegistrarAvanceDto,
-    ProyectoCrearDto, LogCrearDto, RolCrearDto, RolActualizarDto, OrganizacionNodoCrearDto,
-    UsuarioOrganizacionAsignarDto, PaginationDto, AuditFilterDto, ReportFilterDto,
-    FocoAgregarDto, FocoActualizarDto, FocoReordenarDto, ProyectoFilterDto, SolicitudCambioDto
-} from './dto/clarity.dtos';
-import { FocoService } from './foco.service';
+import { TasksService } from './tasks.service';
+import { RecurrenciaService } from './recurrencia.service';
+import { TareaCrearRapidaDto, CheckinUpsertDto, FechaQueryDto, TareaActualizarDto, ProyectoCrearDto, ProyectoFilterDto, TareaRevalidarDto } from './dto/clarity.dtos';
 
-@ApiTags('Clarity Core')
+@ApiTags('Clarity Core (Migrated)')
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
-@Controller('')
+@Controller()
 export class ClarityController {
     constructor(
-        private readonly clarityService: ClarityService,
-        private readonly reportsService: ReportsService,
         private readonly tasksService: TasksService,
-        private readonly focoService: FocoService
+        private readonly recurrenciaService: RecurrenciaService
     ) { }
-
-    @Get('config')
-    @ApiOperation({ summary: 'Obtener configuración usuario' })
-    async getConfig(@Request() req) {
-        return this.clarityService.getConfig(req.user.userId);
-    }
-
-    @Post('config')
-    @ApiOperation({ summary: 'Actualizar configuración usuario' })
-    async setConfig(@Request() req, @Body() body: { vistaPreferida?: string, rutinas?: string }) {
-        return this.clarityService.setConfig(req.user.userId, body);
-    }
 
     @Get('mi-dia')
     @ApiOperation({ summary: 'Obtener snapshot del día para el empleado' })
     async getMiDia(@Request() req, @Query() query: FechaQueryDto) {
-        const userId = req.user.userId;
-        return this.tasksService.miDiaGet(userId, query.fecha);
+        return this.tasksService.miDiaGet(req.user.userId, query.fecha);
+    }
+
+    @Post('checkins')
+    @ApiOperation({ summary: 'Registrar o actualizar check-in diario' })
+    async upsertCheckin(@Body() dto: CheckinUpsertDto, @Request() req) {
+        // Si se intenta crear para otro usuario, verificar permisos
+        if (dto.idUsuario && Number(dto.idUsuario) !== req.user.userId) {
+            const canManage = await this.tasksService.canManageUser(req.user.userId, Number(dto.idUsuario), req.user.rolGlobal);
+            if (!canManage) {
+                throw new ForbiddenException('No tienes permisos para modificar el checkin de este usuario.');
+            }
+        } else {
+            dto.idUsuario = req.user.userId;
+        }
+        return this.tasksService.checkinUpsert(dto);
+    }
+
+    @Post('tareas/rapida')
+    @ApiOperation({ summary: 'Crear tarea rápida' })
+    async crearTareaRapida(@Body() dto: TareaCrearRapidaDto, @Request() req) {
+        if (dto.idUsuario && Number(dto.idUsuario) !== req.user.userId) {
+            const canManage = await this.tasksService.canManageUser(req.user.userId, Number(dto.idUsuario), req.user.rolGlobal);
+            if (!canManage) throw new ForbiddenException('No puedes crear tareas para este usuario.');
+        } else {
+            dto.idUsuario = req.user.userId;
+        }
+        return this.tasksService.tareaCrearRapida(dto);
+    }
+
+    @Get('tareas/mias')
+    @ApiOperation({ summary: 'Listar mis tareas' })
+    async getMisTareas(@Request() req, @Query('estado') estado?: string, @Query('idProyecto') idProyecto?: number) {
+        return this.tasksService.tareasMisTareas(req.user.userId, estado, idProyecto);
+    }
+
+    @Patch('tareas/:id')
+    @ApiOperation({ summary: 'Actualizar tarea' })
+    async actualizarTarea(@Param('id') id: number, @Body() body: TareaActualizarDto, @Request() req) {
+        return this.tasksService.tareaActualizar(id, body, req.user.userId);
+    }
+
+    @Post('tareas/:id/revalidar')
+    @ApiOperation({ summary: 'Revalidar o reasignar tarea' })
+    async revalidarTarea(@Param('id') id: number, @Body() body: TareaRevalidarDto, @Request() req) {
+        return this.tasksService.tareaRevalidar(id, body, req.user.userId);
     }
 
     @Get('agenda/:targetUserId')
@@ -59,410 +80,169 @@ export class ClarityController {
                 throw new ForbiddenException('No tienes permisos para ver la agenda de este usuario.');
             }
         }
-
         return this.tasksService.miDiaGet(targetId, query.fecha);
     }
 
-    @Post('checkins')
-    @ApiOperation({ summary: 'Registrar o actualizar check-in diario' })
-    async upsertCheckin(@Body() dto: CheckinUpsertDto, @Request() req) {
-        dto.idUsuario = req.user.userId; // Secure override
-        return this.tasksService.checkinUpsert(dto);
+    @Get('equipo/miembro/:idMiembro/tareas')
+    @ApiOperation({ summary: 'MANAGER: Ver detalles de miembro de equipo' })
+    async getEquipoMemberTareas(@Param('idMiembro') idMiembro: number, @Request() req) {
+        const idLider = req.user.userId;
+        const res = await this.tasksService.equipoMiembro(idLider, idMiembro);
+        return res.tareas; // El frontend espera solo el arreglo de tareas en este endpoint
     }
 
-    @Post('tareas/rapida')
-    @ApiOperation({ summary: 'Crear tarea rápida' })
-    async crearTareaRapida(@Body() dto: TareaCrearRapidaDto, @Request() req) {
-        dto.idUsuario = req.user.userId;
-        const result = await this.tasksService.tareaCrearRapida(dto);
-        return result;
-    }
-
-    @Get('tareas/mias')
-    @ApiOperation({ summary: 'Listar mis tareas' })
-    async getMisTareas(@Request() req, @Query('estado') estado?: string, @Query('idProyecto') idProyecto?: number) {
-        return this.tasksService.tareasMisTareas(req.user.userId, estado, idProyecto);
+    @Get('equipo/miembro/:idMiembro')
+    @ApiOperation({ summary: 'MANAGER: Ver detalles de miembro de equipo' })
+    async getEquipoMember(@Param('idMiembro') idMiembro: number, @Request() req) {
+        const idLider = req.user.userId;
+        return this.tasksService.equipoMiembro(idLider, idMiembro);
     }
 
     @Get('tareas/historico/:carnet')
-    @ApiOperation({ summary: 'Listar tareas históricas por carnet (30 días)' })
-    async getTareasHistorico(@Param('carnet') carnet: string, @Query('dias') dias?: number) {
-        return this.tasksService.tareasHistorico(carnet, dias || 30);
-    }
-
-    @Patch('tareas/:id')
-    @ApiOperation({ summary: 'Actualizar tarea' })
-    async actualizarTarea(@Param('id') id: number, @Body() body: TareaActualizarDto, @Request() req) {
-        return this.tasksService.tareaActualizar(id, body, req.user.userId);
-    }
-
-    @Post('tareas/:id/revalidar')
-    @ApiOperation({ summary: 'Revalidar tarea (arrastrados)' })
-    async revalidarTarea(@Param('id') id: number, @Body() body: TareaRevalidarDto, @Request() req) {
-        return this.tasksService.tareaRevalidar(id, body, req.user.userId);
-    }
-
-    @Post('tareas/:id/descartar')
-    @ApiOperation({ summary: 'Descartar tarea explícitamente' })
-    async descartarTarea(@Param('id') id: number, @Request() req) {
-        // Bypass DTO validation issues by using a direct specialized endpoint
-        return this.tasksService.tareaRevalidar(id, { accion: 'NoAplica' }, req.user.userId);
-    }
-
-    @Patch('tareas/:id/orden')
-    @ApiOperation({ summary: 'Actualizar orden de la tarea' })
-    async actualizarOrden(@Param('id') id: number, @Body() body: { orden: number }, @Request() req) {
-        return this.tasksService.tareaActualizarOrden(id, body.orden, req.user.userId);
-    }
-
-    @Patch('tareas/reordenar')
-    @ApiOperation({ summary: 'Reordenar múltiples tareas por IDs' })
-    async reordenarTareas(@Body() body: { ids: number[] }) {
-        return this.tasksService.tareaReordenar(body.ids);
+    @ApiOperation({ summary: 'Obtener historial de tareas por carnet' })
+    async getTareasHistorico(@Param('carnet') carnet: string, @Query('dias') dias: number = 30) {
+        return this.tasksService.tareasHistorico(carnet, dias);
     }
 
     @Post('tareas/:id/avance')
-    @ApiOperation({ summary: 'Registrar avance (KPIs, %, Bitácora)' })
-    async registrarAvance(@Param('id') id: number, @Body() body: TareaRegistrarAvanceDto, @Request() req) {
-        return this.tasksService.tareaRegistrarAvance(id, body, req.user.userId);
-    }
-
-    @Post('tareas/:id/asignar')
-    @ApiOperation({ summary: 'Asignar tarea a otro usuario (Jefe -> Empleado)' })
-    async asignarTarea(@Param('id') id: number, @Request() req, @Body() body: { idResponsable: number }) {
-        return this.tasksService.tareaAsignarResponsable(id, body.idResponsable, req.user.userId);
-    }
-
-    @Post('tareas/solicitud-cambio')
-    @ApiOperation({ summary: 'Solicitar cambio en campo bloqueado' })
-    async solicitarCambio(@Body() dto: SolicitudCambioDto, @Request() req) {
-        return this.tasksService.crearSolicitudCambio(req.user.userId, dto.idTarea, dto.campo, dto.valorNuevo, dto.motivo);
-    }
-
-    @Post('bloqueos')
-    @ApiOperation({ summary: 'Crear bloqueo' })
-    async crearBloqueo(@Body() dto: BloqueoCrearDto, @Request() req) {
-        dto.idOrigenUsuario = req.user.userId;
-        return this.tasksService.bloqueoCrear(dto);
-    }
-
-    @Patch('bloqueos/:id/resolver')
-    @ApiOperation({ summary: 'Resolver bloqueo' })
-    async resolverBloqueo(@Param('id') id: number, @Body() body: BloqueoResolverDto, @Request() req) {
-        return this.tasksService.bloqueoResolver(id, body, req.user.userId);
-    }
-
-    @Get('kpis/dashboard')
-    @ApiOperation({ summary: 'Obtener KPIs del Dashboard Ejecutivo (Jerárquico)' })
-    async getDashboardKPIs(@Request() req) {
-        return this.tasksService.getDashboardKPIs(req.user.userId);
-    }
-
-    // --- Jefatura ---
-
-    @Get('equipo/hoy')
-    @ApiOperation({ summary: 'Dashboard equipo: hoy' })
-    async getEquipoHoy(@Request() req, @Query() query: FechaQueryDto) {
-        return this.tasksService.equipoHoy(req.user.userId, query.fecha);
-    }
-
-    @Get('equipo/bloqueos')
-    @ApiOperation({ summary: 'Dashboard equipo: bloqueos' })
-    async getEquipoBloqueos(@Request() req, @Query() query: FechaQueryDto) {
-        return this.reportsService.equipoBloqueos(req.user.userId, query.fecha);
-    }
-
-    @Get('equipo/backlog')
-    @ApiOperation({ summary: 'Dashboard equipo: backlog' })
-    async getEquipoBacklog(@Request() req, @Query() query: FechaQueryDto) {
-        return this.tasksService.equipoBacklog(req.user.userId, query.fecha);
-    }
-
-    @Get('equipo/miembro/:id/tareas')
-    @ApiOperation({ summary: 'Obtener tareas de un miembro del equipo (Vista Jefatura)' })
-    async getEquipoMiembroTareas(@Param('id') id: number, @Request() req) {
-        const tieneAcceso = await this.tasksService.verificarAccesoSubordinadoPublic(req.user.userId, id);
-        if (!tieneAcceso) throw new ForbiddenException('No tienes acceso a los datos de este usuario');
-        return this.tasksService.tareasUsuario(id);
-    }
-
-    @Get('equipo/miembro/:id/bloqueos')
-    @ApiOperation({ summary: 'Obtener bloqueos activos de un miembro del equipo' })
-    async getEquipoMiembroBloqueos(@Param('id') id: number, @Request() req) {
-        const tieneAcceso = await this.tasksService.verificarAccesoSubordinadoPublic(req.user.userId, id);
-        if (!tieneAcceso) throw new ForbiddenException('No tienes acceso a los datos de este usuario');
-        return this.tasksService.getBloqueosUsuario(id);
-    }
-
-    @Get('equipo/miembro/:id')
-    @ApiOperation({ summary: 'Obtener información básica de un miembro del equipo' })
-    async getEquipoMiembro(@Param('id') id: number, @Request() req) {
-        return this.tasksService.equipoMiembro(req.user.userId, id);
-    }
-
-    // --- Gerencia ---
-
-    @Get('gerencia/resumen')
-    @ApiOperation({ summary: 'Dashboard gerencia: resumen' })
-    async getGerenciaResumen(@Request() req, @Query() query: FechaQueryDto) {
-        return this.reportsService.gerenciaResumen(req.user.userId, query.fecha);
-    }
-
-    // --- FOCO DIARIO ---
-    @Get('foco')
-    @ApiOperation({ summary: 'Obtener foco del día (con arrastre automático)' })
-    async getFocoDelDia(@Request() req, @Query() query: FechaQueryDto) {
-        return this.focoService.getFocoDelDia(req.user.userId, query.fecha);
-    }
-
-    @Post('foco')
-    @ApiOperation({ summary: 'Agregar tarea al foco del día' })
-    async agregarAlFoco(@Request() req, @Body() dto: FocoAgregarDto) {
-        return this.focoService.agregarAlFoco(req.user.userId, dto);
-    }
-
-    @Patch('foco/:id')
-    @ApiOperation({ summary: 'Actualizar foco (estratégico/completado)' })
-    async actualizarFoco(@Request() req, @Param('id') id: number, @Body() dto: FocoActualizarDto, @Query() query: FechaQueryDto) {
-        return this.focoService.actualizarFoco(id, req.user.userId, dto, query.fecha);
-    }
-
-    @Delete('foco/:id')
-    @ApiOperation({ summary: 'Quitar tarea del foco' })
-    async quitarDelFoco(@Request() req, @Param('id') id: number) {
-        return this.focoService.quitarDelFoco(id, req.user.userId);
-    }
-
-    @Post('foco/reordenar')
-    @ApiOperation({ summary: 'Reordenar focos del día' })
-    async reordenarFocos(@Request() req, @Body() dto: FocoReordenarDto, @Query() query: FechaQueryDto) {
-        return this.focoService.reordenarFocos(req.user.userId, query.fecha, dto.ids);
-    }
-
-    @Get('foco/estadisticas')
-    @ApiOperation({ summary: 'Estadísticas de efectividad del foco' })
-    async getEstadisticasFoco(@Request() req, @Query() filter: ReportFilterDto) {
-        return this.focoService.getEstadisticasFoco(req.user.userId, filter.month, filter.year);
-    }
-
-    @Get('reportes/productividad')
-    @ApiOperation({ summary: 'Reporte: Productividad de equipo' })
-    async getProductividad(@Request() req, @Query() filter: ReportFilterDto) {
-        return this.reportsService.getReporteProductividad(req.user.userId, filter);
-    }
-
-    @Get('reportes/bloqueos-trend')
-    @ApiOperation({ summary: 'Reporte: Tendencia de bloqueos' })
-    async getBloqueosTrend(@Request() req, @Query() filter: ReportFilterDto) {
-        return this.reportsService.getReporteBloqueosTrend(req.user.userId, filter);
-    }
-
-    @Get('reportes/equipo-performance')
-    @ApiOperation({ summary: 'Reporte: Desempeño comparativo del equipo' })
-    async getEquipoPerformance(@Request() req, @Query() filter: ReportFilterDto) {
-        return this.reportsService.getReporteEquipoPerformance(req.user.userId, filter);
+    @ApiOperation({ summary: 'Registrar avance en una tarea' })
+    async registrarAvance(@Param('id') id: number, @Body() body: { progreso: number; comentario?: string }, @Request() req) {
+        return this.tasksService.registrarAvance(id, body.progreso, body.comentario, req.user.userId);
     }
 
     @Get('planning/workload')
     @ApiOperation({ summary: 'Obtener carga de trabajo del equipo' })
     async getWorkload(@Request() req) {
-        return this.reportsService.getWorkload(req.user.userId);
+        return this.tasksService.getWorkload(req.user.userId);
     }
 
-    @Post('proyectos')
-    @ApiOperation({ summary: 'Crear nuevo proyecto' })
-    async crearProyecto(@Body() dto: ProyectoCrearDto, @Request() req) {
-        return this.tasksService.proyectoCrear(dto, req.user.userId);
+    @Get('audit-logs/task/:idTarea')
+    @ApiOperation({ summary: 'Obtener logs de auditoría de una tarea' })
+    async getAuditLogsByTask(@Param('idTarea') idTarea: number) {
+        return this.tasksService.getAuditLogsByTask(idTarea);
     }
+
+    @Post('tareas/solicitud-cambio')
+    @ApiOperation({ summary: 'Solicitar cambio en una tarea estratégica' })
+    async solicitarCambio(@Body() body: { idTarea: number; campo: string; valorNuevo: string; motivo: string }, @Request() req) {
+        return this.tasksService.crearSolicitudCambio(req.user.userId, body.idTarea, body.campo, body.valorNuevo, body.motivo);
+    }
+
+    // ==========================================
+    // PROYECTOS (Restaurado)
+    // ==========================================
 
     @Get('proyectos')
-    @ApiOperation({ summary: 'Listar proyectos activos (visibles para el usuario)' })
+    @ApiOperation({ summary: 'Listar proyectos' })
     async listarProyectos(@Request() req, @Query() filter: ProyectoFilterDto) {
         return this.tasksService.proyectoListar(req.user.userId, filter);
     }
 
+    @Post('proyectos')
+    @ApiOperation({ summary: 'Crear proyecto' })
+    async crearProyecto(@Body() dto: ProyectoCrearDto, @Request() req) {
+        return this.tasksService.proyectoCrear(dto, req.user.userId);
+    }
+
     @Get('proyectos/:id')
-    @ApiOperation({ summary: 'Obtener detalle de un proyecto' })
     async getProyecto(@Param('id') id: number) {
         return this.tasksService.proyectoObtener(id);
     }
 
     @Patch('proyectos/:id')
-    @ApiOperation({ summary: 'Actualizar proyecto' })
     async actualizarProyecto(@Param('id') id: number, @Body() dto: Partial<ProyectoCrearDto>, @Request() req) {
         return this.tasksService.proyectoActualizar(id, dto, req.user.userId);
     }
 
-    @Patch('proyectos/:id/enllavar')
-    @ApiOperation({ summary: 'Enllavar/Desbloquear proyecto' })
-    async enllavarProyecto(@Param('id') id: number, @Body() body: { enllavado: boolean }, @Request() req) {
-        return this.tasksService.proyectoEnllavar(id, body.enllavado, req.user.userId);
-    }
-
     @Delete('proyectos/:id')
-    @ApiOperation({ summary: 'Archivar proyecto' })
-    async archivarProyecto(@Param('id') id: number, @Request() req) {
+    async eliminarProyecto(@Param('id') id: number, @Request() req) {
         return this.tasksService.proyectoEliminar(id, req.user.userId);
     }
 
-    @Post('proyectos/:id/confirmar')
-    @ApiOperation({ summary: 'Confirmar plan de proyecto' })
-    async confirmarProyecto(@Param('id', ParseIntPipe) id: number, @Request() req) {
-        return this.tasksService.confirmarProyecto(id, req.user.userId);
-    }
-
-    @Get('planning/approvals')
-    @ApiOperation({ summary: 'Obtener solicitudes de cambio pendientes' })
-    async getSolicitudesPendientes(@Request() req) {
-        return this.tasksService.getSolicitudesPendientes(req.user.userId);
-    }
-
-    @Post('planning/approvals/:id/resolve')
-    @ApiOperation({ summary: 'Aprobar o rechazar solicitud de cambio' })
-    async resolverSolicitud(@Param('id', ParseIntPipe) id: number, @Body() body: { accion: 'Aprobar' | 'Rechazar', comentario?: string }, @Request() req) {
-        return this.tasksService.resolverSolicitud(id, body.accion, req.user.userId, body.comentario);
-    }
-
-
-
     @Get('proyectos/:id/tareas')
     @ApiOperation({ summary: 'Obtener todas las tareas de un proyecto' })
-    async getTareasProyecto(@Param('id') id: number, @Request() req) {
+    async getProyectosTareas(@Param('id') id: number, @Request() req) {
         return this.tasksService.tareasDeProyecto(id, req.user.userId);
     }
 
-    // --- ADMIN (Still in ClarityService) ---
+    // ==========================================
+    // RECURRENCIA (Agenda Diaria / Mi Día)
+    // ==========================================
 
-    @Post('logs')
-    @ApiOperation({ summary: 'Registrar log de sistema (Error/Warn)' })
-    async crearLog(@Body() dto: LogCrearDto) {
-        return this.clarityService.crearLog(dto);
-    }
-
-    @Get('admin/usuarios')
-    @ApiOperation({ summary: 'Admin: Listar todos los usuarios' })
-    async listarUsuarios(@Request() req, @Query() pagination: PaginationDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Acceso denegado (Solo Admin)');
-        return this.clarityService.usuariosListarTodos(pagination.page, pagination.limit);
-    }
-
-    @Patch('admin/usuarios/:id/rol')
-    @ApiOperation({ summary: 'Admin: Cambiar rol de usuario' })
-    async cambiarRol(@Request() req, @Param('id') id: number, @Body() body: { rol: string, idRol?: number }) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Acceso denegado (Solo Admin)');
-        return this.clarityService.usuarioCambiarRol(id, body.rol, req.user.userId, body.idRol);
-    }
-
-    @Get('admin/logs')
-    @ApiOperation({ summary: 'Admin: Ver logs del sistema' })
-    async listarLogs(@Request() req, @Query() pagination: PaginationDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.logsListar(pagination.page, pagination.limit);
-    }
-
-    @Get('admin/audit-logs')
-    @ApiOperation({ summary: 'Admin: Ver registros de auditoría' })
-    async listarAuditLogs(@Request() req, @Query() pagination: AuditFilterDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.auditLogsListar(pagination);
-    }
-
-    @Get('audit-logs/task/:id')
-    @ApiOperation({ summary: 'Obtener logs de auditoría de una tarea específica' })
-    async getAuditLogsByTask(@Param('id') id: string) {
-        return this.clarityService.auditLogsByTask(Number(id));
-    }
-
-    // --- ADMIN ROLES ---
-
-    @Get('admin/roles')
-    @ApiOperation({ summary: 'Admin: Listar roles' })
-    async listarRoles(@Request() req) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.rolesListar();
-    }
-
-    @Post('admin/roles')
-    @ApiOperation({ summary: 'Admin: Crear rol' })
-    async crearRol(@Request() req, @Body() dto: RolCrearDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.rolCrear(dto, req.user.userId);
-    }
-
-    @Patch('admin/roles/:id')
-    @ApiOperation({ summary: 'Admin: Actualizar rol' })
-    async actualizarRol(@Request() req, @Param('id') id: number, @Body() dto: RolActualizarDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.rolActualizar(id, dto, req.user.userId);
-    }
-
-    @Delete('admin/roles/:id')
-    @ApiOperation({ summary: 'Admin: Eliminar rol' })
-    async eliminarRol(@Request() req, @Param('id') id: number) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.rolEliminar(id, req.user.userId);
-    }
-
-    // --- ADMIN ORGANIGRAMA ---
-
-    @Get('admin/organigrama')
-    @ApiOperation({ summary: 'Admin: Ver estructura organizacional' })
-    async getOrganigrama(@Request() req) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.getOrganigrama();
-    }
-
-    @Post('admin/nodos')
-    @ApiOperation({ summary: 'Admin: Crear nodo organizacional' })
-    async crearNodo(@Request() req, @Body() dto: OrganizacionNodoCrearDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.nodoCrear(dto, req.user.userId);
-    }
-
-    @Get('reportes/exportar')
-    @ApiOperation({ summary: 'Exportar reportes a Excel' })
-    async exportarReporte(
-        @Request() req,
-        @Res() res,
-        @Query('tipo') tipo: string,
-        @Query('idProyecto') idProyecto?: number
+    @Post('tareas/:id/recurrencia')
+    @ApiOperation({ summary: 'Crear recurrencia para una tarea' })
+    async crearRecurrencia(
+        @Param('id') idTarea: number,
+        @Body() body: {
+            tipoRecurrencia: 'SEMANAL' | 'MENSUAL';
+            diasSemana?: string;
+            diaMes?: number;
+            fechaInicioVigencia: string;
+            fechaFinVigencia?: string;
+        },
+        @Request() req
     ) {
-        const userId = req.user.userId;
-        let data: any[] = [];
-        let filename = `reporte-${tipo}-${new Date().getTime()}.xlsx`;
-
-        if (tipo === 'productividad') {
-            data = await this.reportsService.getReporteProductividad(userId, { idProyecto });
-        } else if (tipo === 'bloqueos-trend') {
-            data = await this.reportsService.getReporteBloqueosTrend(userId, { idProyecto });
-        } else if (tipo === 'equipo-performance') {
-            data = await this.reportsService.getReporteEquipoPerformance(userId, { idProyecto });
-        } else {
-            throw new BadRequestException('Tipo de reporte no válido');
-        }
-
-        const buffer = await this.reportsService.exportToExcel(data, tipo.toUpperCase());
-
-        res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.header('Content-Disposition', `attachment; filename=${filename}`);
-        res.send(buffer);
+        return this.recurrenciaService.crearTareaRecurrente(
+            idTarea,
+            {
+                tipoRecurrencia: body.tipoRecurrencia,
+                diasSemana: body.diasSemana,
+                diaMes: body.diaMes,
+                fechaInicioVigencia: new Date(body.fechaInicioVigencia),
+                fechaFinVigencia: body.fechaFinVigencia ? new Date(body.fechaFinVigencia) : undefined
+            },
+            req.user.userId
+        );
     }
 
-    @Post('admin/usuarios-organizacion')
-    @ApiOperation({ summary: 'Admin: Asignar usuario a nodo' })
-    async asignarUsuarioNodo(@Request() req, @Body() dto: UsuarioOrganizacionAsignarDto) {
-        if (!['Admin', 'Administrador', 'SuperAdmin'].includes(req.user.rol)) throw new ForbiddenException('Solo Admin');
-        return this.clarityService.usuarioAsignarANodo(dto, req.user.userId);
-    }
-    @Get('organizacion/estructura-usuarios')
-    @ApiOperation({ summary: 'Obtener estructura organizacional basada en usuarios' })
-    async getEstructuraUsuarios(@Request() req) {
-        return this.tasksService.getOrganizacionDesdeUsuarios(req.user.userId);
+    @Get('tareas/:id/recurrencia')
+    @ApiOperation({ summary: 'Obtener configuración de recurrencia' })
+    async obtenerRecurrencia(@Param('id') idTarea: number) {
+        return this.recurrenciaService.obtenerRecurrencia(idTarea);
     }
 
-    @Get('organizacion/catalogo')
-    @ApiOperation({ summary: 'Obtener catálogo completo de jerarquía organizacional' })
-    async getCatalogoJerarquia() {
-        return this.tasksService.getCatalogJerarquia();
+    @Post('tareas/:id/instancia')
+    @ApiOperation({ summary: 'Marcar instancia (hecha/omitida/reprogramada)' })
+    async marcarInstancia(
+        @Param('id') idTarea: number,
+        @Body() body: {
+            fechaProgramada: string;
+            estadoInstancia: 'HECHA' | 'OMITIDA' | 'REPROGRAMADA';
+            comentario?: string;
+            fechaReprogramada?: string;
+        },
+        @Request() req
+    ) {
+        return this.recurrenciaService.marcarInstancia(
+            idTarea,
+            new Date(body.fechaProgramada),
+            body.estadoInstancia,
+            body.comentario,
+            req.user.userId,
+            body.fechaReprogramada ? new Date(body.fechaReprogramada) : undefined
+        );
+    }
+
+    @Get('tareas/:id/instancias')
+    @ApiOperation({ summary: 'Obtener bitácora de instancias' })
+    async obtenerInstancias(@Param('id') idTarea: number, @Query('limit') limit: number = 30) {
+        return this.recurrenciaService.obtenerInstancias(idTarea, limit);
+    }
+
+    @Get('equipo/bloqueos')
+    @ApiOperation({ summary: 'Obtener bloqueos del equipo' })
+    async getEquipoBloqueos(@Request() req, @Query('fecha') fecha: string) {
+        return this.tasksService.getEquipoBloqueos(req.user.userId, fecha);
+    }
+
+    @Get('agenda-recurrente')
+    @ApiOperation({ summary: 'Obtener tareas recurrentes para una fecha' })
+    async obtenerAgendaRecurrente(@Query('fecha') fecha: string, @Request() req) {
+        return this.recurrenciaService.obtenerAgendaRecurrente(
+            fecha ? new Date(fecha) : new Date(),
+            req.user.userId
+        );
     }
 }
+
+

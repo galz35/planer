@@ -1,220 +1,104 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Usuario, UsuarioCredenciales, UsuarioOrganizacion, OrganizacionNodo, Rol, UsuarioConfig } from '../entities';
-import * as bcrypt from 'bcrypt';
-import { EmpleadoImportDto } from './admin.controller';
+import * as adminRepo from './admin.repo';
+import * as authRepo from '../auth/auth.repo';
+import { RolDb, OrganizacionNodoDb, LogSistemaDb } from '../db/tipos';
+import { VisibilidadService } from '../acceso/visibilidad.service';
+import { AuditService } from '../common/audit.service';
 
 @Injectable()
 export class AdminService {
     constructor(
-        @InjectRepository(Usuario)
-        private usuarioRepo: Repository<Usuario>,
-        @InjectRepository(UsuarioCredenciales)
-        private credencialesRepo: Repository<UsuarioCredenciales>,
-        @InjectRepository(UsuarioOrganizacion)
-        private usuarioOrgRepo: Repository<UsuarioOrganizacion>,
-        @InjectRepository(OrganizacionNodo)
-        private nodoRepo: Repository<OrganizacionNodo>,
-        @InjectRepository(Rol)
-        private rolRepo: Repository<Rol>,
-        @InjectRepository(UsuarioConfig)
-        private configRepo: Repository<UsuarioConfig>,
+        private readonly visibilidadService: VisibilidadService,
+        private readonly auditService: AuditService
     ) { }
 
-    /**
-     * Importar empleados masivamente
-     * - Si existe (por correo): actualizar datos y estado
-     * - Si no existe: crear nuevo
-     */
-    async importEmpleados(empleados: EmpleadoImportDto[]) {
-        const results = {
-            creados: 0,
-            actualizados: 0,
-            errores: [] as string[],
-        };
-
-        const hashedDefaultPw = await bcrypt.hash('123456', 10);
-        const today = new Date();
-
-        for (const emp of empleados) {
-            try {
-                if (!emp.correo || !emp.nombre) {
-                    results.errores.push(`Falta correo o nombre: ${JSON.stringify(emp)}`);
-                    continue;
-                }
-
-                const correo = emp.correo.toLowerCase().trim();
-                let user = await this.usuarioRepo.findOneBy({ correo });
-
-                // Determinar si está activo basado en fechaBaja
-                let activo = true;
-                if (emp.fechaBaja) {
-                    const fechaBaja = new Date(emp.fechaBaja);
-                    activo = fechaBaja > today; // Activo si baja es futura
-                }
-
-                if (user) {
-                    // UPDATE existing
-                    user.nombre = emp.nombre;
-                    if (emp.telefono) user.telefono = emp.telefono;
-                    user.activo = activo;
-                    await this.usuarioRepo.save(user);
-                    results.actualizados++;
-                } else {
-                    // CREATE new
-                    user = await this.usuarioRepo.save({
-                        nombre: emp.nombre,
-                        correo: correo,
-                        telefono: emp.telefono || undefined,
-                        activo: activo,
-                        rolGlobal: 'User',
-                    });
-
-                    // Create credentials
-                    await this.credencialesRepo.save({
-                        idUsuario: user.idUsuario,
-                        passwordHash: hashedDefaultPw,
-                    });
-
-                    results.creados++;
-                }
-
-                // Handle organization assignment
-                if (emp.organizacion) {
-                    const nodo = await this.nodoRepo.findOneBy({ nombre: emp.organizacion });
-                    if (nodo) {
-                        // Check if assignment exists
-                        let asign = await this.usuarioOrgRepo.findOneBy({
-                            idUsuario: user.idUsuario,
-                            idNodo: nodo.idNodo
-                        });
-
-                        if (!asign) {
-                            await this.usuarioOrgRepo.save({
-                                idUsuario: user.idUsuario,
-                                idNodo: nodo.idNodo,
-                                rol: emp.rol || 'Colaborador',
-                                fechaInicio: emp.fechaIngreso ? new Date(emp.fechaIngreso) : new Date(),
-                            });
-                        } else if (emp.rol && asign.rol !== emp.rol) {
-                            asign.rol = emp.rol;
-                            await this.usuarioOrgRepo.save(asign);
-                        }
-                    }
-                }
-
-            } catch (err) {
-                results.errores.push(`Error procesando ${emp.correo}: ${err.message}`);
-            }
-        }
-
-        return results;
+    // Usuarios
+    async usuariosListarTodos(page: number, limit: number) {
+        return adminRepo.listarUsuarios(page, limit);
     }
 
-    /**
-     * Crear un solo usuario (Reutilizando lógica de importación)
-     */
-    async crearUsuario(dto: EmpleadoImportDto) {
-        return this.importEmpleados([dto]);
-    }
-
-    /**
-     * Actualizar estado de un empleado
-     */
-    async updateEstadoEmpleado(correo: string, activo: boolean, fechaBaja?: string) {
-        const user = await this.usuarioRepo.findOneBy({ correo: correo.toLowerCase() });
-        if (!user) {
-            throw new NotFoundException(`Usuario no encontrado: ${correo}`);
-        }
-
-        user.activo = activo;
-        await this.usuarioRepo.save(user);
-
-        return { mensaje: `Usuario ${correo} actualizado a ${activo ? 'ACTIVO' : 'INACTIVO'}` };
-    }
-
-    /**
-     * Resetear contraseña
-     */
-    async resetPassword(correo: string, nuevaPassword: string) {
-        const user = await this.usuarioRepo.findOneBy({ correo: correo.toLowerCase() });
-        if (!user) {
-            throw new NotFoundException(`Usuario no encontrado: ${correo}`);
-        }
-
-        const hashedPw = await bcrypt.hash(nuevaPassword, 10);
-
-        let creds = await this.credencialesRepo.findOneBy({ idUsuario: user.idUsuario });
-        if (creds) {
-            creds.passwordHash = hashedPw;
-            await this.credencialesRepo.save(creds);
-        } else {
-            await this.credencialesRepo.save({
-                idUsuario: user.idUsuario,
-                passwordHash: hashedPw,
-            });
-        }
-
-        return { mensaje: `Contraseña reseteada para ${correo}` };
-    }
-
-    /**
-     * Obtener lista de empleados
-     */
-    async getEmpleados() {
-        const users = await this.usuarioRepo.find({
-            select: ['idUsuario', 'nombre', 'correo', 'telefono', 'activo', 'rolGlobal', 'fechaCreacion'],
-            order: { nombre: 'ASC' },
-            take: 500, // Limit for safety
-        });
-        return users;
-    }
-
-    /**
-     * Estadísticas
-     */
     async getStats() {
-        const total = await this.usuarioRepo.count();
-        const activos = await this.usuarioRepo.count({ where: { activo: true } });
-        const inactivos = total - activos;
-        const admins = await this.usuarioRepo.count({ where: { rolGlobal: 'Admin' } });
-        const nodos = await this.nodoRepo.count();
-        const asignaciones = await this.usuarioOrgRepo.count();
-
-        return {
-            totalUsuarios: total,
-            usuariosActivos: activos,
-            usuariosInactivos: inactivos,
-            administradores: admins,
-            nodosOrganizacionales: nodos,
-            asignaciones: asignaciones,
-        };
+        return adminRepo.obtenerEstadisticasAdmin();
     }
 
-    /**
-     * Actualizar menú por defecto de un rol
-     */
-    async updateRoleMenu(idRol: number, menuJson: any) {
-        const rol = await this.rolRepo.findOneBy({ idRol });
-        if (!rol) throw new NotFoundException('Rol no encontrado');
-
-        rol.defaultMenu = JSON.stringify(menuJson);
-        await this.rolRepo.save(rol);
-        return { mensaje: 'Menú actualizado correctamente' };
+    async usuarioCambiarRol(idUsuario: number, rol: string, idAdmin: number, idRol?: number) {
+        await adminRepo.cambiarRolUsuario(idUsuario, rol, idRol);
+        await this.crearLog({
+            idUsuario: idAdmin,
+            accion: 'CAMBIO_ROL',
+            entidad: 'Usuario',
+            datos: `Usuario ${idUsuario} -> ${rol} (idRol: ${idRol})`
+        });
     }
 
-    /**
-     * Actualizar menú personalizado de usuario
-     */
-    async updateUserMenu(idUsuario: number, menuJson: any) {
-        let config = await this.configRepo.findOneBy({ idUsuario });
-        if (!config) {
-            config = this.configRepo.create({ idUsuario });
+    // Roles
+    async rolesListar() {
+        return adminRepo.listarRoles();
+    }
+
+    async rolCrear(dto: any, idAdmin: number) {
+        await adminRepo.crearRol(dto);
+        await this.crearLog({ idUsuario: idAdmin, accion: 'CREAR_ROL', entidad: 'Rol', datos: dto.nombre });
+    }
+
+    async rolActualizar(id: number, dto: any, idAdmin: number) {
+        await adminRepo.actualizarRol(id, dto);
+        await this.crearLog({ idUsuario: idAdmin, accion: 'ACTUALIZAR_ROL', entidad: 'Rol', datos: `${id}` });
+    }
+
+    async rolEliminar(id: number, idAdmin: number) {
+        await adminRepo.eliminarRol(id);
+        await this.crearLog({ idUsuario: idAdmin, accion: 'ELIMINAR_ROL', entidad: 'Rol', datos: `${id}` });
+    }
+
+    // Logs
+    async crearLog(log: Partial<LogSistemaDb>) {
+        // Asegurar campos obligatorios
+        return adminRepo.crearLog({
+            accion: log.accion || 'UNKNOWN',
+            ...log
+        });
+    }
+
+    async logsListar(page: number, limit: number) {
+        return this.auditService.listarLogs(page, limit);
+    }
+
+    async auditLogsListar(filter: any) {
+        return this.auditService.listarAudit(filter.page || 1, filter.limit || 50, filter);
+    }
+
+    async auditLogsByTask(idTarea: number) {
+        return [];
+    }
+
+    // Organigrama
+    async getOrganigrama() {
+        return adminRepo.obtenerOrganigrama();
+    }
+
+    async nodoCrear(dto: any, idAdmin: number) {
+        const result = await adminRepo.crearNodoOrganigrama(dto);
+        // result en repo podría devolver array, check repo
+        await this.crearLog({ idUsuario: idAdmin, accion: 'CREAR_NODO', entidad: 'OrganizacionNodo', datos: dto.nombre });
+        return result;
+    }
+
+    async usuarioAsignarANodo(dto: any, idAdmin: number) {
+        await adminRepo.asignarUsuarioNodo(dto.idUsuario, dto.idNodo, dto.rol);
+        await this.crearLog({ idUsuario: idAdmin, accion: 'ASIGNAR_NODO', entidad: 'UsuarioOrganizacion', datos: `${dto.idUsuario} -> ${dto.idNodo}` });
+    }
+
+    async getEfectiveVisibility(idUsuarioObjetivo: number) {
+        // 1. Obtener usuario
+        const usuario = await authRepo.obtenerUsuarioPorId(idUsuarioObjetivo);
+        if (!usuario || !usuario.carnet) {
+            throw new NotFoundException('Usuario no encontrado o sin carnet');
         }
 
-        config.customMenu = JSON.stringify(menuJson);
-        await this.configRepo.save(config);
-        return { mensaje: 'Menú personalizado guardado' };
+        // 2. Usar servicio de visibilidad (Fuente de la verdad)
+        const visibleEmployees = await this.visibilidadService.obtenerEmpleadosVisibles(usuario.carnet);
+
+        return visibleEmployees;
     }
 }

@@ -1,0 +1,52 @@
+[
+  {
+    "id": 5,
+    "idTarea": 47,
+    "mes": 1,
+    "anio": 2026,
+    "porcentajeMes": 16,
+    "comentario": null,
+    "idUsuarioActualizador": 1,
+    "fechaActualizacion": "2026-01-21T21:27:14.000Z"
+  },
+  {
+    "id": 4,
+    "idTarea": 42,
+    "mes": 1,
+    "anio": 2026,
+    "porcentajeMes": 25,
+    "comentario": null,
+    "idUsuarioActualizador": 3,
+    "fechaActualizacion": "2026-01-21T18:31:35.013Z"
+  },
+  {
+    "id": 3,
+    "idTarea": 40,
+    "mes": 1,
+    "anio": 2026,
+    "porcentajeMes": 25,
+    "comentario": null,
+    "idUsuarioActualizador": 3,
+    "fechaActualizacion": "2026-01-21T17:48:57.860Z"
+  },
+  {
+    "id": 2,
+    "idTarea": 39,
+    "mes": 1,
+    "anio": 2026,
+    "porcentajeMes": 25,
+    "comentario": null,
+    "idUsuarioActualizador": 3,
+    "fechaActualizacion": "2026-01-21T17:47:43.990Z"
+  },
+  {
+    "id": 1,
+    "idTarea": 38,
+    "mes": 1,
+    "anio": 2026,
+    "porcentajeMes": 25,
+    "comentario": "Avance test",
+    "idUsuarioActualizador": 3,
+    "fechaActualizacion": "2026-01-21T17:46:53.077Z"
+  }
+]

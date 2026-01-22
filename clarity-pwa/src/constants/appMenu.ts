@@ -1,7 +1,7 @@
 
 import {
     Sun, CheckSquare, FileText, LayoutDashboard, Eye, Shield, BarChart, FileCheck,
-    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen
+    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen, ClipboardList
 } from 'lucide-react';
 
 export const APP_MENU = [
@@ -10,15 +10,15 @@ export const APP_MENU = [
         items: [
             { path: '/app/hoy', label: 'Mi Agenda', icon: 'Sun' },
             { path: '/app/pendientes', label: 'Mis Tareas', icon: 'CheckSquare' },
+            { path: '/app/planning/proyectos', label: 'Gestión Proyectos', icon: 'FileCheck' },
             { path: '/app/notas', label: 'Mis Notas', icon: 'FileText' },
         ]
     },
     {
         group: 'Gestión Equipo',
         items: [
-            { path: '/app/equipo', label: 'Dashboard', icon: 'LayoutDashboard' },
             { path: '/app/equipo/mi-equipo', label: 'Mi Equipo', icon: 'Eye' },
-            { path: '/app/equipo/bloqueos', label: 'Bloqueos y Riesgos', icon: 'Shield' },
+            // { path: '/app/equipo/bloqueos', label: 'Bloqueos y Riesgos', icon: 'Shield' },
         ]
     },
     {
@@ -26,15 +26,16 @@ export const APP_MENU = [
         items: [
             { path: '/app/planning/carga', label: 'Carga Laboral', icon: 'BarChart' },
             { path: '/app/planning/proyectos', label: 'Gestión Proyectos', icon: 'FileCheck' },
+            { path: '/app/software/dashboard', label: 'Anality', icon: 'PieChart' },
             { path: '/app/planning/approvals', label: 'Aprobaciones', icon: 'FileCheck' },
         ]
     },
-    {
+    /* {
         group: 'Inteligencia',
         items: [
             { path: '/app/reports', label: 'Centro de Reportes', icon: 'PieChart' },
         ]
-    },
+    }, */
     {
         group: 'Administración',
         items: [
@@ -48,12 +49,12 @@ export const APP_MENU = [
             { path: '/app/admin/logs', label: 'Monitor Sistema', icon: 'Terminal' }
         ]
     },
-    {
+    /* {
         group: 'Historial',
         items: [
             { path: '/app/archivo', label: 'Archivo Tareas', icon: 'Archive' },
         ]
-    },
+    }, */
     {
         group: 'Ayuda',
         items: [
@@ -64,5 +65,5 @@ export const APP_MENU = [
 
 export const ICON_MAP: any = {
     Sun, CheckSquare, FileText, LayoutDashboard, Eye, Shield, BarChart, FileCheck,
-    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen
+    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen, ClipboardList
 };

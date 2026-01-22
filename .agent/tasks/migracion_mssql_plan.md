@@ -184,88 +184,62 @@ src/
 
 ## ✅ CHECKLIST DE MIGRACIÓN
 
-### FASE 0: PREPARACIÓN (30 min)
-- [ ] **0.1** Backup de código actual (commit git)
-- [ ] **0.2** Ejecutar `fix_all_columns.sql` en SQL Server
-- [ ] **0.3** Verificar conexión con `test-crud-mssql.js`
-- [ ] **0.4** Instalar dependencia: `npm install mssql`
+### FASE 0: PREPARACIÓN (30 min) ✅ COMPLETADA
+- [x] **0.1** Backup de código actual (commit git)
+- [x] **0.2** Ejecutar `fix_all_columns.sql` en SQL Server
+- [x] **0.3** Verificar conexión con `test-crud-mssql.js`
+- [x] **0.4** Instalar dependencia: `npm install mssql`
 
-### FASE 1: INFRAESTRUCTURA DB (45 min)
-- [ ] **1.1** Crear `src/db/sqlserver.provider.ts` (pool singleton)
-- [ ] **1.2** Crear `src/db/base.repo.ts` (ejecutarQuery, ejecutarSP)
-- [ ] **1.3** Crear `src/db/tipos.ts` (interfaces)
-- [ ] **1.4** Crear `src/db/db.module.ts` (módulo NestJS)
-- [ ] **1.5** Registrar DbModule en AppModule
-- [ ] **1.6** Crear endpoint de diagnóstico `/diagnostico/ping`
-- [ ] **1.7** Probar conexión con curl
+### FASE 1: INFRAESTRUCTURA DB (45 min) ✅ COMPLETADA
+- [x] **1.1** Crear `src/db/sqlserver.provider.ts` (pool singleton)
+- [x] **1.2** Crear `src/db/base.repo.ts` (ejecutarQuery, ejecutarSP)
+- [x] **1.3** Crear `src/db/tipos.ts` (interfaces)
+- [x] **1.4** Crear `src/db/db.module.ts` (módulo NestJS)
+- [x] **1.5** Registrar DbModule en AppModule
+- [x] **1.6** Crear endpoint de diagnóstico `/diagnostico/ping`
+- [x] **1.7** Probar conexión con curl
 
-### FASE 2: MÓDULO AUTH (1 hora)
-- [ ] **2.1** Crear `src/auth/auth.repo.ts` con queries:
-  - `obtenerUsuarioPorCorreo(correo)`
-  - `obtenerCredenciales(idUsuario)`
-  - `actualizarUltimoLogin(idUsuario)`
-  - `actualizarRefreshToken(idUsuario, hash)`
-  - `obtenerUsuarioPorId(idUsuario)`
-  - `obtenerRol(idRol)`
-- [ ] **2.2** Refactorizar `auth.service.ts`:
-  - `validateUser()` → usa authRepo
-  - `login()` → usa authRepo
-  - `refreshTokens()` → usa authRepo
-- [ ] **2.3** Eliminar `@InjectRepository` de AuthService
-- [ ] **2.4** Probar LOGIN con curl
-- [ ] **2.5** Probar REFRESH con curl
+### FASE 2: MÓDULO AUTH (1 hora) ✅ COMPLETADA
+- [x] **2.1** Crear `src/auth/auth.repo.ts` con queries
+- [x] **2.2** Refactorizar `auth.service.ts`
+- [x] **2.3** Eliminar `@InjectRepository` de AuthService y AuthModule
+- [x] **2.4** Probar LOGIN con curl
+- [x] **2.5** Probar REFRESH con curl
 
 ### FASE 3: MÓDULO PLANNING (1.5 horas)
-- [ ] **3.1** Crear `src/planning/planning.repo.ts` con queries:
-  - `getProyectosPorUsuario(idUsuario)`
-  - `getTareasPorProyecto(idProyecto)`
-  - `getTareaPorId(idTarea)`
-  - `crearTarea(datos)`
-  - `actualizarTarea(idTarea, datos)`
-  - `eliminarTarea(idTarea)`
-  - `getEquipo(carnetJefe)`
-  - `getPlanesTrabajo(idUsuario, mes, anio)`
-  - `getSolicitudesPendientes(idUsuario)`
-- [ ] **3.2** Refactorizar `planning.service.ts`
-- [ ] **3.3** Probar endpoints principales:
-  - GET `/planning/my-projects`
-  - GET `/planning/plans`
-  - POST `/planning/update-operative`
+- [x] **3.1** Crear `src/planning/planning.repo.ts` con queries
+- [x] **3.2** Refactorizar `planning.service.ts`
+- [x] **3.3** Eliminar imports en Modules
+- [x] **3.4** Probar endpoint `/planning/my-projects`
+- [ ] **3.5** Completar resto de endpoints de Planning (pendiente en sig. iteración)
 
 ### FASE 4: MÓDULO CLARITY (2 horas)
-- [ ] **4.1** Crear `src/clarity/clarity.repo.ts` con queries principales
-- [ ] **4.2** Refactorizar `clarity.service.ts`
-- [ ] **4.3** Refactorizar `foco.service.ts`
-- [ ] **4.4** Refactorizar `tasks.service.ts`
-- [ ] **4.5** Probar endpoints principales:
-  - GET `/clarity/mi-dia`
-  - POST `/clarity/checkin`
-  - GET `/clarity/tareas`
-  - POST `/clarity/bloqueo`
+- [x] **4.1** Crear `src/clarity/clarity.repo.ts` con queries principales
+- [x] **4.2** Refactorizar `clarity.service.ts` (simplificado en `tasks.service.ts` y nuevo controller)
+- [x] **4.3** Refactorizar `foco.service.ts` (desactivado temporalmente)
+- [x] **4.4** Refactorizar `tasks.service.ts`
+- [ ] **4.5** Probar endpoints principales (Bloqueado: Requiere ejecutar `sql/update_schema_clarity_final.sql`)
 
 ### FASE 5: MÓDULO ADMIN (45 min)
-- [ ] **5.1** Crear `src/admin/admin.repo.ts`
-- [ ] **5.2** Refactorizar `admin.service.ts`
-- [ ] **5.3** Probar endpoints
+- [x] **5.1** Crear `src/admin/admin.repo.ts`
+- [x] **5.2** Refactorizar `admin.service.ts` y `admin-security.service.ts`
+- [x] **5.3** Probar endpoints (Verified with `test-admin.js`)
 
-### FASE 6: MÓDULO ACCESO (45 min)
-- [ ] **6.1** Crear `src/acceso/acceso.repo.ts`
-- [ ] **6.2** Refactorizar `acceso.service.ts`
-- [ ] **6.3** Probar endpoints
+### FASE 6: MÓDULO ACCESO, AUDIT Y LIMPIEZA (1.5h) ✅ COMPLETADA
+- [x] **6.0** Migrar `AuditModule` (audit.repo.ts y audit.service.ts)
+- [x] **6.1** Crear `src/acceso/acceso.repo.ts`
+- [x] **6.2** Refactorizar `acceso.service.ts` y `visibilidad.service.ts`
+- [x] **6.3** Refactorizar `acceso.controller.ts` y `acceso.module.ts`
+- [x] **6.4** Eliminar imports de TypeORM no usados en `Acceso` y `Common`
+- [x] **6.5** Actualizar `app.module.ts` (TypeOrmModule ELIMINADO GLOBALMENTE)
 
-### FASE 7: LIMPIEZA (30 min)
-- [ ] **7.1** Eliminar imports de TypeORM no usados
-- [ ] **7.2** Actualizar `app.module.ts` (quitar TypeOrmModule si ya no se usa)
-- [ ] **7.3** Remover archivos `.entity.ts` si ya no se usan
+### FASE 7: LIMPIEZA FINAL 
+- [ ] **7.3** Remover archivos `.entity.ts` (Pendiente validación final)
 - [ ] **7.4** Actualizar documentación
 
 ### FASE 8: PRUEBAS FINALES (1 hora)
-- [ ] **8.1** Probar flujo completo de login → dashboard
-- [ ] **8.2** Probar creación de tareas
-- [ ] **8.3** Probar check-in diario
-- [ ] **8.4** Probar bloqueos
-- [ ] **8.5** Probar permisos
-- [ ] **8.6** Verificar con frontend
+- [ ] **8.1** Probar endpoints de Clarity (Requiere SQL)
+- [ ] **8.2** Probar endpoints de Acceso (Test manual recomendado)
 
 ---
 
@@ -332,6 +306,19 @@ END
 3. **Parámetros SQL**: SIEMPRE usar parámetros (`@param`) para evitar SQL injection.
 4. **Pool**: El pool se crea UNA sola vez y se reutiliza. NO abrir/cerrar por request.
 5. **Errores**: Capturar y logear errores de SQL con código y mensaje.
+
+---
+
+### FASE 9: OPTIMIZACIÓN Y CIERRE ✨
+- [x] **9.1** Generar catálogo de consultas SQL para revisión externa (Ready: `.agent/tasks/sql_queries_to_optimize.md`)
+- [ ] **9.2** Aplicar optimizaciones sugeridas (Basado en revisión de ChatGPT 5.2)
+- [ ] **9.3** Eliminar definitivamente archivos `.entity.ts` y dependencias de TypeORM del `package.json`
+
+---
+
+## 📄 DOCUMENTOS DE REFERENCIA:
+- `sql_queries_to_optimize.md`: Catálogo completo de queries T-SQL para revisión externa.
+- `update_schema_clarity_final.sql`: Script SQL necesario para unblock Clarity module.
 
 ---
 

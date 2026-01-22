@@ -94,9 +94,10 @@ export const AgendaTimeline: React.FC<Props> = ({ onTaskComplete, onTaskCancel }
             console.log('[AgendaTimeline] Generated groups:', groups.map(g => g.date));
 
             if (tasks) {
-                tasks.forEach((t: Tarea) => {
-                    const taskDate = t.fechaHecha || t.fechaObjetivo;
-                    console.log('[AgendaTimeline] Task:', t.titulo, 'fechaObjetivo:', t.fechaObjetivo, 'fechaHecha:', t.fechaHecha, 'resolved:', taskDate);
+                tasks.forEach((t: Tarea & { fechaTrabajada?: string }) => {
+                    // Prioridad: fechaTrabajada (del check-in) > fechaHecha > fechaCreacion
+                    const taskDate = (t as any).fechaTrabajada || t.fechaHecha || t.fechaCreacion;
+                    console.log('[AgendaTimeline] Task:', t.titulo, 'fechaTrabajada:', (t as any).fechaTrabajada, 'fechaHecha:', t.fechaHecha, 'fechaCreacion:', t.fechaCreacion, 'resolved:', taskDate);
                     if (taskDate) {
                         const dateStr = typeof taskDate === 'string' ? taskDate.substring(0, 10) : (taskDate as any).toISOString().split('T')[0];
                         console.log('[AgendaTimeline] Task dateStr:', dateStr);

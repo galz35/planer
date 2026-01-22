@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "message": "Avance de 20% registrado para 1/2026",
+    "data": {
+      "historial": [
+        {
+          "id": 5,
+          "idTarea": 47,
+          "anio": 2026,
+          "mes": 1,
+          "porcentajeMes": 20,
+          "porcentajeAcumulado": 20,
+          "comentario": "Prueba API Directa",
+          "idUsuarioActualizador": 1,
+          "fechaActualizacion": "2026-01-21T21:57:50.223Z"
+        }
+      ],
+      "acumulado": 20
+    }
+  },
+  "statusCode": 201,
+  "timestamp": "2026-01-21T21:57:50.501Z",
+  "path": "/api/tareas/47/avance-mensual"
+}

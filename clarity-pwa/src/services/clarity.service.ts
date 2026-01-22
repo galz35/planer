@@ -2,7 +2,7 @@ import { api } from './api';
 import type { ApiResponse } from '../types/api';
 import type {
     Checkin, Tarea, Bloqueo, CheckinUpsertDto, BloqueoCrearDto, TareaCrearRapidaDto, TareaRegistrarAvanceDto,
-    Usuario, Proyecto
+    Usuario, Proyecto, TareaAvanceMensual
 } from '../types/modelos';
 import type { EquipoHoyResponse } from '../types/equipo';
 
@@ -37,6 +37,11 @@ export const clarityService = {
 
     // Tareas
     postTareaRapida: async (dto: TareaCrearRapidaDto) => {
+        const { data: response } = await api.post<ApiResponse<Tarea>>('/tareas/rapida', dto);
+        return response.data;
+    },
+
+    postTarea: async (dto: TareaCrearRapidaDto & { comportamiento?: 'SIMPLE' | 'RECURRENTE' | 'LARGA' }) => {
         const { data: response } = await api.post<ApiResponse<Tarea>>('/tareas/rapida', dto);
         return response.data;
     },
@@ -99,6 +104,60 @@ export const clarityService = {
 
     postAvance: async (idTarea: number, dto: TareaRegistrarAvanceDto) => {
         const { data: response } = await api.post<ApiResponse>(`/tareas/${idTarea}/avance`, dto);
+        return response.data;
+    },
+
+    // ==========================================
+    // AVANCE MENSUAL (Tareas C - Avance Mensual)
+    // ==========================================
+
+    getAvancesMensuales: async (idTarea: number) => {
+        const { data: response } = await api.get<ApiResponse<{ historial: TareaAvanceMensual[], acumulado: number }>>(`/tareas/${idTarea}/avance-mensual`);
+        return response.data;
+    },
+
+    postAvanceMensual: async (idTarea: number, dto: { anio: number, mes: number, porcentajeMes: number, comentario?: string }) => {
+        const { data: response } = await api.post<ApiResponse<{ historial: TareaAvanceMensual[], acumulado: number }>>(`/tareas/${idTarea}/avance-mensual`, dto);
+        return response.data;
+    },
+
+    // ==========================================
+    // RECURRENCIA (Tareas A - Agenda Diaria)
+    // ==========================================
+
+    crearRecurrencia: async (idTarea: number, dto: {
+        tipoRecurrencia: 'SEMANAL' | 'MENSUAL';
+        diasSemana?: string;
+        diaMes?: number;
+        fechaInicioVigencia: string;
+        fechaFinVigencia?: string;
+    }) => {
+        const { data: response } = await api.post<ApiResponse>(`/tareas/${idTarea}/recurrencia`, dto);
+        return response.data;
+    },
+
+    obtenerRecurrencia: async (idTarea: number) => {
+        const { data: response } = await api.get<ApiResponse>(`/tareas/${idTarea}/recurrencia`);
+        return response.data;
+    },
+
+    marcarInstancia: async (idTarea: number, dto: {
+        fechaProgramada: string;
+        estadoInstancia: 'HECHA' | 'OMITIDA' | 'REPROGRAMADA';
+        comentario?: string;
+        fechaReprogramada?: string;
+    }) => {
+        const { data: response } = await api.post<ApiResponse>(`/tareas/${idTarea}/instancia`, dto);
+        return response.data;
+    },
+
+    obtenerInstancias: async (idTarea: number, limit: number = 30) => {
+        const { data: response } = await api.get<ApiResponse>(`/tareas/${idTarea}/instancias`, { params: { limit } });
+        return response.data;
+    },
+
+    obtenerAgendaRecurrente: async (fecha: string) => {
+        const { data: response } = await api.get<ApiResponse>(`/agenda-recurrente`, { params: { fecha } });
         return response.data;
     },
 
@@ -214,12 +273,22 @@ export const clarityService = {
     // Admin Users
     getUsuarios: async (page: number = 1, limit: number = 50) => {
         const { data: response } = await api.get<ApiResponse<{
-            items: Usuario[],
+            datos?: Usuario[],
+            items?: Usuario[],
             total: number,
-            page: number,
-            lastPage: number
+            pagina?: number,
+            page?: number,
+            totalPaginas?: number,
+            lastPage?: number
         }>>('/admin/usuarios', { params: { page, limit } });
-        return response.data;
+        const raw = response.data;
+        // Normalizar campos para compatibilidad
+        return {
+            items: raw?.items || raw?.datos || [],
+            total: raw?.total || 0,
+            page: raw?.page || raw?.pagina || 1,
+            lastPage: raw?.lastPage || raw?.totalPaginas || 1
+        };
     },
     getAdminStats: async () => {
         const { data: response } = await api.get<ApiResponse>('/admin/stats');
@@ -227,6 +296,10 @@ export const clarityService = {
     },
     crearUsuario: async (dto: any) => {
         const { data: response } = await api.post<ApiResponse>('/admin/usuarios', dto);
+        return response.data;
+    },
+    getVisibilidadEfectiva: async (idUsuario: number) => {
+        const { data: response } = await api.get<ApiResponse<any[]>>(`/admin/usuarios/${idUsuario}/visibilidad-efectiva`);
         return response.data;
     },
     updateUsuarioRol: async (idUsuario: number, rol: string, idRol?: number) => {

@@ -19,12 +19,10 @@ async function bootstrap() {
 
   // Habilitar CORS a nivel de adaptador Fastify (más eficiente) o usar Nest enableCors
   adapter.enableCors({
-    origin: process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(',')
-      : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
+    origin: true, // Permitir cualquier origen que venga en la request
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: '*', // Permitir todos los headers
   });
 
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -80,8 +78,8 @@ async function bootstrap() {
   logger.log(`🚀 Application running on: http://localhost:${port}/api`);
   logger.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
   logger.log(`⚡ Engine: Fastify`);
+  logger.log(`🔍 Checking Routes: GET /api/kpis/dashboard, GET /api/equipo/hoy, GET /api/proyectos/:id/tareas`);
   logger.log(`🚀 SERVIDOR INICIADO LIMPIAMENTE: ` + new Date().toISOString());
 }
 bootstrap();
-// Hot Reload Trigger: Unified System Update
-
+// Hot Reload Trigger: Unified System Update v10 - All Routes Ready

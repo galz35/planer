@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 
 export const EquipoBloqueosPage: React.FC = () => {
     const { user } = useAuth();
-    const today = new Date().toISOString().split('T')[0];
+    const [today] = useState(() => new Date().toISOString().split('T')[0]); // Stable today
     const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
@@ -29,14 +29,22 @@ export const EquipoBloqueosPage: React.FC = () => {
             setLoading(true);
             const data = await clarityService.getEquipoBloqueos(today);
             setBloqueos(data || []);
-        } catch (e) {
-            showToast("Error al cargar bloqueos del servidor", "error");
+        } catch (e: any) {
+            // Only show toast if it's not a generic 404 handled globally or cancelled
+            if (e.response?.status !== 404) {
+                showToast("Error al cargar bloqueos", "error");
+            }
+            console.warn("Fetch bloqueos failed:", e);
         } finally {
             setLoading(false);
         }
     }, [today, showToast]);
 
-    useEffect(() => { fetchBloqueos(); }, [fetchBloqueos]);
+    useEffect(() => {
+        let mounted = true;
+        fetchBloqueos();
+        return () => { mounted = false; };
+    }, [fetchBloqueos]);
 
     const stats = useMemo(() => {
         const active = bloqueos.filter(b => b.estado === 'Activo');

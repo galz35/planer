@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Archivos de entorno (NUNCA subir credenciales)
+.env
+.env.local
+.env.*.local
+
+# Editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+*.temp
+tmp/
+
+# Debug
+debug/
+*.debug
+
+# AWS Keys
+*.pem
+*.ppk

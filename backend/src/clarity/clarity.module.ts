@@ -1,32 +1,23 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClarityController } from './clarity.controller';
-import { ClarityService } from './clarity.service';
-import { ReportsService } from './reports.service';
+import { OrganizacionController } from './organizacion.controller';
+import { KpisController, EquipoController, AsignacionesController, AvanceMensualController } from './kpis.controller';
 import { TasksService } from './tasks.service';
-import { FocoService } from './foco.service';
-import { Usuario, Tarea, TareaAsignado, Checkin, CheckinTarea, Bloqueo, OrganizacionNodo, Proyecto, UsuarioOrganizacion, UsuarioConfig, Nota, LogSistema, Rol, UsuarioCredenciales, AuditLog, FocoDiario, TareaAvance } from '../entities';
-
-import { SeedController } from './seed.controller';
-
-import { SeedService } from './seed.service';
+import { RecurrenciaService } from './recurrencia.service';
 import { PlanningModule } from '../planning/planning.module';
 import { AccesoModule } from '../acceso/acceso.module';
 
-import { SolicitudCambio } from '../planning/entities/solicitud-cambio.entity';
+// NOTA: ClarityService, ReportsService, FocoService, SeedService
+// han sido removidos o migrados a SQL directo
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([
-            Usuario, Tarea, TareaAsignado, Checkin, CheckinTarea, Bloqueo,
-            OrganizacionNodo, Proyecto, UsuarioOrganizacion, UsuarioConfig, Nota, LogSistema, Rol, UsuarioCredenciales, AuditLog, FocoDiario, TareaAvance,
-            SolicitudCambio
-        ]),
         PlanningModule,
         AccesoModule
     ],
-    controllers: [ClarityController, SeedController],
-    providers: [ClarityService, ReportsService, TasksService, SeedService, FocoService],
-    exports: [ClarityService, ReportsService, TasksService, SeedService, FocoService]
+    controllers: [ClarityController, OrganizacionController, KpisController, EquipoController, AsignacionesController, AvanceMensualController],
+    providers: [TasksService, RecurrenciaService],
+    exports: [TasksService, RecurrenciaService]
 })
 export class ClarityModule { }
+

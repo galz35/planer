@@ -1,0 +1,34 @@
+[
+  {
+    "idTarea": 44,
+    "nombre": "prueba",
+    "comportamiento": "SIMPLE",
+    "estado": "Pendiente",
+    "porcentaje": 0,
+    "idProyecto": 55
+  },
+  {
+    "idTarea": 45,
+    "nombre": "a",
+    "comportamiento": "SIMPLE",
+    "estado": "Pendiente",
+    "porcentaje": 0,
+    "idProyecto": 55
+  },
+  {
+    "idTarea": 46,
+    "nombre": "f",
+    "comportamiento": "LARGA",
+    "estado": "Pendiente",
+    "porcentaje": 0,
+    "idProyecto": 55
+  },
+  {
+    "idTarea": 47,
+    "nombre": "x",
+    "comportamiento": "LARGA",
+    "estado": "Pendiente",
+    "porcentaje": 0,
+    "idProyecto": 55
+  }
+]

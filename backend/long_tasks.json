@@ -1,0 +1,16 @@
+[
+  {
+    "idTarea": 46,
+    "nombre": "f",
+    "comportamiento": "LARGA",
+    "estado": "Pendiente",
+    "porcentaje": 0
+  },
+  {
+    "idTarea": 47,
+    "nombre": "x",
+    "comportamiento": "LARGA",
+    "estado": "Pendiente",
+    "porcentaje": 0
+  }
+]

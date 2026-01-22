@@ -181,6 +181,11 @@ export class TareaCrearRapidaDto {
     @IsOptional()
     @IsString()
     descripcion?: string;
+
+    @ApiProperty({ required: false, enum: ['SIMPLE', 'RECURRENTE', 'LARGA'] })
+    @IsOptional()
+    @IsIn(['SIMPLE', 'RECURRENTE', 'LARGA'])
+    comportamiento?: string;
 }
 
 export class TareaActualizarDto {
@@ -237,6 +242,21 @@ export class TareaActualizarDto {
     @IsString()
     @MaxLength(500)
     motivo?: string; // Para solicitudes de cambio
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    motivoBloqueo?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    alcance?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    comentario?: string;
 }
 
 export class TareaRevalidarDto {

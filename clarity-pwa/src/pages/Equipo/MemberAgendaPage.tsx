@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, useParams, useNavigate } from 'react-router-dom';
 import { MemberAgendaProvider } from '../Hoy/context/MemberAgendaContext';
 import { useMiDiaContext } from '../Hoy/context/MiDiaContext';
-import { LayoutGrid, List, Calendar, BookOpen, ChevronLeft, ChevronRight, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { List, Calendar, BookOpen, ChevronLeft, ChevronRight, ShieldAlert, ArrowLeft } from 'lucide-react';
 
 const MemberAgendaContent: React.FC = () => {
     const { today, setToday } = useMiDiaContext();
@@ -54,9 +54,9 @@ const MemberAgendaContent: React.FC = () => {
                     <NavLink to="." end className={linkClass}>
                         <List size={14} /> Lista
                     </NavLink>
-                    <NavLink to="matrix" className={linkClass}>
+                    {/* <NavLink to="matrix" className={linkClass}>
                         <LayoutGrid size={14} /> Matriz
-                    </NavLink>
+                    </NavLink> */}
                     <NavLink to="calendario" className={linkClass}>
                         <Calendar size={14} /> Cal
                     </NavLink>

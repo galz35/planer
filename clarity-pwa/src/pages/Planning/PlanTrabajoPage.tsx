@@ -7,6 +7,8 @@ import { useToast } from '../../context/ToastContext';
 import type { Tarea, Proyecto } from '../../types/modelos';
 import { CreateTaskModal } from '../../components/ui/CreateTaskModal';
 import { TipoBadge } from '../../components/ui/TipoBadge';
+
+import { AvanceMensualModal } from './components/AvanceMensualModal';
 import {
     LayoutGrid, List, Calendar as CalendarIcon, ChevronDown, Plus,
     Briefcase, Lock, MoreVertical, Search, CheckCircle, ChevronLeft, ChevronRight,
@@ -59,7 +61,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 const UserAvatar: React.FC<{ name: string, color?: string }> = ({ name, color }) => (
     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ${color || 'bg-slate-600'}`}>
-        {name.charAt(0).toUpperCase()}
+        {(name || '?').charAt(0).toUpperCase()}
     </div>
 );
 
@@ -103,7 +105,7 @@ const QuickAssignDropdown: React.FC<{
                     </div>
                 )}
                 <span className="text-xs text-slate-600 truncate max-w-[80px] hidden md:block">
-                    {currentAssignee ? currentAssignee.nombre.split(' ')[0] : 'Asignar'}
+                    {currentAssignee ? (currentAssignee.nombre || 'Usuario').split(' ')[0] : 'Asignar'}
                 </span>
                 <ChevronDown size={10} className="text-slate-400" />
             </button>
@@ -423,6 +425,8 @@ export const PlanTrabajoPage: React.FC = () => {
     const [newProjectName, setNewProjectName] = useState('');
     const [isCreatingProject, setIsCreatingProject] = useState(false);
 
+    // Avance Mensual Modal State (para tareas LARGA)
+    const [isAvanceMensualOpen, setIsAvanceMensualOpen] = useState(false);
 
 
     const openTaskDetails = (task: Tarea) => {
@@ -566,8 +570,13 @@ export const PlanTrabajoPage: React.FC = () => {
                 }
 
                 const teamResponseData = teamRes.data as any;
-                const teamArray = Array.isArray(teamResponseData) ? teamResponseData : (teamResponseData?.data || []);
-                setTeam(Array.isArray(teamArray) ? teamArray : []);
+                let teamArray = Array.isArray(teamResponseData) ? teamResponseData : (teamResponseData?.data || []);
+                // Mapear nombreCompleto a nombre para compatibilidad
+                teamArray = (Array.isArray(teamArray) ? teamArray : []).map((m: any) => ({
+                    ...m,
+                    nombre: m.nombre || m.nombreCompleto || 'Sin Nombre'
+                }));
+                setTeam(teamArray);
             } catch (error) {
                 console.error('Error loading data', error);
                 showToast('Error cargando proyectos', 'error');
@@ -579,18 +588,22 @@ export const PlanTrabajoPage: React.FC = () => {
     }, [projectIdFromUrl]);
 
     // --- TASK LOADING ---
+    // --- TASK LOADING ---
     const loadTasks = async () => {
         if (!selectedProject) {
             setTasks([]);
-            return;
+            return [];
         }
         setLoadingTasks(true);
         try {
             const res = await clarityService.getProyectosTareas(selectedProject!.idProyecto);
-            setTasks((res || []).sort((a, b) => b.idTarea - a.idTarea));
+            const sortedTasks = (res || []).sort((a, b) => b.idTarea - a.idTarea);
+            setTasks(sortedTasks);
+            return sortedTasks;
         } catch (error) {
             console.error(error);
             showToast('Error cargando tareas', 'error');
+            return [];
         } finally {
             setLoadingTasks(false);
         }
@@ -627,6 +640,9 @@ export const PlanTrabajoPage: React.FC = () => {
         const updatedTask = { ...tasks[taskIndex] };
         const userObj = team.find(u => u.idUsuario === userId);
         if (userObj) {
+            // Set both direct fields and asignados for compatibility
+            updatedTask.idResponsable = userId;
+            updatedTask.responsableNombre = userObj.nombre;
             updatedTask.asignados = [{ idAsignacion: 0, idTarea: taskId, idUsuario: userId, usuario: { nombre: userObj.nombre } } as any];
         }
 
@@ -665,12 +681,29 @@ export const PlanTrabajoPage: React.FC = () => {
         }
     };
 
+    const handleDeleteTask = async (taskId: number) => {
+        if (!window.confirm('¿Eliminar esta tarea definitivamente?')) return;
+
+        try {
+            await clarityService.descartarTarea(taskId);
+            setTasks(prev => prev.filter(t => t.idTarea !== taskId));
+            showToast('Tarea eliminada', 'success');
+            if (selectedTask?.idTarea === taskId) {
+                setIsPanelOpen(false);
+                setSelectedTask(null);
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Error al eliminar tarea', 'error');
+        }
+    };
+
     // --- RENDER ---
 
     const finalFilteredTasks = useMemo(() => {
         return tasks.filter(t => {
             const matchText = t.titulo.toLowerCase().includes(filterText.toLowerCase());
-            const matchAssignee = filterAssignee === '' || t.asignados?.some(a => a.idUsuario === Number(filterAssignee));
+            const matchAssignee = filterAssignee === '' || t.idResponsable === Number(filterAssignee) || t.asignados?.some(a => a.idUsuario === Number(filterAssignee));
             return matchText && matchAssignee;
         });
     }, [tasks, filterText, filterAssignee]);
@@ -989,7 +1022,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                 <span>Todos</span>
                                                             </button>
                                                             {team
-                                                                .filter(m => m.nombre.toLowerCase().includes(assigneeFilterSearch.toLowerCase()))
+                                                                .filter(m => (m.nombre || '').toLowerCase().includes(assigneeFilterSearch.toLowerCase()))
                                                                 .map(member => {
                                                                     const count = tasks.filter(t => t.asignados?.some(a => a.idUsuario === member.idUsuario)).length;
                                                                     return (
@@ -1008,7 +1041,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                         </button>
                                                                     );
                                                                 })}
-                                                            {team.filter(m => m.nombre.toLowerCase().includes(assigneeFilterSearch.toLowerCase())).length === 0 && (
+                                                            {team.filter(m => (m.nombre || '').toLowerCase().includes(assigneeFilterSearch.toLowerCase())).length === 0 && (
                                                                 <div className="px-4 py-3 text-xs text-slate-400 text-center italic">No se encontraron resultados</div>
                                                             )}
                                                         </div>
@@ -1028,7 +1061,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                     </div>
                                     <div className="text-xs text-slate-400 font-medium">
                                         {tasks.filter(t => {
-                                            const matchAssignee = filterAssignee === '' || t.asignados?.some(a => a.idUsuario === filterAssignee);
+                                            const matchAssignee = filterAssignee === '' || t.idResponsable === filterAssignee || t.asignados?.some(a => a.idUsuario === filterAssignee);
                                             return matchAssignee;
                                         }).length} tareas
                                     </div>
@@ -1082,7 +1115,12 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                 const daysDelayed = t.fechaObjetivo && t.estado !== 'Hecha' && isAfter(startOfDay(new Date()), new Date(t.fechaObjetivo))
                                                                     ? differenceInDays(startOfDay(new Date()), new Date(t.fechaObjetivo))
                                                                     : 0;
-                                                                const assignedUser = t.asignados && t.asignados.length > 0 ? { id: t.asignados[0].idUsuario, nombre: t.asignados[0].usuario?.nombre || 'U' } : null;
+                                                                const assignedUser =
+                                                                    t.idResponsable
+                                                                        ? { id: t.idResponsable, nombre: t.responsableNombre || 'Asignado' }
+                                                                        : (t.asignados && t.asignados.length > 0
+                                                                            ? { id: t.asignados[0].idUsuario, nombre: t.asignados[0].usuario?.nombre || 'U' }
+                                                                            : null);
 
                                                                 return (
                                                                     <div
@@ -1107,6 +1145,17 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                                 <div className="flex items-center gap-2">
                                                                                     {daysDelayed > 0 && <span className="text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded">+{daysDelayed}d</span>}
                                                                                     <span className="font-medium bg-slate-100 px-2 py-0.5 rounded">{t.progreso}%</span>
+                                                                                    {isManagerMode && (
+                                                                                        <button
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleDeleteTask(t.idTarea);
+                                                                                            }}
+                                                                                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                                                                        >
+                                                                                            <Trash2 size={14} />
+                                                                                        </button>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1174,10 +1223,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                                         onClick={(e) => {
                                                                                             e.stopPropagation();
                                                                                             if (window.confirm('¿Eliminar esta tarea definitivamente?')) {
-                                                                                                clarityService.descartarTarea(t.idTarea).then(() => {
-                                                                                                    setTasks(prev => prev.filter(task => task.idTarea !== t.idTarea));
-                                                                                                    showToast('Tarea eliminada', 'success');
-                                                                                                });
+                                                                                                handleDeleteTask(t.idTarea);
                                                                                             }
                                                                                         }}
                                                                                     >
@@ -1260,6 +1306,15 @@ export const PlanTrabajoPage: React.FC = () => {
                                 <span className="text-xs font-bold text-slate-700">Detalles de Tarea</span>
                             </div>
                             <div className="flex items-center gap-2">
+                                {isManagerMode && selectedTask && (
+                                    <button
+                                        onClick={() => handleDeleteTask(selectedTask.idTarea)}
+                                        className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-500 transition-colors mr-1"
+                                        title="Eliminar tarea"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
                                 {isManagerMode && (
                                     <button
                                         onClick={() => {
@@ -1428,23 +1483,41 @@ export const PlanTrabajoPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Progress */}
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <label className="text-xs font-bold text-slate-700">Progreso</label>
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${selectedTask.estado === 'Bloqueada' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
-                                        {selectedTask.progreso || 0}%
-                                    </span>
+                            {/* Progress or Monthly Manager */}
+                            {selectedTask.comportamiento === 'LARGA' ? (
+                                <div className="mb-4">
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-xs font-bold text-slate-700">Avance Mensual (Larga Duración)</label>
+                                        <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100">
+                                            {selectedTask.progreso || 0}% Global
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsAvanceMensualOpen(true)}
+                                        className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-indigo-200 text-indigo-700 rounded-xl font-bold text-xs hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-sm group"
+                                    >
+                                        <CalendarIcon size={16} className="text-indigo-500 group-hover:scale-110 transition-transform" />
+                                        Gestionar Avance y Comentarios
+                                    </button>
                                 </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    className={`w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer ${selectedTask.estado === 'Bloqueada' ? 'accent-red-500' : 'accent-slate-700'}`}
-                                    value={selectedTask.progreso || 0}
-                                    onChange={(e) => setSelectedTask({ ...selectedTask, progreso: parseInt(e.target.value) })}
-                                />
-                            </div>
+                            ) : (
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-xs font-bold text-slate-700">Progreso</label>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${selectedTask.estado === 'Bloqueada' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
+                                            {selectedTask.progreso || 0}%
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        className={`w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer ${selectedTask.estado === 'Bloqueada' ? 'accent-red-500' : 'accent-slate-700'}`}
+                                        value={selectedTask.progreso || 0}
+                                        onChange={(e) => setSelectedTask({ ...selectedTask, progreso: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            )}
 
                             <hr className="border-slate-100" />
 
@@ -1581,11 +1654,26 @@ export const PlanTrabajoPage: React.FC = () => {
             {
                 isCreateTaskOpen && selectedProject && (
                     <CreateTaskModal
-                        projectId={selectedProject.idProyecto}
+                        isOpen={isCreateTaskOpen}
                         onClose={() => setIsCreateTaskOpen(false)}
-                        onSuccess={() => {
-                            setIsCreateTaskOpen(false);
-                            loadTasks(); // Actualizar sin recargar
+                        currentProject={selectedProject}
+                        projects={projects}
+                        onTaskCreated={loadTasks}
+                    />
+                )
+            }
+
+            {/* AVANCE MENSUAL MODAL (LARGA DURACION) */}
+            {
+                isAvanceMensualOpen && selectedTask && (
+                    <AvanceMensualModal
+                        isOpen={isAvanceMensualOpen}
+                        onClose={() => setIsAvanceMensualOpen(false)}
+                        task={selectedTask}
+                        onSaved={async () => {
+                            const newTasks = await loadTasks();
+                            const updated = newTasks.find(t => t.idTarea === selectedTask.idTarea);
+                            if (updated) setSelectedTask(updated);
                         }}
                     />
                 )

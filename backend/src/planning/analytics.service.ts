@@ -1,362 +1,297 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In } from 'typeorm';
-import { PlanTrabajo } from './entities/plan-trabajo.entity';
-import { Tarea } from './entities/tarea.entity';
-import { UsuarioOrganizacion } from '../auth/entities/usuario-organizacion.entity';
-import { Usuario } from '../auth/entities/usuario.entity';
-import { Proyecto } from './entities/proyecto.entity';
-import { Bloqueo } from '../clarity/entities/bloqueo.entity';
 import { VisibilidadService } from '../acceso/visibilidad.service';
+import { ejecutarQuery, Int, NVarChar } from '../db/base.repo';
+import * as accesoRepo from '../acceso/acceso.repo';
 
 @Injectable()
 export class AnalyticsService {
-    constructor(
-        @InjectRepository(PlanTrabajo) private planRepo: Repository<PlanTrabajo>,
-        @InjectRepository(Tarea) private tareaRepo: Repository<Tarea>,
-        @InjectRepository(UsuarioOrganizacion) private userOrgRepo: Repository<UsuarioOrganizacion>,
-        @InjectRepository(Usuario) private userRepo: Repository<Usuario>,
-        @InjectRepository(Proyecto) private proyectoRepo: Repository<Proyecto>,
-        @InjectRepository(Bloqueo) private bloqueoRepo: Repository<Bloqueo>,
-        private visibilidadService: VisibilidadService,
-    ) { }
+    constructor(private readonly visibilidadService: VisibilidadService) { }
 
     async getDashboardStats(managerId: number, month: number, year: number) {
-        // Obtener el usuario que solicita
-        const requestingUser = await this.userRepo.findOne({ where: { idUsuario: managerId } });
-        const isAdmin = ['Admin', 'Administrador', 'SuperAdmin'].includes(requestingUser?.rolGlobal || '');
+        console.log(`[Analytics] Solicitando dashboard para ManagerID: ${managerId} (Mes: ${month}, Año: ${year})`);
+        try {
+            // 1. Get user's carnet first, then get visible employees
+            const carnet = await accesoRepo.obtenerCarnetDeUsuario(managerId);
+            console.log(`[Analytics] Carnet encontrado: ${carnet}`);
 
-        // Obtener IDs de usuarios visibles (subordinados + él mismo)
-        let visibleUserIds: number[] = [];
-        if (isAdmin) {
-            // Admin ve todo
-            const allUsers = await this.userRepo.find({ where: { activo: true }, select: ['idUsuario'] });
-            visibleUserIds = allUsers.map(u => u.idUsuario);
-        } else if (requestingUser?.carnet) {
-            // Líder ve a sus subordinados
-            const visibles = await this.visibilidadService.obtenerEmpleadosVisibles(requestingUser.carnet);
-            visibleUserIds = visibles.map(v => v.idUsuario);
-        } else {
-            // Usuario normal solo se ve a sí mismo
-            visibleUserIds = [managerId];
-        }
+            if (!carnet) {
+                console.warn(`[Analytics] No se encontró carnet para el usuario ${managerId}`);
+                return this.getEmptyStats();
+            }
 
-        // 1. Plan Adoption (Coverage) - Solo planes de usuarios visibles
-        const plans = await this.planRepo.find({
-            where: { mes: month, anio: year, idUsuario: In(visibleUserIds) },
-            relations: ['usuario']
-        });
+            const visibleUsers = await this.visibilidadService.obtenerEmpleadosVisibles(carnet);
+            console.log(`[Analytics] Usuarios visibles brutos: ${visibleUsers.length}`);
 
-        // Calculate Users without Plan (solo de usuarios visibles)
-        const allUsersRaw = await this.userRepo.find({ where: { activo: true, idUsuario: In(visibleUserIds) } });
-        const allUsers = allUsersRaw.filter(u => !u.nombre.toLowerCase().includes('gustavo test'));
+            const visibleUserIds = visibleUsers.map((u: any) => u.idUsuario).filter(Boolean);
+            console.log(`[Analytics] IDs de usuarios visibles: ${visibleUserIds.length}`);
 
-        const usersWithPlanIds = new Set(plans.map(p => p.idUsuario));
-        const usersWithoutPlan = allUsers
-            .filter(u => !usersWithPlanIds.has(u.idUsuario) && u.rolGlobal !== 'Admin' && u.rolGlobal !== 'SuperAdmin')
-            .map(u => ({
-                id: u.idUsuario,
-                nombre: u.nombre,
-                correo: u.correo,
-                rol: u.rolGlobal
+            if (visibleUserIds.length === 0) {
+                console.warn(`[Analytics] No se encontraron IDs de usuario para los colaboradores visibles.`);
+                return this.getEmptyStats();
+            }
+
+            const idsStr = visibleUserIds.join(',');
+            console.log(`[Analytics] Consultando proyectos para ${visibleUserIds.length} miembros del equipo...`);
+
+            // 2. Fetch projects logic: All Projects (aligned with ProyectosPage) + "Tareas Sin Proyecto"
+            const queryRaw = `
+                -- First part: All formal projects
+                SELECT 
+                    p.idProyecto,
+                    p.nombre,
+                    p.estado,
+                    (SELECT ISNULL(AVG(CAST(st.porcentaje AS FLOAT)), 0) FROM p_Tareas st WHERE st.idProyecto = p.idProyecto AND st.estado NOT IN ('Eliminada', 'Archivada')) as globalProgress,
+                    ISNULL(p.subgerencia, 'General') as subgerencia,
+                    ISNULL(p.area, '') as area,
+                    ISNULL(p.gerencia, '') as gerencia,
+                    p.fechaInicio,
+                    p.fechaFin,
+                    -- Count only tasks assigned to our team
+                    COUNT(DISTINCT ta.idTarea) as totalTasks,
+                    ISNULL(SUM(CASE WHEN t.estado = 'Hecha' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as hechas,
+                    ISNULL(SUM(CASE WHEN t.estado = 'EnCurso' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as enCurso,
+                    ISNULL(SUM(CASE WHEN t.estado = 'Pendiente' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as pendientes,
+                    ISNULL(SUM(CASE WHEN t.estado = 'Bloqueada' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as bloqueadas,
+                    ISNULL(SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND ta.idUsuario IS NOT NULL AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END), 0) as atrasadas
+                FROM p_Proyectos p
+                LEFT JOIN p_Tareas t ON p.idProyecto = t.idProyecto
+                LEFT JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea AND ta.idUsuario IN (${idsStr})
+                GROUP BY p.idProyecto, p.nombre, p.estado, p.subgerencia, p.area, p.gerencia, p.fechaInicio, p.fechaFin
+
+                UNION ALL
+
+                -- Second part: Tasks without project (managed as a pseudo-project)
+                SELECT 
+                    0 as idProyecto,
+                    'Tareas Sin Proyecto' as nombre,
+                    'General' as subgerencia,
+                    '' as area,
+                    '' as gerencia,
+                    NULL as fechaInicio,
+                    NULL as fechaFin,
+                    COUNT(DISTINCT t.idTarea) as totalTasks,
+                    ISNULL(SUM(CASE WHEN t.estado = 'Hecha' THEN 1 ELSE 0 END), 0) as hechas,
+                    ISNULL(SUM(CASE WHEN t.estado = 'EnCurso' THEN 1 ELSE 0 END), 0) as enCurso,
+                    ISNULL(SUM(CASE WHEN t.estado = 'Pendiente' THEN 1 ELSE 0 END), 0) as pendientes,
+                    ISNULL(SUM(CASE WHEN t.estado = 'Bloqueada' THEN 1 ELSE 0 END), 0) as bloqueadas,
+                    ISNULL(SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END), 0) as atrasadas
+                FROM p_Tareas t
+                INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
+                WHERE (t.idProyecto IS NULL OR t.idProyecto = 0)
+                  AND ta.idUsuario IN (${idsStr})
+                  AND t.estado NOT IN ('Eliminada', 'Archivada')
+                HAVING COUNT(t.idTarea) > 0
+
+                ORDER BY nombre
+            `;
+
+            const projectsRaw = await ejecutarQuery<any>(queryRaw);
+            console.log(`[Analytics] Proyectos encontrados (con team stats): ${projectsRaw.length}`);
+
+            // 3. Fetch all tasks for visible users to enable drill-down in frontend
+            const allTasksRaw = await ejecutarQuery<{
+                idTarea: number;
+                idProyecto: number;
+                titulo: string;
+                estado: string;
+                progreso: number;
+                prioridad: string;
+                fechaInicio: string;
+                fechaObjetivo: string;
+                asignado: string;
+                atrasada: number;
+            }>(`
+                SELECT 
+                    t.idTarea,
+                    ISNULL(t.idProyecto, 0) as idProyecto,
+                    t.nombre as titulo,
+                    t.estado,
+                    ISNULL(t.porcentaje, 0) as progreso,
+                    t.prioridad,
+                    t.fechaInicioPlanificada as fechaInicio,
+                    t.fechaObjetivo,
+                    u.nombre as asignado,
+                    CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END as atrasada
+                FROM p_Tareas t
+                INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
+                INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
+                WHERE ta.idUsuario IN (${idsStr})
+                  AND t.estado NOT IN ('Eliminada', 'Archivada')
+                ORDER BY t.fechaObjetivo ASC
+            `);
+
+            // 4. Calculate global statistics and group tasks by project
+            let totalAll = 0, hechasAll = 0, atrasadasAll = 0, bloqueadasAll = 0;
+            const projectsStats = projectsRaw.map(p => {
+                const progress = p.totalTasks > 0 ? Math.round((p.hechas / p.totalTasks) * 100) : 0;
+                const projectTasks = allTasksRaw.filter(t => t.idProyecto === p.idProyecto);
+
+                // Calculate expected progress based on dates
+                let expectedProgress = 0;
+                if (p.fechaInicio && p.fechaFin) {
+                    const start = new Date(p.fechaInicio).getTime();
+                    const end = new Date(p.fechaFin).getTime();
+                    const now = Date.now();
+                    if (now >= end) expectedProgress = 100;
+                    else if (now <= start) expectedProgress = 0;
+                    else expectedProgress = Math.round(((now - start) / (end - start)) * 100);
+                }
+
+                totalAll += p.totalTasks;
+                hechasAll += p.hechas;
+                atrasadasAll += p.atrasadas;
+                bloqueadasAll += p.bloqueadas;
+
+                return {
+                    id: p.idProyecto,
+                    nombre: p.nombre,
+                    estado: p.estado,
+                    globalProgress: p.globalProgress,
+                    subgerencia: p.subgerencia,
+                    area: p.area,
+                    gerencia: p.gerencia,
+                    totalTasks: p.totalTasks,
+                    hechas: p.hechas,
+                    enCurso: p.enCurso,
+                    pendientes: p.pendientes,
+                    bloqueadas: p.bloqueadas,
+                    atrasadas: p.atrasadas,
+                    progress,
+                    expectedProgress,
+                    deviation: progress - expectedProgress,
+                    tareas: projectTasks
+                };
+            });
+
+            // 4. Group by subgerencia for hierarchy breakdown
+            const subgerenciaMap = new Map<string, {
+                pendientes: number; enCurso: number; hechas: number; bloqueadas: number; atrasadas: number; total: number;
+            }>();
+
+            projectsRaw.forEach(p => {
+                const key = p.subgerencia || 'General';
+                const existing = subgerenciaMap.get(key) || { pendientes: 0, enCurso: 0, hechas: 0, bloqueadas: 0, atrasadas: 0, total: 0 };
+                existing.pendientes += p.pendientes;
+                existing.enCurso += p.enCurso;
+                existing.hechas += p.hechas;
+                existing.bloqueadas += p.bloqueadas;
+                existing.atrasadas += p.atrasadas;
+                existing.total += p.totalTasks;
+                subgerenciaMap.set(key, existing);
+            });
+
+            const hierarchyBreakdown = Array.from(subgerenciaMap.entries()).map(([name, stats]) => ({
+                name,
+                ...stats
             }));
 
-        const statusDist = { Borrador: 0, Confirmado: 0, Cerrado: 0 };
-        plans.forEach(p => {
-            if (statusDist[p.estado] !== undefined) statusDist[p.estado]++;
-        });
+            // 5. Get top delays (tasks most overdue)
+            const topDelays = await ejecutarQuery<{
+                idTarea: number;
+                titulo: string;
+                fechaObjetivo: string;
+                diasRetraso: number;
+                asignado: string;
+            }>(`
+                SELECT TOP 10
+                    t.idTarea,
+                    t.titulo,
+                    t.fechaObjetivo,
+                    DATEDIFF(DAY, t.fechaObjetivo, GETDATE()) as diasRetraso,
+                    u.nombre as asignado
+                FROM p_Tareas t
+                INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
+                INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
+                WHERE ta.idUsuario IN (${idsStr})
+                  AND t.estado IN ('Pendiente', 'EnCurso')
+                  AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE)
+                ORDER BY diasRetraso DESC
+            `);
 
-        // 2. Task Completion & Hierarchy Analysis
-        // Find tasks in Plan OR tasks with Target Date in range - SOLO DE USUARIOS VISIBLES
-        const lastDay = new Date(year, month, 0).getDate();
-        const startStr = `${year}-${month.toString().padStart(2, '0')}-01`;
-        const endStr = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+            // 6. Identify users without active tasks (Users Without Plan)
+            // Get all users who have at least one active task (Pendiente/EnCurso)
+            const usersWithActiveTasks = await ejecutarQuery<{ idUsuario: number }>(`
+                SELECT DISTINCT ta.idUsuario
+                FROM p_TareaAsignados ta
+                INNER JOIN p_Tareas t ON ta.idTarea = t.idTarea
+                WHERE ta.idUsuario IN (${idsStr})
+                  AND t.estado IN ('Pendiente', 'EnCurso')
+            `);
 
-        // Primera consulta: tareas del mes seleccionado
-        let tasks = await this.tareaRepo.find({
-            where: [
-                { plan: { mes: month, anio: year, idUsuario: In(visibleUserIds) } },
-                { fechaObjetivo: Between(startStr, endStr) }
-            ],
-            relations: ['plan', 'plan.usuario', 'proyecto', 'asignados', 'asignados.usuario']
-        });
+            const activeUserIds = new Set(usersWithActiveTasks.map(u => u.idUsuario));
+            const usersWithoutPlan = visibleUsers
+                .filter((u: any) => !activeUserIds.has(u.idUsuario))
+                .map((u: any) => ({
+                    id: u.idUsuario,
+                    nombre: u.nombre || u.nombreCompleto,
+                    cargo: u.cargo || 'Sin cargo',
+                    avatar: u.avatar || null
+                }));
 
-        // Filtrar tareas: solo las de planes de usuarios visibles O asignadas a usuarios visibles
-        tasks = tasks.filter(t => {
-            const planUserId = t.plan?.idUsuario;
-            const assignedUserIds = t.asignados?.map(a => a.idUsuario) || [];
-            return visibleUserIds.includes(planUserId) || assignedUserIds.some(id => visibleUserIds.includes(id));
-        });
+            // 7. Get blockers detail
+            const blockersDetail = await ejecutarQuery<{
+                id: number;
+                tarea: string;
+                proyecto: string;
+                usuario: string;
+                motivo: string;
+                dias: number;
+            }>(`
+                SELECT TOP 20
+                    b.idBloqueo as id,
+                    ISNULL(t.titulo, 'Sin tarea') as tarea,
+                    ISNULL(p.nombre, 'General') as proyecto,
+                    u.nombre as usuario,
+                    b.motivo,
+                    DATEDIFF(DAY, b.fechaCreacion, GETDATE()) as dias
+                FROM p_Bloqueos b
+                LEFT JOIN p_Tareas t ON b.idTarea = t.idTarea
+                LEFT JOIN p_Proyectos p ON t.idProyecto = p.idProyecto
+                LEFT JOIN p_Usuarios u ON b.idUsuario = u.idUsuario
+                WHERE b.idUsuario IN (${idsStr})
+                  AND b.estado = 'Activo'
+                ORDER BY b.fechaCreacion DESC
+            `);
 
-        // FALLBACK: Si no hay tareas en el mes, buscar TODAS las tareas activas de usuarios visibles
-        if (tasks.length === 0) {
-            console.log('[AnalyticsService] No hay tareas en el mes, buscando todas las tareas activas...');
-            tasks = await this.tareaRepo.find({
-                where: {
-                    estado: In(['Pendiente', 'EnCurso', 'Bloqueada']),
-                    asignados: { idUsuario: In(visibleUserIds) }
-                },
-                relations: ['plan', 'plan.usuario', 'proyecto', 'asignados', 'asignados.usuario']
-            });
-
-            // Agregar también tareas completadas recientemente (últimos 30 días)
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            const completedTasks = await this.tareaRepo.find({
-                where: {
-                    estado: 'Hecha',
-                    asignados: { idUsuario: In(visibleUserIds) }
-                },
-                relations: ['plan', 'plan.usuario', 'proyecto', 'asignados', 'asignados.usuario']
-            });
-
-            // Concatenar y eliminar duplicados
-            const allTaskIds = new Set(tasks.map(t => t.idTarea));
-            completedTasks.forEach(t => {
-                if (!allTaskIds.has(t.idTarea)) {
-                    tasks.push(t);
-                }
-            });
-        }
-
-        // Filter tasks from test user
-        tasks = tasks.filter(t => !t.plan?.usuario?.nombre.toLowerCase().includes('gustavo test'));
-
-        const totalTasks = tasks.length;
-        const doneTasks = tasks.filter(t => t.estado === 'Hecha').length;
-        const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
-        // Group by Hierarchy (Subgerencia - Area)
-        const today = new Date();
-        const areaStats: Record<string, { total: number, atrasadas: number, pendientes: number, enCurso: number, hechas: number, bloqueadas: number }> = {};
-        const tasksDetails: any[] = []; // Lightweight list for frontend drilldown
-
-        tasks.forEach(t => {
-            let area = 'General';
-            const p = t.proyecto;
-            if (p) {
-                if (p.subgerencia) {
-                    area = p.subgerencia;
-                    if (p.area) area += ` / ${p.area}`;
-                } else if (p.area) {
-                    area = p.area;
-                } else if (p.gerencia) {
-                    area = p.gerencia;
-                }
-            }
-
-            // Normalizar fechas para comparar solo días (evitar falsos atrasos por hora)
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-
-            let targetDate = t.fechaObjetivo ? new Date(t.fechaObjetivo) : null;
-            // Ajustar al inicio del día si existe fecha, compensando posible shift UTC si es string puro
-            if (targetDate) {
-                // Si la fecha viene como string YYYY-MM-DD, a veces JS la toma UTC 00:00
-                // Queremos asegurar que la comparacion sea justa.
-                // Si targetDate (00:00) < todayStart (00:00) -> Atrasada (Vencio ayer o antes)
-                // Si targetDate (00:00) == todayStart (00:00) -> Vence hoy (NO Atrasada aun)
-                targetDate.setHours(0, 0, 0, 0);
-                // Añadir pequeño margen para timezone offset si es necesario, pero start of day comparison suele bastar
-            }
-
-            const isDelayed = t.estado !== 'Hecha' && targetDate && targetDate.getTime() < todayStart.getTime();
-
-            if (!areaStats[area]) areaStats[area] = { total: 0, atrasadas: 0, pendientes: 0, enCurso: 0, hechas: 0, bloqueadas: 0 };
-
-            areaStats[area].total++;
-
-            // Status counts
-            if (t.estado === 'Pendiente') areaStats[area].pendientes++;
-            else if (t.estado === 'EnCurso') areaStats[area].enCurso++;
-            else if (t.estado === 'Hecha') areaStats[area].hechas++;
-            else if (t.estado === 'Bloqueada') areaStats[area].bloqueadas++;
-
-            if (isDelayed) {
-                areaStats[area].atrasadas++;
-            }
-
-            // Populate drilldown data
-            tasksDetails.push({
-                id: t.idTarea,
-                titulo: t.titulo,
-                responsable: t.asignados?.[0]?.usuario?.nombre || 'Sin asignar',
-                estado: t.estado,
-                isDelayed,
-                area,
-                fechaObjetivo: t.fechaObjetivo
-            });
-        });
-
-        const hierarchyBreakdown = Object.entries(areaStats).map(([name, stats]) => ({
-            name,
-            ...stats,
-            cumplimiento: stats.total > 0 ? Math.round(((stats.total - stats.atrasadas) / stats.total) * 100) : 100
-        })).sort((a, b) => a.cumplimiento - b.cumplimiento); // Sort by lowest compliance (worst first)
-
-        // 3. Detailed Top Delays
-        const overdueTasks = tasks.filter(t => t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today);
-        const topDelays = overdueTasks
-            .map(t => ({
-                id: t.idTarea,
-                titulo: t.titulo,
-                usuario: t.plan?.usuario?.nombre || 'Desconocido',
-                area: t.proyecto?.area || 'General',
-                fechaObjetivo: t.fechaObjetivo,
-                diasAtraso: Math.floor((today.getTime() - new Date(t.fechaObjetivo).getTime()) / (1000 * 3600 * 24))
-            }))
-            .sort((a, b) => b.diasAtraso - a.diasAtraso)
-            .slice(0, 15);
-
-        // 4. Project List with Progress - FILTRADO POR USUARIOS VISIBLES
-        const activeProjects = await this.proyectoRepo.find({
-            where: { estado: 'Activo' },
-            relations: ['tareas', 'tareas.asignados']
-        });
-
-        // Filtrar proyectos: solo los que tienen tareas asignadas a usuarios visibles
-        let filteredProjectsSorted = activeProjects.filter(p => {
-            if (!p.tareas || p.tareas.length === 0) return false;
-            // El proyecto es visible si al menos una tarea tiene un asignado en visibleUserIds
-            return p.tareas.some(t =>
-                t.asignados?.some(a => visibleUserIds.includes(a.idUsuario))
-            );
-        });
-
-        // FALLBACK: Si no hay proyectos por asignación directa, buscar por gerencia/departamento
-        if (filteredProjectsSorted.length === 0 && !isAdmin) {
-            const gerenciasVisibles = new Set<string>();
-            if (requestingUser?.departamento) {
-                gerenciasVisibles.add(requestingUser.departamento.toUpperCase());
-            }
-
-            const subordinados = await this.userRepo.find({
-                where: { idUsuario: In(visibleUserIds) },
-                select: ['departamento', 'cargo']
-            });
-            subordinados.forEach(s => {
-                if (s.departamento) gerenciasVisibles.add(s.departamento.toUpperCase());
-                if (s.cargo?.toUpperCase().includes('RECURSOS HUMANOS')) {
-                    gerenciasVisibles.add('RECURSOS HUMANOS');
-                }
-            });
-
-            if (gerenciasVisibles.size > 0) {
-                filteredProjectsSorted = activeProjects.filter(p => {
-                    const proyGerencia = (p.gerencia || '').toUpperCase();
-                    const proySubgerencia = (p.subgerencia || '').toUpperCase();
-                    return Array.from(gerenciasVisibles).some(g =>
-                        proyGerencia.includes(g) || proySubgerencia.includes(g) ||
-                        (g.includes('RECURSOS HUMANOS') && proyGerencia.includes('RECURSOS HUMANOS'))
-                    );
-                });
-            }
-        }
-
-        const projectsStats = filteredProjectsSorted.map(p => {
-            // Filtrar solo las tareas de usuarios visibles dentro del proyecto
-            const pTasks = (p.tareas || []).filter(t =>
-                t.asignados?.some(a => visibleUserIds.includes(a.idUsuario))
-            );
-            const total = pTasks.length;
-            const done = pTasks.filter(t => t.estado === 'Hecha').length;
-            const inProgress = pTasks.filter(t => t.estado === 'EnCurso').length;
-            const progress = total > 0 ? Math.round((done / total) * 100) : 0;
-            const atrasadas = pTasks.filter(t => t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today).length;
-            const bloqueadas = pTasks.filter(t => t.estado === 'Bloqueada').length;
-
-            // Calcular progreso esperado basado en cronograma
-            let expectedProgress = 0;
-            if (p.fechaInicio && p.fechaFin) {
-                const startDate = new Date(p.fechaInicio);
-                const endDate = new Date(p.fechaFin);
-                const totalMs = endDate.getTime() - startDate.getTime();
-                const elapsedMs = today.getTime() - startDate.getTime();
-
-                if (totalMs > 0) {
-                    if (today < startDate) expectedProgress = 0;
-                    else if (today > endDate) expectedProgress = 100;
-                    else expectedProgress = Math.round((elapsedMs / totalMs) * 100);
-                }
-            } else if (pTasks.length > 0) {
-                // Fallback por fechas de tareas
-                const tasksWithDates = pTasks.filter(t => t.fechaInicioPlanificada && t.fechaObjetivo);
-                if (tasksWithDates.length > 0) {
-                    const taskStarts = tasksWithDates.map(t => new Date(t.fechaInicioPlanificada!).getTime());
-                    const taskEnds = tasksWithDates.map(t => new Date(t.fechaObjetivo!).getTime());
-                    const earliestStart = Math.min(...taskStarts);
-                    const latestEnd = Math.max(...taskEnds);
-                    const totalMs = latestEnd - earliestStart;
-                    const elapsedMs = today.getTime() - earliestStart;
-                    if (totalMs > 0 && elapsedMs >= 0) {
-                        expectedProgress = Math.min(Math.round((elapsedMs / totalMs) * 100), 100);
-                    }
-                }
-            }
-
-            const deviation = progress - expectedProgress;
+            const globalCompletion = totalAll > 0 ? Math.round((hechasAll / totalAll) * 100) : 0;
 
             return {
-                id: p.idProyecto,
-                nombre: p.nombre,
-                gerencia: p.gerencia,
-                subgerencia: p.subgerencia,
-                area: p.area,
-                fechaInicio: p.fechaInicio,
-                fechaFin: p.fechaFin,
-                progress,
-                expectedProgress,  // NUEVO
-                deviation,         // NUEVO
-                totalTasks: total,
-                hechas: done,
-                enCurso: inProgress,
-                atrasadas,
-                bloqueadas,
-                tareas: pTasks.map(t => ({
-                    id: t.idTarea,
-                    titulo: t.titulo,
-                    estado: t.estado,
-                    prioridad: t.prioridad,
-                    progreso: t.progreso || 0,
-                    fechaInicio: t.fechaInicioPlanificada,
-                    fechaObjetivo: t.fechaObjetivo,
-                    atrasada: t.estado !== 'Hecha' && t.fechaObjetivo && new Date(t.fechaObjetivo) < today
-                })).slice(0, 50)
+                statusDistribution: [
+                    { name: 'Pendientes', value: totalAll - hechasAll - atrasadasAll, fill: '#94a3b8' },
+                    { name: 'Atrasadas', value: atrasadasAll, fill: '#f43f5e' },
+                    { name: 'Hechas', value: hechasAll, fill: '#10b981' },
+                ],
+                globalCompletion,
+                totalActivePlans: projectsStats.length,
+                usersWithoutPlanCount: usersWithoutPlan.length,
+                usersWithoutPlan: usersWithoutPlan,
+                hierarchyBreakdown,
+                topDelays,
+                projectsStats,
+                blockersDetail,
+                visibleTeamCount: visibleUsers.length,
+                bottlenecks: topDelays.slice(0, 5),
+                tasksDetails: allTasksRaw || []
             };
-        }).sort((a, b) => a.deviation - b.deviation); // Ordenar por mayor atraso primero
+        } catch (error) {
+            console.error('Error in getDashboardStats:', error);
+            return this.getEmptyStats();
+        }
+    }
 
-        // 5. Blockers Detail
-        const activeBlockers = await this.bloqueoRepo.find({
-            where: { estado: 'Activo' },
-            relations: ['tarea', 'tarea.proyecto', 'origenUsuario']
-        });
-
-        const blockersDetail = activeBlockers.map(b => ({
-            id: b.idBloqueo,
-            motivo: b.motivo,
-            fecha: b.fechaCreacion,
-            usuario: b.origenUsuario?.nombre,
-            tarea: b.tarea?.titulo,
-            proyecto: b.tarea?.proyecto?.nombre,
-            dias: Math.floor((today.getTime() - new Date(b.fechaCreacion).getTime()) / (1000 * 3600 * 24))
-        })).sort((a, b) => b.dias - a.dias);
-
+    private getEmptyStats() {
         return {
-            statusDistribution: [
-                { name: 'Borrador', value: statusDist.Borrador, fill: '#94a3b8' },
-                { name: 'Confirmado', value: statusDist.Confirmado, fill: '#f59e0b' },
-                { name: 'Cerrado', value: statusDist.Cerrado, fill: '#10b981' },
-            ],
-            globalCompletion: completionRate,
-            totalActivePlans: plans.length,
-            usersWithoutPlanCount: usersWithoutPlan.length,
-            usersWithoutPlan,
-            hierarchyBreakdown,
-            topDelays,
-            projectsStats,
-            blockersDetail,
-            bottlenecks: hierarchyBreakdown.map(h => ({ name: h.name, count: h.atrasadas })).slice(0, 5),
-            tasksDetails
+            statusDistribution: [],
+            globalCompletion: 0,
+            totalActivePlans: 0,
+            usersWithoutPlanCount: 0,
+            usersWithoutPlan: [],
+            hierarchyBreakdown: [],
+            topDelays: [],
+            projectsStats: [],
+            blockersDetail: [],
+            bottlenecks: [],
+            tasksDetails: []
         };
     }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { TopBar } from '../../components/layout/TopBar';
 import type { Tarea, Proyecto } from '../../types/modelos';
-import { Plus, Inbox, MoreHorizontal, Play } from 'lucide-react';
+import { Plus, Inbox, MoreHorizontal, Play, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { clarityService } from '../../services/clarity.service';
@@ -19,12 +19,50 @@ export const PendientesPage: React.FC = () => {
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [menuPos, setMenuPos] = useState<{ top: number, right: number } | null>(null);
 
-    // Filter tasks based on selected project
+    // Filters & Pagination
+    const [searchTerm, setSearchTerm] = useState('');
+    const [priorityFilter, setPriorityFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    // Filter tasks based on selected project, search, and priority
     const filteredTasks = useMemo(() => {
-        if (selectedProjectId === 'all') return tasks;
-        if (selectedProjectId === '') return tasks.filter(t => !t.idProyecto);
-        return tasks.filter(t => t.idProyecto === selectedProjectId);
-    }, [tasks, selectedProjectId]);
+        let result = tasks;
+
+        // Project Filter
+        if (selectedProjectId !== 'all') {
+            if (selectedProjectId === '') result = result.filter(t => !t.idProyecto);
+            else result = result.filter(t => t.idProyecto === selectedProjectId);
+        }
+
+        // Priority Filter
+        if (priorityFilter !== 'all') {
+            result = result.filter(t => t.prioridad === priorityFilter);
+        }
+
+        // Search Filter
+        if (searchTerm) {
+            const lower = searchTerm.toLowerCase();
+            result = result.filter(t =>
+                t.titulo.toLowerCase().includes(lower) ||
+                (t.descripcion || '').toLowerCase().includes(lower)
+            );
+        }
+
+        return result;
+    }, [tasks, selectedProjectId, priorityFilter, searchTerm]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
+    const paginatedTasks = filteredTasks.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedProjectId, priorityFilter, searchTerm]);
 
     const fetchInitialData = async () => {
         if (!user) return;
@@ -86,8 +124,8 @@ export const PendientesPage: React.FC = () => {
             <div className="max-w-7xl mx-auto p-6 space-y-6">
 
                 {/* Header & Controls */}
-                <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
-                    <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
+                    <div className="flex items-center gap-4">
                         <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
                             <Inbox size={24} />
                         </div>
@@ -97,26 +135,11 @@ export const PendientesPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto items-center">
-                        <select
-                            className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-100"
-                            value={selectedProjectId}
-                            onChange={e => {
-                                const v = e.target.value;
-                                if (v === 'all') setSelectedProjectId('all');
-                                else if (v === '') setSelectedProjectId('');
-                                else setSelectedProjectId(Number(v));
-                            }}
-                        >
-                            <option value="all">Todos los Proyectos</option>
-                            <option value="">Sin Proyecto</option>
-                            {projects.map(p => (
-                                <option key={p.idProyecto} value={p.idProyecto}>{p.nombre}</option>
-                            ))}
-                        </select>
-                        <div className="flex-1 md:w-64 bg-gray-50 border border-gray-200 rounded-lg flex items-center px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <div className="flex-1 w-full md:w-auto flex flex-col md:flex-row gap-2 justify-end">
+                        {/* Creation Input */}
+                        <div className="w-full md:w-96 bg-indigo-50/50 border border-indigo-100 rounded-lg flex items-center px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                             <input
-                                className="bg-transparent outline-none w-full"
+                                className="bg-transparent outline-none w-full font-medium"
                                 placeholder="+ Nueva Tarea Rápida..."
                                 value={newTaskTitle}
                                 onChange={e => setNewTaskTitle(e.target.value)}
@@ -126,6 +149,59 @@ export const PendientesPage: React.FC = () => {
                                 <Plus size={18} />
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                {/* Filters Toolbar */}
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div className="flex gap-2 flex-1 w-full md:w-auto overflow-x-auto pb-1">
+                        {/* Search */}
+                        <div className="relative min-w-[220px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-500 transition-colors"
+                                placeholder="Buscar en mis tareas..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Project Filter */}
+                        <select
+                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 cursor-pointer max-w-[200px] truncate"
+                            value={selectedProjectId}
+                            onChange={e => {
+                                const v = e.target.value;
+                                if (v === 'all') setSelectedProjectId('all');
+                                else if (v === '') setSelectedProjectId('');
+                                else setSelectedProjectId(Number(v));
+                            }}
+                        >
+                            <option value="all">📁 Todos los Proyectos</option>
+                            <option value="">📂 Sin Proyecto</option>
+                            {projects.map(p => (
+                                <option key={p.idProyecto} value={p.idProyecto}>{p.nombre}</option>
+                            ))}
+                        </select>
+
+                        {/* Priority Filter */}
+                        <div className="relative">
+                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                            <select
+                                className="bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                value={priorityFilter}
+                                onChange={e => setPriorityFilter(e.target.value)}
+                            >
+                                <option value="all">Todas Prioridades</option>
+                                <option value="Alta">🔥 Alta</option>
+                                <option value="Media">⚡ Media</option>
+                                <option value="Baja">☕ Baja</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                        Mostrando {paginatedTasks.length} de {filteredTasks.length} tareas
                     </div>
                 </div>
 
@@ -154,11 +230,17 @@ export const PendientesPage: React.FC = () => {
                                 {!loading && filteredTasks.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
-                                            Sin tareas en este filtro.
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Search size={32} className="opacity-20" />
+                                                <p>No se encontraron tareas con estos filtros.</p>
+                                                <button onClick={() => { setSearchTerm(''); setPriorityFilter('all'); setSelectedProjectId('all'); }} className="text-indigo-600 text-xs font-bold hover:underline">
+                                                    Limpiar filtros
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}
-                                {filteredTasks.map((task) => (
+                                {paginatedTasks.map((task) => (
                                     <tr key={task.idTarea} className="hover:bg-indigo-50/30 transition-colors group">
                                         <td className="px-6 py-4 font-mono text-gray-400 text-xs">#{task.idTarea}</td>
                                         <td className="px-6 py-4">
@@ -218,82 +300,126 @@ export const PendientesPage: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-                </div>
 
-                {/* GLOBAL ACTION MENU (Rendered outside table to avoid clipping) */}
-                {activeMenuId && menuPos && (
-                    <div
-                        className="fixed z-[100] w-56 bg-white rounded-xl shadow-2xl ring-1 ring-slate-900/10 text-left animate-in fade-in zoom-in-95 duration-100 origin-top-right"
-                        style={{ top: menuPos.top, right: menuPos.right }}
-                    >
-                        <div className="py-1">
+                    {/* Pagination Footer */}
+                    {totalPages > 1 && (
+                        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                             <button
-                                onClick={() => {
-                                    const t = tasks.find(x => x.idTarea === activeMenuId);
-                                    if (t) setSelectedTask(t);
-                                    setActiveMenuId(null);
-                                }}
-                                className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 flex items-center gap-3 font-medium border-b border-gray-50"
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent text-gray-500"
                             >
-                                <span>✏️</span> Editar Tarea
+                                <ChevronLeft size={20} />
                             </button>
 
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        await clarityService.actualizarTarea(activeMenuId, { estado: 'EnCurso' });
-                                        showToast('Tarea movida a Agenda', 'success');
-                                        fetchInitialData();
-                                    } catch (err) { showToast('Error al mover', 'error'); }
-                                    setActiveMenuId(null);
-                                }}
-                                className="w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 flex items-center gap-3 font-bold border-b border-indigo-50"
-                            >
-                                <Play size={16} /> Mover a Agenda
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1))
+                                    .map((p, i, arr) => (
+                                        <React.Fragment key={p}>
+                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="px-2 text-gray-400">...</span>}
+                                            <button
+                                                onClick={() => setCurrentPage(p)}
+                                                className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors ${currentPage === p
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                                    }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        </React.Fragment>
+                                    ))
+                                }
+                            </div>
 
                             <button
-                                onClick={async () => {
-                                    try {
-                                        await clarityService.actualizarTarea(activeMenuId, { estado: 'Hecha' });
-                                        showToast('Tarea completada', 'success');
-                                        setTasks(prev => prev.filter(t => t.idTarea !== activeMenuId));
-                                    } catch (err) { showToast('Error al completar', 'error'); }
-                                    setActiveMenuId(null);
-                                }}
-                                className="w-full px-4 py-3 text-sm text-emerald-700 hover:bg-emerald-50 flex items-center gap-3 font-bold border-b border-emerald-50"
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent text-gray-500"
                             >
-                                <span>✅</span> Completar
-                            </button>
-
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        await clarityService.actualizarTarea(activeMenuId, { estado: 'Descartada' });
-                                        showToast('Tarea descartada', 'success');
-                                        setTasks(prev => prev.filter(t => t.idTarea !== activeMenuId));
-                                    } catch (err) { showToast('Error al descartar', 'error'); }
-                                    setActiveMenuId(null);
-                                }}
-                                className="w-full px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-3 font-medium"
-                            >
-                                <span>🗑️</span> Descartar
+                                <ChevronRight size={20} />
                             </button>
                         </div>
-                    </div>
-                )}
-                {/* Global Action Menu outside of table scope */}
+                    )}
+                </div>
             </div>
 
-            {selectedTask && (
-                <ReadTaskDetailModal
-                    task={selectedTask}
-                    onClose={() => setSelectedTask(null)}
-                    onUpdate={() => {
-                        fetchInitialData();
-                    }}
-                />
+            {/* GLOBAL ACTION MENU (Rendered outside table to avoid clipping) */}
+            {activeMenuId && menuPos && (
+                <div
+                    className="fixed z-[100] w-56 bg-white rounded-xl shadow-2xl ring-1 ring-slate-900/10 text-left animate-in fade-in zoom-in-95 duration-100 origin-top-right"
+                    style={{ top: menuPos.top, right: menuPos.right }}
+                >
+                    <div className="py-1">
+                        <button
+                            onClick={() => {
+                                const t = tasks.find(x => x.idTarea === activeMenuId);
+                                if (t) setSelectedTask(t);
+                                setActiveMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 flex items-center gap-3 font-medium border-b border-gray-50"
+                        >
+                            <span>✏️</span> Editar Tarea
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await clarityService.actualizarTarea(activeMenuId, { estado: 'EnCurso' });
+                                    showToast('Tarea movida a Agenda', 'success');
+                                    fetchInitialData();
+                                } catch (err) { showToast('Error al mover', 'error'); }
+                                setActiveMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 flex items-center gap-3 font-bold border-b border-indigo-50"
+                        >
+                            <Play size={16} /> Mover a Agenda
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await clarityService.actualizarTarea(activeMenuId, { estado: 'Hecha' });
+                                    showToast('Tarea completada', 'success');
+                                    setTasks(prev => prev.filter(t => t.idTarea !== activeMenuId));
+                                } catch (err) { showToast('Error al completar', 'error'); }
+                                setActiveMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-sm text-emerald-700 hover:bg-emerald-50 flex items-center gap-3 font-bold border-b border-emerald-50"
+                        >
+                            <span>✅</span> Completar
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await clarityService.actualizarTarea(activeMenuId, { estado: 'Descartada' });
+                                    showToast('Tarea descartada', 'success');
+                                    setTasks(prev => prev.filter(t => t.idTarea !== activeMenuId));
+                                } catch (err) { showToast('Error al descartar', 'error'); }
+                                setActiveMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-3 font-medium"
+                        >
+                            <span>🗑️</span> Descartar
+                        </button>
+                    </div>
+                </div>
             )}
-        </div>
+            {/* Global Action Menu outside of table scope */}
+
+
+            {
+                selectedTask && (
+                    <ReadTaskDetailModal
+                        task={selectedTask}
+                        onClose={() => setSelectedTask(null)}
+                        onUpdate={() => {
+                            fetchInitialData();
+                        }}
+                    />
+                )
+            }
+        </div >
     );
 };

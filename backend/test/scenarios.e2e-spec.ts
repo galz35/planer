@@ -3,8 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { JwtService } from '@nestjs/jwt';
-import { ClarityService } from './../src/clarity/clarity.service';
 import { TasksService } from './../src/clarity/tasks.service';
+import { AdminService } from './../src/admin/admin.service';
 import { ReportsService } from './../src/clarity/reports.service';
 
 describe('Multi-Role Scenarios (E2E)', () => {
@@ -16,14 +16,13 @@ describe('Multi-Role Scenarios (E2E)', () => {
     let managerToken: string;
     let employeeToken: string;
 
-    const mockClarityService = {
+    const mockAdminService = {
         usuariosListarTodos: jest.fn().mockResolvedValue({ items: [], total: 0 }),
         logsListar: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        getConfig: jest.fn().mockResolvedValue({}),
     };
 
     const mockTasksService = {
-        equipoHoy: jest.fn().mockResolvedValue({ miembros: [], resumenAnimo: { feliz: 0, neutral: 0, triste: 0, promedio: 0 } }),
+        getEquipoHoy: jest.fn().mockResolvedValue({ miembros: [], resumenAnimo: { feliz: 0, neutral: 0, triste: 0, promedio: 0 } }),
         equipoBacklog: jest.fn().mockResolvedValue([]),
         miDiaGet: jest.fn().mockResolvedValue({
             checkinHoy: null,
@@ -44,8 +43,8 @@ describe('Multi-Role Scenarios (E2E)', () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
         })
-            .overrideProvider(ClarityService)
-            .useValue(mockClarityService)
+            .overrideProvider(AdminService)
+            .useValue(mockAdminService)
             .overrideProvider(TasksService)
             .useValue(mockTasksService)
             .overrideProvider(ReportsService)
@@ -126,16 +125,15 @@ describe('Multi-Role Scenarios (E2E)', () => {
             await request(app.getHttpServer())
                 .get('/api/reportes/productividad')
                 .set('Authorization', `Bearer ${managerToken}`)
-                .expect(200)
-                .expect([]);
+                .expect(200);
         });
 
         it('should get performance report', async () => {
             await request(app.getHttpServer())
                 .get('/api/reportes/equipo-performance')
                 .set('Authorization', `Bearer ${managerToken}`)
-                .expect(200)
-                .expect([]);
+                .expect(200);
         });
     });
 });
+

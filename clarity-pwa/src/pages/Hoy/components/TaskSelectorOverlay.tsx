@@ -8,12 +8,15 @@ interface Props {
     onSelect: (task: Tarea) => void;
     onClose: () => void;
     isSelected: (id: number) => boolean;
-    onQuickAdd: (title: string, type: 'Entrego' | 'Avanzo' | 'Extra', index: number) => Promise<void>;
+    onQuickAdd: (title: string, type: 'Entrego' | 'Avanzo' | 'Extra', index: number, projectId?: number) => Promise<void>;
     selectionContext: { type: 'Entrego' | 'Avanzo' | 'Extra', index: number };
+    projects?: { idProyecto: number; nombre: string }[];
+    defaultProjectId?: number | '';
 }
 
-export const TaskSelectorOverlay: React.FC<Props> = ({ disponibles, onSelect, onClose, isSelected, onQuickAdd, selectionContext }) => {
+export const TaskSelectorOverlay: React.FC<Props> = ({ disponibles, onSelect, onClose, isSelected, onQuickAdd, selectionContext, projects = [], defaultProjectId }) => {
     const [quickVal, setQuickVal] = useState('');
+    const [creationProjectId, setCreationProjectId] = useState<number | ''>(defaultProjectId || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { showToast } = useToast();
 
@@ -23,7 +26,7 @@ export const TaskSelectorOverlay: React.FC<Props> = ({ disponibles, onSelect, on
 
         setIsSubmitting(true);
         try {
-            await onQuickAdd(quickVal, selectionContext.type, selectionContext.index);
+            await onQuickAdd(quickVal, selectionContext.type, selectionContext.index, creationProjectId !== '' ? creationProjectId : undefined);
             showToast('Tarea rápida creada', 'success');
             // Overlay closes automatically via parent update
         } catch (error) {
@@ -55,21 +58,33 @@ export const TaskSelectorOverlay: React.FC<Props> = ({ disponibles, onSelect, on
 
                 {/* Quick Create in Overlay */}
                 <div className="p-4 border-b bg-white relative">
-                    <input
-                        autoFocus
-                        type="text"
-                        disabled={isSubmitting}
-                        value={quickVal}
-                        onChange={(e) => setQuickVal(e.target.value)}
-                        placeholder={isSubmitting ? "Creando tarea..." : "Escribe nueva tarea y presiona Enter..."}
-                        className={`w-full bg-slate-100 p-4 rounded-xl outline-none border border-transparent focus:border-indigo-500 focus:bg-white transition-all font-medium ${isSubmitting ? 'opacity-50 cursor-wait' : ''}`}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleQuickAddLocal();
-                            }
-                        }}
-                    />
+                    <div className="w-full bg-slate-100 p-2 rounded-xl border border-transparent focus-within:border-indigo-500 focus-within:bg-white transition-all flex items-center gap-2">
+                        <select
+                            value={creationProjectId}
+                            onChange={(e) => setCreationProjectId(e.target.value ? Number(e.target.value) : '')}
+                            className="bg-transparent text-xs font-bold text-indigo-600 outline-none cursor-pointer max-w-[80px] truncate border-r border-slate-300 pr-1 py-2"
+                            title="Proyecto Destino"
+                            disabled={isSubmitting}
+                        >
+                            <option value="">📥 Inbox</option>
+                            {projects.map(p => <option key={p.idProyecto} value={p.idProyecto}>{p.nombre}</option>)}
+                        </select>
+                        <input
+                            autoFocus
+                            type="text"
+                            disabled={isSubmitting}
+                            value={quickVal}
+                            onChange={(e) => setQuickVal(e.target.value)}
+                            placeholder={isSubmitting ? "Creando tarea..." : "Buscar o crear nueva tarea..."}
+                            className={`flex-1 bg-transparent outline-none font-medium ${isSubmitting ? 'opacity-50 cursor-wait' : ''}`}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleQuickAddLocal();
+                                }
+                            }}
+                        />
+                    </div>
                     {isSubmitting && (
                         <div className="absolute right-8 top-1/2 -translate-y-1/2">
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
@@ -78,26 +93,35 @@ export const TaskSelectorOverlay: React.FC<Props> = ({ disponibles, onSelect, on
                 </div>
 
                 <div className="overflow-y-auto p-2 space-y-2 bg-slate-50 flex-1">
-                    {disponibles.filter(t => !isSelected(t.idTarea)).map((t, i) => (
-                        <button
-                            key={t.idTarea}
-                            type="button"
-                            onClick={() => onSelect(t)}
-                            className={`w-full text-left p-4 rounded-xl border shadow-sm hover:border-indigo-400 active:scale-[0.98] transition-all relative group
+                    {disponibles
+                        .filter(t => !isSelected(t.idTarea))
+                        .filter(t => {
+                            if (!quickVal.trim()) return true;
+                            const query = quickVal.toLowerCase();
+                            // Search by title or project name
+                            return t.titulo.toLowerCase().includes(query) ||
+                                (t.proyecto?.nombre || '').toLowerCase().includes(query);
+                        })
+                        .map((t, i) => (
+                            <button
+                                key={t.idTarea}
+                                type="button"
+                                onClick={() => onSelect(t)}
+                                className={`w-full text-left p-4 rounded-xl border shadow-sm hover:border-indigo-400 active:scale-[0.98] transition-all relative group
                              ${i < 3 ? 'bg-white border-l-4 border-l-indigo-500 border-slate-200' : 'bg-white border-slate-200'} `}
-                        >
-                            {i < 3 && <span className="absolute top-2 right-2 text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">Prioridad</span>}
+                            >
+                                {i < 3 && <span className="absolute top-2 right-2 text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">Prioridad</span>}
 
-                            <p className="font-bold text-slate-700 text-base mb-1">{t.titulo}</p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">{t.proyecto?.nombre}</span>
-                                {t.prioridad === 'Alta' && <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded font-bold">Alta</span>}
-                            </div>
-                            <div className="mt-2 text-[10px] text-slate-400 font-medium">
-                                Activa hace {getDaysActive(t.fechaCreacion)} días
-                            </div>
-                        </button>
-                    ))}
+                                <p className="font-bold text-slate-700 text-base mb-1">{t.titulo}</p>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">{t.proyecto?.nombre}</span>
+                                    {t.prioridad === 'Alta' && <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded font-bold">Alta</span>}
+                                </div>
+                                <div className="mt-2 text-[10px] text-slate-400 font-medium">
+                                    Activa hace {getDaysActive(t.fechaCreacion)} días
+                                </div>
+                            </button>
+                        ))}
                     {disponibles.filter(t => !isSelected(t.idTarea)).length === 0 && (
                         <div className="p-12 text-center text-slate-400 text-sm flex flex-col items-center gap-2">
                             <CheckCircle2 size={32} className="text-slate-300" />

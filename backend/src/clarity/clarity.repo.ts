@@ -348,6 +348,13 @@ export async function bloquearTarea(dto: any) {
     }
 }
 
+export async function resolverBloqueo(idBloqueo: number, resolucion: string) {
+    await ejecutarQuery(`UPDATE p_Bloqueos SET estado = 'Resuelto', resolucion = @res, fechaResolucion = GETDATE() WHERE idBloqueo = @id`, {
+        res: { valor: resolucion, tipo: NVarChar },
+        id: { valor: idBloqueo, tipo: Int }
+    });
+}
+
 export async function obtenerTareasHistorico(carnet: string, dias: number) {
     // Esta query devuelve las tareas junto con las fechas en que fueron trabajadas (desde check-ins)
     // La Bitácora usará 'fechaTrabajada' para agrupar las tareas por día

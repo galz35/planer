@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Tarea, CheckinUpsertDto, Bloqueo } from '../../../types/modelos';
+import type { Tarea, CheckinUpsertDto, Bloqueo, Proyecto } from '../../../types/modelos';
 import { Zap, Battery, BatteryWarning, Plus, X, CheckCircle2, Circle, MessageSquare, Send, Trash2 } from 'lucide-react';
 import { TaskDetailModal } from '../../../components/ui/TaskDetailModal';
 import { TaskSelectorOverlay } from './TaskSelectorOverlay';
@@ -41,8 +41,23 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
     const [quickLogId, setQuickLogId] = useState<number | null>(null);
     const [quickLogText, setQuickLogText] = useState('');
     const [viewBlockers, setViewBlockers] = useState(false);
+    const [lastCreationProjectId, setLastCreationProjectId] = useState<number | ''>('');
+    const [localTasks, setLocalTasks] = useState<Tarea[]>([]); // Tareas creadas localmente para visualización inmediata
 
     // Initialize arrays from initialData
+    const [projects, setProjects] = useState<Proyecto[]>([]);
+
+    useEffect(() => {
+        const loadP = async () => {
+            try {
+                const { clarityService } = await import('../../../services/clarity.service');
+                const p = await clarityService.getProyectos();
+                setProjects((p as any).items || p || []);
+            } catch { } // Silent fail
+        };
+        loadP();
+    }, []);
+
     useEffect(() => {
         if (initialData?.entrego && initialData.entrego.length > 0) {
             const newArr = [...initialData.entrego];
@@ -66,7 +81,7 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
     // Helpers
     const getTask = (id: number | null) => {
         if (!id) return null;
-        return disponibles.find(t => t.idTarea === id) || checkinTasks.find(t => t.idTarea === id);
+        return disponibles.find(t => t.idTarea === id) || checkinTasks.find(t => t.idTarea === id) || localTasks.find(t => t.idTarea === id);
     };
     const isSelected = (id: number) => entregoIds.includes(id) || avanzoIds.includes(id) || extraIds.includes(id);
 
@@ -139,8 +154,12 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
         setSelectingFor(null);
     };
 
-    const handleQuickAdd = async (val: string) => {
+    const handleQuickAdd = async (val: string, _type?: any, _index?: any, projectId?: number) => {
         if (!val.trim() || !selectingFor) return;
+
+        // Save preference for next time
+        setLastCreationProjectId(projectId !== undefined ? projectId : '');
+
         try {
             const { clarityService } = await import('../../../services/clarity.service');
             const prioridad = selectingFor.type === 'Entrego' ? 'Alta' : selectingFor.type === 'Avanzo' ? 'Media' : 'Baja';
@@ -149,11 +168,16 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
             const newT = await clarityService.postTareaRapida({
                 titulo: val,
                 idUsuario: userId,
+                idProyecto: projectId,
                 prioridad,
                 esfuerzo
             });
             if (onTaskCreated) await onTaskCreated();
-            const tempTask = { ...newT, proyecto: { nombre: 'Inbox' } } as unknown as Tarea;
+
+            const realProject = projects.find(p => p.idProyecto === projectId);
+            const tempTask = { ...newT, proyecto: realProject || { nombre: 'Inbox' } } as unknown as Tarea;
+
+            setLocalTasks(prev => [...prev, tempTask]);
             handleSelectTask(tempTask);
         } catch (err) { showToast('Error creando tarea', 'error'); }
     };
@@ -344,6 +368,8 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
                     onSelect={handleSelectTask}
                     isSelected={isSelected}
                     onQuickAdd={handleQuickAdd}
+                    projects={projects}
+                    defaultProjectId={lastCreationProjectId}
                 />
             )}
 

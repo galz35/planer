@@ -15,6 +15,7 @@ export const PendientesPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [selectedProjectId, setSelectedProjectId] = useState<number | '' | 'all'>('all');
+    const [creationProjectId, setCreationProjectId] = useState<number | ''>(''); // Proyecto destino al crear
     const [selectedTask, setSelectedTask] = useState<Tarea | null>(null);
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [menuPos, setMenuPos] = useState<{ top: number, right: number } | null>(null);
@@ -64,6 +65,15 @@ export const PendientesPage: React.FC = () => {
         setCurrentPage(1);
     }, [selectedProjectId, priorityFilter, searchTerm]);
 
+    // Sync creation project with filter project
+    useEffect(() => {
+        if (typeof selectedProjectId === 'number') {
+            setCreationProjectId(selectedProjectId);
+        } else if (selectedProjectId === '') {
+            setCreationProjectId('');
+        }
+    }, [selectedProjectId]);
+
     const fetchInitialData = async () => {
         if (!user) return;
         try {
@@ -100,7 +110,7 @@ export const PendientesPage: React.FC = () => {
             await clarityService.postTareaRapida({
                 titulo: newTaskTitle,
                 idUsuario: user.idUsuario,
-                idProyecto: typeof selectedProjectId === 'number' ? selectedProjectId : undefined,
+                idProyecto: creationProjectId !== '' ? creationProjectId : undefined,
                 prioridad: 'Media',
                 esfuerzo: 'M'
             });
@@ -137,7 +147,16 @@ export const PendientesPage: React.FC = () => {
 
                     <div className="flex-1 w-full md:w-auto flex flex-col md:flex-row gap-2 justify-end">
                         {/* Creation Input */}
-                        <div className="w-full md:w-96 bg-indigo-50/50 border border-indigo-100 rounded-lg flex items-center px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                        <div className="w-full md:min-w-[400px] bg-indigo-50/50 border border-indigo-100 rounded-lg flex items-center px-2 py-1 text-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all gap-1">
+                            <select
+                                value={creationProjectId}
+                                onChange={(e) => setCreationProjectId(e.target.value ? Number(e.target.value) : '')}
+                                className="bg-transparent text-xs font-bold text-indigo-800 outline-none cursor-pointer max-w-[100px] truncate border-r border-indigo-200 pr-1 mr-1"
+                                title="Proyecto Destino"
+                            >
+                                <option value="">📥 Inbox</option>
+                                {projects.map(p => <option key={p.idProyecto} value={p.idProyecto}>{p.nombre}</option>)}
+                            </select>
                             <input
                                 className="bg-transparent outline-none w-full font-medium"
                                 placeholder="+ Nueva Tarea Rápida..."

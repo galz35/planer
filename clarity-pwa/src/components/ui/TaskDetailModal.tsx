@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Tarea, Usuario } from '../../types/modelos';
 import {
     X, Save, AlertTriangle, CheckCircle, Ban, UserPlus, Calendar, AlignLeft, Users,
@@ -17,6 +18,7 @@ interface Props {
 
 export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) => {
     // Task Fields
+    const [titulo, setTitulo] = useState(task.titulo || '');
     const [progreso, setProgreso] = useState(task.progreso || 0);
     const [descripcion, setDescripcion] = useState(task.descripcion || '');
     const [fechaObjetivo, setFechaObjetivo] = useState(task.fechaObjetivo ? task.fechaObjetivo.split('T')[0] : '');
@@ -63,11 +65,13 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
         setSubmitting(true);
         try {
             // Detectar cambios en campos de definición para evitar llamadas innecesarias (y errores de permiso 403)
+            const currentTitulo = task.titulo || '';
             const currentFechaObj = task.fechaObjetivo ? task.fechaObjetivo.split('T')[0] : '';
             const currentFechaIni = task.fechaInicioPlanificada ? task.fechaInicioPlanificada.split('T')[0] : '';
             const currentDesc = task.descripcion || '';
 
             const hasDefinitionsChanged =
+                titulo.trim() !== currentTitulo.trim() ||
                 descripcion.trim() !== currentDesc.trim() ||
                 fechaObjetivo !== currentFechaObj ||
                 fechaInicioPlanificada !== currentFechaIni;
@@ -78,6 +82,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
 
                 if (changingDates && isLocked) {
                     setPendingChanges({
+                        titulo: titulo.trim() || undefined,
                         fechaObjetivo: fechaObjetivo || undefined,
                         fechaInicioPlanificada: fechaInicioPlanificada || undefined,
                         descripcion
@@ -88,6 +93,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                 }
 
                 await clarityService.actualizarTarea(task.idTarea, {
+                    titulo: titulo.trim() || undefined,
                     fechaObjetivo: fechaObjetivo || undefined,
                     fechaInicioPlanificada: fechaInicioPlanificada || undefined,
                     descripcion
@@ -249,25 +255,25 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
         }
     };
 
-    return (
+    return createPortal(
         <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ring-1 ring-slate-900/5">
 
                 {/* Header */}
-                <div className="p-5 border-b flex justify-between items-start bg-slate-50 relative overflow-hidden">
-                    {isStrategic && <div className="absolute top-0 left-0 w-2 h-full bg-purple-600" />}
+                <div className="px-6 py-5 border-b flex justify-between items-start bg-white relative overflow-hidden shrink-0">
+                    {isStrategic && <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-600" />}
 
-                    <div className="flex-1 pr-4 pl-2">
+                    <div className="flex-1 pr-8 pl-1 min-w-0">
                         <div className="flex gap-2 mb-2 items-center">
                             {isStrategic ? (
                                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 flex items-center gap-1 border border-purple-200">
                                     <Lock size={10} /> Estratégico
                                 </span>
                             ) : (
-                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 flex items-center gap-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1">
                                     Operativo
                                 </span>
                             )}
@@ -280,8 +286,19 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                             </span>
                         </div>
 
-                        <h3 className="font-bold text-xl text-slate-800 leading-snug">{task.titulo}</h3>
-                        <p className="text-xs text-slate-500 mt-1 uppercase tracking-wide">{task.proyecto?.nombre} • #{task.idTarea}</p>
+                        <textarea
+                            value={titulo}
+                            onChange={(e) => setTitulo(e.target.value)}
+                            onInput={(e) => {
+                                e.currentTarget.style.height = 'auto';
+                                e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                            }}
+                            rows={titulo.length > 60 ? 2 : 1}
+                            className="font-bold text-xl text-slate-800 leading-snug bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full transition-all py-1 -ml-1 pl-1 rounded resize-none overflow-hidden"
+                            placeholder="Nombre de la tarea"
+                            style={{ height: 'auto' }}
+                        />
+                        <p className="text-xs text-slate-500 mt-1 uppercase tracking-wide truncate">{task.proyecto?.nombre} • #{task.idTarea}</p>
                     </div>
 
                     <button onClick={onClose} className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-100">
@@ -289,12 +306,12 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto space-y-6 bg-white flex-1">
+                <div className="p-4 md:p-6 overflow-y-auto space-y-6 bg-white flex-1">
 
                     {/* MAIN */}
                     {view === 'Main' && (
                         <>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Fecha Inicio */}
                                 <div className={'space-y-1 p-3 rounded-lg border ' + (isLocked ? 'bg-slate-50 border-slate-200' : 'bg-white border-transparent')}>
                                     <label className="text-xs font-bold text-slate-400 uppercase flex items-center justify-between">
@@ -648,6 +665,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, onClose, onUpdate }) =>
                 valorAnterior={task.fechaObjetivo ? task.fechaObjetivo.split('T')[0] : 'N/A'}
                 valorNuevo={pendingChanges?.fechaObjetivo || pendingChanges?.fechaInicioPlanificada || ''}
             />
-        </div>
+        </div>,
+        document.body
     );
 };

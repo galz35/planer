@@ -1,3 +1,8 @@
+/**
+ * ¿QUÉ ES?: La página de inicio de sesión (Login).
+ * ¿PARA QUÉ SE USA?: Permite a los usuarios autenticarse ingresando su correo y contraseña.
+ * ¿QUÉ SE ESPERA?: Que valide las credenciales con el servidor, guarde el token de acceso y redirija al usuario a la aplicación principal.
+ */
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,18 +12,25 @@ import { api } from '../services/api';
 import type { ApiResponse } from '../types/api';
 
 export const LoginPage = () => {
+    // Estados para manejar el formulario y mensajes de error
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Acceso a la función de login del contexto global y navegación
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    /**
+     * ¿QUÉ ES?: El manejador del envío del formulario.
+     * ¿PARA QUÉ SE USA?: Para enviar las credenciales al backend y procesar la respuesta.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        // Validación de formato email
+        // Validación básica de formato email antes de enviar
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError('Por favor ingresa un correo válido');
@@ -33,15 +45,21 @@ export const LoginPage = () => {
         setIsLoading(true);
 
         try {
+            // Petición a la API de autenticación
             const { data: response } = await api.post<ApiResponse<any>>('/auth/login', { correo: email, password });
+
+            // Si tiene éxito, extraemos los tokens y los datos del usuario
             const { access_token, refresh_token, user } = response.data;
+
+            // Guardamos la sesión en el contexto global
             login(access_token, refresh_token, user);
+
+            // Redirigimos a la página principal "Hoy"
             navigate('/app/hoy');
         } catch (err: any) {
             console.error('[LOGIN ERROR] Failed to login', err);
-            if (err.response) {
-                console.error('[LOGIN] Response error data:', err.response.data);
-            }
+
+            // Manejo de errores amigable para el usuario
             const msg = err?.response?.data?.message;
             if (msg?.includes('credenciales') || msg?.includes('Credenciales')) {
                 setError('Correo o contraseña incorrectos');
@@ -55,32 +73,23 @@ export const LoginPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
-            {/* LEFT PANEL - BRANDING */}
+            {/* PANEL IZQUIERDO: Branding y diseño visual */}
             <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden items-center justify-center p-16">
-                {/* Animated background elements */}
                 <div className="absolute inset-0 opacity-30">
                     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_50%,rgba(236,72,153,0.15),transparent_50%)]"></div>
                     <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_50%,rgba(249,115,22,0.15),transparent_50%)]"></div>
                 </div>
 
-                {/* Decorative grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]"></div>
 
-                {/* Content */}
                 <div className="relative z-10 text-center">
-                    {/* ICON + TEXT CONTAINER with overlap effect */}
                     <div className="relative inline-block pb-24">
-                        {/* Icon glow */}
                         <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 blur-3xl opacity-20 hover:opacity-30 transition-opacity duration-500"></div>
-
-                        {/* Icon */}
                         <img
                             src="/momentus-logo2.png"
                             alt="Momentus"
                             className="h-64 w-auto relative z-10 drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
                         />
-
-                        {/* Brand name - OVERLAPPING bottom of icon */}
                         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-max z-20">
                             <h1 className="text-7xl font-black text-white mb-2 tracking-tight leading-none drop-shadow-2xl uppercase">
                                 PLANER-CLARO
@@ -93,10 +102,10 @@ export const LoginPage = () => {
                 </div>
             </div>
 
-            {/* RIGHT PANEL - LOGIN FORM */}
+            {/* PANEL DERECHO: Formulario de Login */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
                 <div className="w-full max-w-md">
-                    {/* Mobile logo */}
+                    {/* Logotipo para móviles */}
                     <div className="lg:hidden text-center mb-12">
                         <div className="relative inline-block pb-16">
                             <img
@@ -113,13 +122,10 @@ export const LoginPage = () => {
                         </div>
                     </div>
 
-                    {/* Form card - Premium Refined */}
                     <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        {/* Subtle brand accent bar */}
                         <div className="h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500"></div>
 
                         <div className="p-12">
-                            {/* Header */}
                             <div className="mb-10 text-center">
                                 <h2 className="text-3xl font-bold text-slate-900 mb-2">Iniciar Sesión</h2>
                                 <p className="text-slate-500 text-sm">Accede a tu cuenta</p>
@@ -146,7 +152,7 @@ export const LoginPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Password */}
+                                {/* Contraseña */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-slate-700">
                                         Contraseña
@@ -166,7 +172,7 @@ export const LoginPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Error */}
+                                {/* Mensajes de Error */}
                                 {error && (
                                     <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700">
                                         <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -174,7 +180,7 @@ export const LoginPage = () => {
                                     </div>
                                 )}
 
-                                {/* Submit button */}
+                                {/* Botón de Ingreso */}
                                 <button
                                     type="submit"
                                     disabled={isLoading}
@@ -202,3 +208,4 @@ export const LoginPage = () => {
         </div>
     );
 };
+

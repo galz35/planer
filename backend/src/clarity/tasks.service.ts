@@ -335,14 +335,14 @@ export class TasksService {
         const usuario = await authRepo.obtenerUsuarioPorId(idUsuario);
         if (!usuario) return { items: [], total: 0, page: 1, lastPage: 1 };
 
-        // 2. Si es Admin, ve todos los proyectos
+        // 2. Si es Admin, ve todos los proyectos (con filtros)
         if (['Admin', 'Administrador', 'SuperAdmin'].includes(usuario.rolGlobal || '')) {
-            const projects = await planningRepo.obtenerTodosProyectos();
+            const projects = await planningRepo.obtenerTodosProyectos(filter);
             return { items: projects, total: projects.length, page: 1, lastPage: 1 };
         }
 
-        // 3. Para usuarios normales, filtrar por visibilidad
-        const projects = await planningRepo.obtenerProyectosVisibles(idUsuario, usuario);
+        // 3. Para usuarios normales, filtrar por visibilidad y parámetros extra
+        const projects = await planningRepo.obtenerProyectosVisibles(idUsuario, usuario, filter);
         return {
             items: projects,
             total: projects.length,
@@ -494,6 +494,19 @@ export class TasksService {
             console.error("Error getEquipoBloqueos:", error);
             return [];
         }
+    }
+
+    // ===============================================
+    // BLOQUEOS RE-IMPLEMENTACIÓN
+    // ===============================================
+
+    async bloqueoCrear(dto: BloqueoCrearDto) {
+        return await clarityRepo.bloquearTarea(dto);
+    }
+
+    async bloqueoResolver(idBloqueo: number, body: any, idUsuarioResolver: number) {
+        await clarityRepo.resolverBloqueo(idBloqueo, body.solucion || 'Resuelto manualmente');
+        return { success: true };
     }
 }
 

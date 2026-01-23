@@ -2,7 +2,7 @@
  * Controlador de diagnóstico para verificar conexión a SQL Server
  */
 import { Controller, Get } from '@nestjs/common';
-import { ejecutarQuerySimple, ejecutarSP, Int, NVarChar, DateTime } from '../db/base.repo';
+import { ejecutarQuery, ejecutarSP, Int, NVarChar, DateTime } from '../db/base.repo';
 
 @Controller('diagnostico')
 export class DiagnosticoController {
@@ -14,7 +14,7 @@ export class DiagnosticoController {
     @Get('ping')
     async ping() {
         try {
-            const result = await ejecutarQuerySimple<{ ok: number }>('SELECT 1 AS ok');
+            const result = await ejecutarQuery<{ ok: number }>('SELECT 1 AS ok');
             return {
                 success: true,
                 db: 'SQL Server',
@@ -42,7 +42,7 @@ export class DiagnosticoController {
             const stats: Record<string, number> = {};
 
             for (const tabla of tablas) {
-                const result = await ejecutarQuerySimple<{ cnt: number }>(`SELECT COUNT(*) as cnt FROM ${tabla}`);
+                const result = await ejecutarQuery<{ cnt: number }>(`SELECT COUNT(*) as cnt FROM ${tabla}`);
                 stats[tabla] = result[0]?.cnt ?? 0;
             }
 
@@ -67,7 +67,7 @@ export class DiagnosticoController {
     @Get('contexto')
     async getContexto() {
         try {
-            const res = await ejecutarQuerySimple<{ db: string, server: string, schema: string }>(`
+            const res = await ejecutarQuery<{ db: string, server: string, schema: string }>(`
                 SELECT DB_NAME() AS db, @@SERVERNAME AS server, SCHEMA_NAME() AS [schema],
                 OBJECT_ID(N'dbo.p_Tareas') AS obj_dbo,
                 OBJECT_ID(N'p_Tareas') AS obj_resuelto
@@ -126,7 +126,7 @@ export class DiagnosticoController {
     @Get('test-idcreador')
     async testIdCreador() {
         try {
-            const result = await ejecutarQuerySimple(`
+            const result = await ejecutarQuery(`
                 SELECT TOP 1 idTarea, nombre, idCreador 
                 FROM p_Tareas
             `);

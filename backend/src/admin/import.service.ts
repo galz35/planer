@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ejecutarQuery, ejecutarQuerySimple, Int, NVarChar, BigInt } from '../db/base.repo';
+import { ejecutarQuery, Int, NVarChar, BigInt } from '../db/base.repo';
 import * as bcrypt from 'bcrypt';
 
 interface ImportEmpleadoDto {
@@ -194,9 +194,9 @@ export class ImportService {
      * Obtener estadísticas
      */
     async getStats() {
-        const empleados = await ejecutarQuerySimple<{ total: number }>(`SELECT COUNT(*) as total FROM p_Usuarios`);
-        const activos = await ejecutarQuerySimple<{ total: number }>(`SELECT COUNT(*) as total FROM p_Usuarios WHERE activo = 1`);
-        const nodos = await ejecutarQuerySimple<{ total: number }>(`SELECT COUNT(*) as total FROM p_OrganizacionNodos`);
+        const empleados = await ejecutarQuery<{ total: number }>(`SELECT COUNT(*) as total FROM p_Usuarios`);
+        const activos = await ejecutarQuery<{ total: number }>(`SELECT COUNT(*) as total FROM p_Usuarios WHERE activo = 1`);
+        const nodos = await ejecutarQuery<{ total: number }>(`SELECT COUNT(*) as total FROM p_OrganizacionNodos`);
 
         return {
             success: true,

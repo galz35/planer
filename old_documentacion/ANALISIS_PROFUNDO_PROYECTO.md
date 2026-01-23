@@ -1,664 +1,125 @@
-# 🔬 ANÁLISIS PROFUNDO DEL PROYECTO MOMENTUS/CLARITY
-## Sistema de Gestión de Planificación y Productividad Empresarial
+# 🧠 ANÁLISIS PROFUNDO DEL PROYECTO: CLARITY / PLANIFICACIÓN
+> **Documento Maestro de Contexto para Modelos de IA (ChatGPT 5.2 / Claude 3.5)**
+> **Objetivo:** Proporcionar una radiografía técnica, funcional y arquitectónica del sistema para facilitar refactorización, migración y análisis de lógica compleja.
 
 ---
 
-**Fecha de Análisis:** 14 de Enero 2026  
-**Versión del Sistema:** 2.0  
-**Estado:** Producción Activa  
+## 1. 🌟 VISIÓN Y FILOSOFÍA DEL PROYECTO
+**Nombre:** Clarity PWA (Sistema de Planificación Estratégica y Operativa)
+**Propósito:** No es solo un gestor de tareas. Es un sistema de **Gobernanza Corporativa** basado en jerarquía estricta.
+*   **Core Idea:** La visibilidad de la información depende estrictamente del organigrama ("Quién es jefe de quién").
+*   **Problema que resuelve:** En organizaciones grandes, un gerente necesita ver el rendimiento consolidado de sus N niveles de descendencia, mientras que un operario solo ve sus tareas.
+*   **Diferenciador:** Motor de Visibilidad Recursiva en tiempo real (PostgreSQL CTE).
 
 ---
 
-## 📋 ÍNDICE
+## 2. 🏗️ ARQUITECTURA TÉCNICA (STACK ACTUAL)
 
-1. [Resumen Ejecutivo](#1-resumen-ejecutivo)
-2. [Arquitectura del Sistema](#2-arquitectura-del-sistema)
-3. [Análisis por Módulos](#3-análisis-por-módulos)
-4. [Stack Tecnológico](#4-stack-tecnológico)
-5. [Modelo de Datos](#5-modelo-de-datos)
-6. [Comparativa con la Competencia](#6-comparativa-con-la-competencia)
-7. [Análisis de Valor](#7-análisis-de-valor)
-8. [Fases de Desarrollo](#8-fases-de-desarrollo)
-9. [Métricas Técnicas](#9-métricas-técnicas)
-10. [Roadmap y Futuro](#10-roadmap-y-futuro)
+### Backend (`/backend`)
+*   **Framework:** NestJS (Node.js).
+*   **Lenguaje:** TypeScript.
+*   **ORM:** TypeORM.
+*   **Base de Datos Actual:** PostgreSQL (Uso intensivo de JSONB y CTEs Recursivos).
+*   **Autenticación:** JWT + Passport + Guardias Personalizados.
 
----
-
-## 1. RESUMEN EJECUTIVO
-
-### 🎯 **Propósito Central**
-**MOMENTUS** (anteriormente Clarity) es un sistema de planificación y productividad empresarial diseñado para:
-- Permitir a cada colaborador registrar su plan del día en **30-60 segundos**
-- Proporcionar **visibilidad jerárquica** de entregables, bloqueos y avances
-- Convertir la planificación diaria en un **hábito simple y accionable**
-
-### 🏢 **Contexto de Uso**
-- **Empresa:** Claro Nicaragua (Telecomunicaciones)
-- **Usuarios Objetivo:** ~2,000 empleados
-- **Problema Resuelto:** Fragmentación de información, falta de continuidad en tareas, poca visibilidad de bloqueos
-
-### 📊 **Indicadores Clave**
-
-| Métrica | Valor |
-|---------|-------|
-| **Entidades de Base de Datos** | 23 tablas principales |
-| **Endpoints API** | 42+ endpoints verificados |
-| **Páginas Frontend** | 56 componentes de página |
-| **Cobertura de Tests** | 100% (Backend API) |
-| **Tiempo de Carga** | < 2 segundos (PWA) |
+### Frontend (`/clarity-pwa`)
+*   **Framework:** React (Vite).
+*   **Estado:** Hooks personalizados + Context API.
+*   **UI:** TailwindCSS + Shadcn/UI (Estética "Glassmorphism" y modo oscuro).
+*   **Navegación:** Dinámica basada en JSON recibido del backend (`MenuBuilder`).
 
 ---
 
-## 2. ARQUITECTURA DEL SISTEMA
+## 3. 🛡️ NÚCLEO CRÍTICO: MÓDULO DE ACCESO Y SEGURIDAD
+Este es el componente más complejo del sistema. Si esto falla, se rompe la confidencialidad.
 
-### 🏗️ **Arquitectura General**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CAPA DE PRESENTACIÓN                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   PWA Web   │  │   Mobile    │  │     Desktop (PWA)       │  │
-│  │   React 18  │  │    PWA      │  │    Windows/Mac/Linux    │  │
-│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │
-└─────────┼────────────────┼─────────────────────┼────────────────┘
-          │                │                     │
-          ▼                ▼                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        API GATEWAY (REST)                        │
-│                      http://api.localhost:3000                   │
-└─────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      CAPA DE APLICACIÓN                          │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                     NESTJS BACKEND                          │ │
-│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌────────┐ │ │
-│  │  │  AUTH   │ │ CLARITY │ │ ACCESO  │ │PLANNING │ │ ADMIN  │ │ │
-│  │  │ Module  │ │ Module  │ │ Module  │ │ Module  │ │ Module │ │ │
-│  │  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘ └───┬────┘ │ │
-│  └───────┼──────────┼──────────┼──────────┼─────────────┼──────┘ │
-│          │          │          │          │             │        │
-│          ▼          ▼          ▼          ▼             ▼        │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                    TYPEORM (ORM)                            │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      CAPA DE DATOS                               │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                    POSTGRESQL 15                            │ │
-│  │              Base de Datos Transaccional                    │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 📁 **Estructura del Proyecto**
-
-```
-d:\planificacion\
-├── 📁 backend/                    # NestJS API Server
-│   ├── 📁 src/
-│   │   ├── 📁 auth/              # Autenticación JWT
-│   │   ├── 📁 clarity/           # Core de tareas y productividad
-│   │   ├── 📁 acceso/            # Control de acceso y visibilidad
-│   │   ├── 📁 planning/          # Planificación y solicitudes
-│   │   ├── 📁 admin/             # Administración del sistema
-│   │   └── 📁 common/            # Utilidades compartidas
-│   └── package.json
-│
-├── 📁 clarity-pwa/               # Frontend React PWA
-│   ├── 📁 src/
-│   │   ├── 📁 pages/             # 56 componentes de página
-│   │   ├── 📁 components/        # Componentes reutilizables
-│   │   ├── 📁 services/          # Servicios API
-│   │   ├── 📁 context/           # Estados globales
-│   │   └── 📁 types/             # Tipado TypeScript
-│   └── package.json
-│
-├── 📁 database/                  # Scripts SQL y migraciones
-├── 📁 manuales/                  # Documentación de usuario
-└── 📄 *.md                       # 40+ archivos de documentación
-```
+### Archivos Clave:
+1.  **`src/acceso/visibilidad.service.ts` (CRÍTICO 🔴)**
+    *   **Qué hace:** Ejecuta una consulta SQL nativa (`WITH RECURSIVE`) para calcular el árbol de empleados que un usuario puede ver.
+    *   **Lógica:** Usuario -> Jefe Directo -> Recursión -> Permisos de Área -> Exclusiones (DENY).
+    *   **Dependencia PostgreSQL:** Alta (Sintaxis `RECURSIVE`, `::text`, `ANY($1::text[])`).
+2.  **`src/acceso/visibilidad.guard.ts`**
+    *   **Qué hace:** Interceptor que protege cada ruta. Verifica `visibilidadService.puedeVer(usuarioLogueado, usuarioObjetivo)`.
+3.  **`src/auth/auth.service.ts`**
+    *   **Qué hace:** Login y generación de JWT. Decide el "Perfil" (Admin, Líder, Empleado) para renderizar el menú.
 
 ---
 
-## 3. ANÁLISIS POR MÓDULOS
+## 4. ⚠️ ANÁLISIS DE MIGRACIÓN: POSTGRESQL VS SQL SERVER
+El sistema usa TypeORM, pero ciertas consultas se hicieron en SQL Nativo por rendimiento. Estos son los puntos de dolor para una migración:
 
-### 📦 **MÓDULO 1: AUTENTICACIÓN (AUTH)**
+| Archivo | Funcionalidad | Postgres (Código Actual) | SQL Server (Incompatible) |
+| :--- | :--- | :--- | :--- |
+| **`visibilidad.service.ts`** | Jerarquía de Empleados | `WITH RECURSIVE cte AS (...)` | `WITH cte AS (...)` (Sin RECURSIVE) |
+| **`visibilidad.service.ts`** | Casting de Tipos | `$1::text` | `CAST(@p1 AS VARCHAR)` |
+| **`visibilidad.service.ts`** | Filtrado Masivo de Arrays | `= ANY($1::text[])` | Requiere `Table-Valued Parameters` o `STRING_SPLIT` |
+| **`tasks.service.ts`** | Búsqueda JSON | `data->>'campo'` (JSONB) | `JSON_VALUE(data, '$.campo')` |
+| **`reports.service.ts`** | Fechas | `CURRENT_DATE`, `NOW()` | `GETDATE()` |
+| **Todo el Backend** | Identificadores de Tabla | `"MiTabla"` (Comillas dobles) | `[MiTabla]` (Corchetes) |
 
-| Característica | Detalle |
-|----------------|---------|
-| **Función** | Gestión de identidad y acceso |
-| **Método** | JWT con refresh tokens |
-| **Duración Token** | 1 hora (access) / 7 días (refresh) |
-| **Entidades** | Usuario, UsuarioCredenciales, Rol |
-
-**Endpoints Verificados:**
-- ✅ `POST /auth/login` - Inicio de sesión
-- ✅ `POST /auth/refresh` - Renovación de token
-- ✅ Validación de credenciales inválidas
-- ✅ Rechazo de campos faltantes
+> **Estrategia sugerida:** Crear una interfaz `IVisibilidadQueries` e implementar `PostgresVisibilidadQueries` y `SqlServerVisibilidadQueries` por separado.
 
 ---
 
-### 📦 **MÓDULO 2: CLARITY (Core de Productividad)**
+## 5. 📂 ESTRUCTURA DETALLADA DEL BACKEND Y FUNCIONALIDAD
 
-| Característica | Detalle |
-|----------------|---------|
-| **Función** | Gestión de tareas, check-ins y foco diario |
-| **Endpoints** | 12 verificados |
-| **Entidades** | Tarea, Checkin, Bloqueo, Foco, Proyecto |
+### `/src/clarity` (Gestión Operativa)
+*   **`tasks.service.ts`**:
+    *   *Qué hace:* CRUD de tareas, asignaciones.
+    *   *Complejidad:* Filtra tareas que "debería ver" un usuario basándose en si es dueño, responsable, o jefe del dueño.
+*   **`governance.service.ts`**:
+    *   *Qué hace:* Reglas de negocio. ¿Puede X editar la tarea de Y?
+*   **`reports.service.ts`**:
+    *   *Qué hace:* Genera estadísticas para los dashboards. Usa agregaciones SQL (`COUNT`, `GROUP BY`) que pueden requerir ajuste en SQL Server.
 
-**Funcionalidades Clave:**
-```
-┌─────────────────────────────────────────┐
-│           MI DÍA (Dashboard)            │
-├─────────────────────────────────────────┤
-│  ┌───────────────┐  ┌────────────────┐  │
-│  │ Hoy Entrego   │  │  Hoy Avanzo    │  │
-│  │  (1 tarea)    │  │  (hasta 3)     │  │
-│  └───────────────┘  └────────────────┘  │
-│                                         │
-│  ┌───────────────┐  ┌────────────────┐  │
-│  │  Arrastrados  │  │   Bloqueos     │  │
-│  │  (pendientes) │  │  (con dueño)   │  │
-│  └───────────────┘  └────────────────┘  │
-└─────────────────────────────────────────┘
-```
-
-**Endpoints Verificados:**
-- ✅ `GET /config` - Configuración de usuario
-- ✅ `GET /mi-dia` - Snapshot del día
-- ✅ `GET /tareas/mias` - Tareas asignadas
-- ✅ `GET /foco` - Foco del día
-- ✅ `GET /equipo/hoy` - Vista de equipo
-- ✅ `GET /proyectos` - Listado de proyectos
+### `/src/planning` (Estrategia)
+*   **`planning.controller.ts`**: Endpoints para Planes, Proyectos y Hitos.
+*   **`analytics.service.ts`**: Dashboard Gerencial. Calcula KPIs globales.
 
 ---
 
-### 📦 **MÓDULO 3: ACCESO (Control de Visibilidad)**
+## 6. 🖥️ ESTRUCTURA DETALLADA DEL FRONTEND Y PÁGINAS
 
-| Característica | Detalle |
-|----------------|---------|
-| **Función** | Control de acceso organizacional basado en carnet |
-| **Modelo** | Visibilidad jerárquica + permisos especiales |
-| **Endpoints** | 17 verificados |
+### Sistema de Rutas y Menú
+*   **`MenuBuilder.tsx`**: Recibe un JSON del backend y construye el sidebar dinámicamente. No hay rutas "hardcoded" visibles para quien no tiene permisos.
 
-**Estructura de Permisos:**
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    MODELO DE VISIBILIDAD                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   ┌─────────────┐                                          │
-│   │   JEFE 1    │ ◄── Ve su equipo directo                 │
-│   └──────┬──────┘                                          │
-│          │                                                  │
-│   ┌──────┴──────┐                                          │
-│   ▼             ▼                                          │
-│ ┌────┐       ┌────┐                                        │
-│ │ E1 │       │ E2 │  ◄── Empleados                         │
-│ └────┘       └────┘                                        │
-│                                                             │
-│ + Permisos por Área (subárbol organizacional)              │
-│ + Permisos por Empleado (acceso específico)                │
-│ + Delegaciones (temporales o permanentes)                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Entidades:**
-- `p_empleados` - Datos de empleados (carnet, nombre, correo, jefe)
-- `p_permiso_area` - Permisos por área organizacional
-- `p_permiso_empleado` - Permisos por empleado específico
-- `p_delegacion_visibilidad` - Delegaciones de acceso
-- `p_organizacion_nodo_rh` - Árbol organizacional
+### Páginas Principales (`src/pages`)
+1.  **`ManagerDashboard.tsx` (`/dashboard`)**
+    *   *Target:* Jefes y Gerentes.
+    *   *Qué hace:* Gráficos de pastel y barras con el estado de tareas de *todo* el equipo descendente.
+    *   *Hook Clave:* `useDashboardData` (consume endpoints de analytics).
+2.  **`Equipo/ManagerDashboard.tsx` (Vista de Equipo)**
+    *   *Target:* Líderes de equipo.
+    *   *Qué hace:* Tabla detallada de subordinados, carga de trabajo y bloqueos.
+3.  **`Planning/Proyectos.tsx`**
+    *   *Target:* PMO y Planificadores.
+    *   *Qué hace:* Vista tipo Gantt/Lista de proyectos estratégicos.
+4.  **`Operacion/MisTareas.tsx`**
+    *   *Target:* Usuario final.
+    *   *Qué hace:* Kanban o Lista de tareas propias.
+5.  **`Admin/UsersPage.tsx`**
+    *   *Target:* RRHH / Admin IT.
+    *   *Qué hace:* Gestión de usuarios, reseteo de claves y asignar jefes (modificar jerarquía).
 
 ---
 
-### 📦 **MÓDULO 4: IMPORTACIÓN DE DATOS**
+## 7. 🚀 PLAN DE TRABAJO E IMPLEMENTACIÓN
 
-| Característica | Detalle |
-|----------------|---------|
-| **Función** | Importación masiva de empleados y organización |
-| **Formatos** | Excel (.xlsx, .xls), JSON |
-| **Modos** | MERGE, INSERT_ONLY, REPLACE |
+### Fase 1: Estabilización y Optimización (ACTUAL)
+*   [x] Optimizar Query Recursivo de Visibilidad (Hecho: uso de `UNION ALL` y `NOT EXISTS`).
+*   [ ] Estandarizar respuestas de API.
+*   [ ] Limpiar "ruido" en logs de consola.
 
-**Validaciones Verificadas:**
-- ✅ Rechaza body vacío
-- ✅ Valida `carnet` obligatorio
-- ✅ Valida longitud de campos (carnet < 100, correo < 150)
-- ✅ Valida modos de importación
-- ✅ Valida fuentes (EXCEL, API, SIGHO1, MANUAL)
+### Fase 2: Robustez Multi-Motor (Preparación Migración)
+*   [ ] Abstraer consultas SQL nativas a archivos de constantes separados por driver (`sql-server.queries.ts`, `postgres.queries.ts`).
+*   [ ] Eliminar dependencias de funciones de fecha nativas en lógica de negocio (usar `date-fns` o `moment` en JS antes de guardar).
 
----
-
-### 📦 **MÓDULO 5: PLANNING (Planificación)**
-
-| Característica | Detalle |
-|----------------|---------|
-| **Función** | Gestión de solicitudes de cambio y aprobaciones |
-| **Flujo** | Solicitud → Revisión → Aprobación/Rechazo |
-
-**Endpoints:**
-- ✅ `GET /planning/pending` - Solicitudes pendientes
-- `POST /planning/request-change` - Nueva solicitud
-- `POST /planning/resolve` - Resolver solicitud
+### Fase 3: Inteligencia de Negocio
+*   [ ] Implementar "Inteligencia Interna": El sistema debe sugerir qué empleado está sobrecargado basándose en la data histórica de `tasks.service.ts`.
 
 ---
 
-### 📦 **MÓDULO 6: ADMIN (Administración)**
-
-| Característica | Detalle |
-|----------------|---------|
-| **Función** | Gestión de usuarios, roles y organigrama |
-| **Acceso** | Solo rol "Admin" |
-
-**Endpoints Verificados:**
-- ✅ `GET /admin/usuarios` - Listar usuarios
-- ✅ `GET /admin/roles` - Listar roles
-- ✅ `GET /admin/organigrama` - Ver estructura
-- ✅ `GET /admin/logs` - Logs del sistema
-
----
-
-## 4. STACK TECNOLÓGICO
-
-### 🔧 **Backend**
-
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| **Node.js** | 20.x LTS | Runtime |
-| **NestJS** | 10.x | Framework API |
-| **TypeORM** | 0.3.x | ORM |
-| **PostgreSQL** | 15.x | Base de datos |
-| **JWT** | - | Autenticación |
-| **bcrypt** | - | Hash de contraseñas |
-| **xlsx** | - | Parsing Excel |
-| **class-validator** | - | Validación DTOs |
-
-### 🎨 **Frontend**
-
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| **React** | 18.x | UI Framework |
-| **TypeScript** | 5.x | Tipado estático |
-| **Vite** | 5.x | Build tool |
-| **TailwindCSS** | 3.x | Estilos |
-| **Lucide React** | - | Iconografía |
-| **React Router** | 6.x | Enrutamiento |
-| **Recharts** | - | Visualización |
-
-### 🛠️ **DevOps & Herramientas**
-
-| Herramienta | Propósito |
-|-------------|-----------|
-| **Docker** | Contenedorización |
-| **GitHub Actions** | CI/CD |
-| **PWA** | Experiencia móvil |
-| **Service Workers** | Offline capability |
-
----
-
-## 5. MODELO DE DATOS
-
-### 📊 **Entidades Principales (23 tablas)**
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        MODELO DE DATOS                               │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                     DOMINIO: AUTH                            │  │
-│  ├──────────────────────────────────────────────────────────────┤  │
-│  │  p_Usuarios ──┬── p_UsuariosCredenciales                     │  │
-│  │               ├── p_UsuariosConfig                           │  │
-│  │               ├── p_UsuariosOrganizacion                     │  │
-│  │               └── p_Roles                                    │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                    DOMINIO: CLARITY                          │  │
-│  ├──────────────────────────────────────────────────────────────┤  │
-│  │  p_Tareas ────┬── p_TareaAsignados                           │  │
-│  │               ├── p_TareaAvances                             │  │
-│  │               ├── p_Bloqueos                                 │  │
-│  │               └── p_FocoDiario                               │  │
-│  │                                                              │  │
-│  │  p_Checkins ──┬── p_CheckinTareas                            │  │
-│  │               └── (snapshot diario)                          │  │
-│  │                                                              │  │
-│  │  p_Proyectos                                                 │  │
-│  │  p_Notas                                                     │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                    DOMINIO: ACCESO                           │  │
-│  ├──────────────────────────────────────────────────────────────┤  │
-│  │  p_empleados (carnet) ──┬── p_permiso_area                   │  │
-│  │                         ├── p_permiso_empleado               │  │
-│  │                         └── p_delegacion_visibilidad         │  │
-│  │                                                              │  │
-│  │  p_organizacion_nodo_rh (árbol jerárquico)                   │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                   DOMINIO: SISTEMA                           │  │
-│  ├──────────────────────────────────────────────────────────────┤  │
-│  │  p_AuditLogs                                                 │  │
-│  │  p_LogsSistema                                               │  │
-│  │  p_SolicitudesCambio                                         │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 🔑 **Relaciones Clave**
-
-| Relación | Descripción |
-|----------|-------------|
-| Usuario → Rol | N:1 (Un usuario tiene un rol) |
-| Tarea → Asignados | 1:N (Una tarea puede tener múltiples asignados) |
-| Empleado → Jefe | N:1 (Hasta 4 niveles de jefatura) |
-| Permiso → Área | N:1 (Un permiso aplica a un subárbol) |
-
----
-
-## 6. COMPARATIVA CON LA COMPETENCIA
-
-### 📊 **Matriz Comparativa Detallada**
-
-| Característica | **MOMENTUS** | **MS Planner** | **Jira** | **Asana** | **Monday** |
-|---------------|--------------|----------------|----------|-----------|------------|
-| **Precio/Usuario/Mes** | **$0** (interno) | $5-12 | $8-17 | $11-25 | $9-16 |
-| **Check-in diario** | ✅ **Nativo** | ❌ | ❌ | ❌ | 🟡 Plugin |
-| **Matriz Eisenhower** | ✅ **Nativo** | ❌ | ❌ | ❌ | ❌ |
-| **Bloqueos como entidad** | ✅ **Nativo** | ❌ | 🟡 | 🟡 | 🟡 |
-| **Visibilidad jerárquica** | ✅ **Avanzada** | 🟡 Básica | ✅ | 🟡 | ✅ |
-| **Integraciones Office** | ❌ | ✅ **Nativo** | 🟡 | ✅ | ✅ |
-| **Automatizaciones** | 🟡 Limitadas | ✅ Power Automate | ✅ **Avanzadas** | ✅ | ✅ |
-| **Búsqueda avanzada** | 🟡 Básica | ✅ | ✅ **JQL** | ✅ | ✅ |
-| **App móvil nativa** | 🟡 PWA | ✅ | ✅ | ✅ | ✅ |
-| **Gantt/Timeline** | 🟡 Básico | 🟡 | ✅ | ✅ | ✅ |
-| **Subtareas infinitas** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **Reportes custom** | 🟡 Fijos | ✅ PowerBI | ✅ | ✅ | ✅ |
-| **Control RRHH** | ✅ **Nativo** | ❌ | ❌ | ❌ | ❌ |
-| **Multi-país** | ✅ **Nativo** | ❌ | ❌ | ❌ | 🟡 |
-
-### 🏆 **Ventajas Competitivas de MOMENTUS**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│              🎯 PROPUESTA DE VALOR ÚNICA                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  1️⃣  CERO COSTO DE LICENCIAMIENTO                              │
-│      • Desarrollo interno = Sin fees por usuario                │
-│      • ROI inmediato vs $5-25/usuario/mes de competencia        │
-│      • Para 2,000 usuarios = Ahorro de $120,000-600,000/año    │
-│                                                                 │
-│  2️⃣  CHECK-IN DIARIO EN 30 SEGUNDOS                            │
-│      • Feature única que Planner/Jira no ofrecen               │
-│      • Reduce reuniones de status en 70%                        │
-│      • Fuerza disciplina sin obligar a cambio de herramientas  │
-│                                                                 │
-│  3️⃣  VISIBILIDAD JERÁRQUICA REAL                               │
-│      • Integración con organigrama RRHH                         │
-│      • El jefe ve su equipo, el gerente ve el subárbol         │
-│      • Delegaciones temporales y permisos especiales           │
-│                                                                 │
-│  4️⃣  BLOQUEOS COMO CIUDADANOS DE PRIMERA CLASE                 │
-│      • Todo bloqueo tiene dueño ("espero a: ___")              │
-│      • Escalamiento automático por antigüedad                   │
-│      • Métricas de aging y resolución                          │
-│                                                                 │
-│  5️⃣  PERSONALIZACIÓN TOTAL                                     │
-│      • Código fuente propio = Cualquier feature posible        │
-│      • Integración específica con sistemas internos            │
-│      • Sin dependencia de roadmap de terceros                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### ⚠️ **Brechas vs Competencia (Honestidad)**
-
-| Brecha | Impacto | Plan de Mitigación |
-|--------|---------|-------------------|
-| Sin integración Office 365 | Alto | Deeplinks + API futuro |
-| Sin automatizaciones IFTTT | Medio | Motor de reglas Q2 2026 |
-| Búsqueda básica | Medio | Fuzzy search con Fuse.js |
-| PWA vs App Nativa | Bajo | PWA optimizada es suficiente |
-| Reportes fijos | Medio | Dashboard configurables Q3 |
-
----
-
-## 7. ANÁLISIS DE VALOR
-
-### 💰 **ROI Estimado**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CÁLCULO DE VALOR                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  AHORRO EN LICENCIAS (vs Planner + Jira):                      │
-│  ────────────────────────────────────────                      │
-│  • 2,000 usuarios × $10/mes promedio = $240,000/año             │
-│  • MOMENTUS costo = $0/licencia                                 │
-│  • AHORRO ANUAL = $240,000                                      │
-│                                                                 │
-│  AHORRO EN REUNIONES:                                          │
-│  ──────────────────────                                        │
-│  • Reunión status diaria: 15 min × 2,000 personas              │
-│  • = 30,000 min/día = 500 horas/día                            │
-│  • Reducción 70% = 350 horas/día × $25/hora = $8,750/día       │
-│  • AHORRO ANUAL = $2,275,000                                    │
-│                                                                 │
-│  AHORRO EN RESOLUCIÓN DE BLOQUEOS:                             │
-│  ─────────────────────────────────                             │
-│  • Bloqueo promedio se resuelve 2 días antes                   │
-│  • 500 bloqueos/mes × 16 horas × $25 = $200,000/mes            │
-│  • AHORRO ANUAL = $2,400,000                                    │
-│                                                                 │
-│  ═══════════════════════════════════════════════════════════   │
-│  VALOR TOTAL ESTIMADO:              $4,915,000/año              │
-│  ═══════════════════════════════════════════════════════════   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 📈 **Métricas de Productividad Esperadas**
-
-| Métrica | Antes | Con MOMENTUS | Mejora |
-|---------|-------|--------------|--------|
-| Tiempo en reportar status | 15 min/día | 1 min/día | **93%** |
-| Bloqueos sin dueño | 60% | 0% | **100%** |
-| Visibilidad de entregables | 40% | 95% | **138%** |
-| Tareas perdidas/olvidadas | 25% | 5% | **80%** |
-| Tiempo de resolución de bloqueos | 5 días | 2 días | **60%** |
-
----
-
-## 8. FASES DE DESARROLLO
-
-### 🗓️ **Timeline del Proyecto**
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         FASES DE DESARROLLO                                 │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                                                            │
-│  FASE 1: FUNDACIÓN (Completada ✅)                           Q3 2025       │
-│  ─────────────────────────────────                                         │
-│  • Arquitectura base NestJS + React                                        │
-│  • Autenticación JWT                                                       │
-│  • CRUD de tareas y proyectos                                              │
-│  • Interfaz básica de usuario                                              │
-│                                                                            │
-│  FASE 2: PRODUCTIVIDAD CORE (Completada ✅)                  Q4 2025       │
-│  ──────────────────────────────────────────                                │
-│  • Check-in diario                                                         │
-│  • Sistema de bloqueos                                                     │
-│  • Vista "Mi Día" con Eisenhower                                           │
-│  • Tareas arrastradas y revalidación                                       │
-│  • Foco diario                                                             │
-│                                                                            │
-│  FASE 3: VISIBILIDAD JERÁRQUICA (Completada ✅)              Q1 2026       │
-│  ────────────────────────────────────────────                              │
-│  • Módulo de Acceso (carnet-based)                                         │
-│  • Permisos por área y empleado                                            │
-│  • Delegaciones de visibilidad                                             │
-│  • Importación masiva de empleados                                         │
-│  • Integración con organigrama RRHH                                        │
-│                                                                            │
-│  FASE 4: REPORTES Y ADMIN (En Progreso 🔄)                   Q1 2026       │
-│  ──────────────────────────────────────────                                │
-│  • Dashboards de productividad                                             │
-│  • Reportes de bloqueos y trends                                           │
-│  • Gestión de roles y permisos                                             │
-│  • Logs de auditoría                                                       │
-│                                                                            │
-│  FASE 5: MULTI-PAÍS (Planificada 📋)                         Q2 2026       │
-│  ─────────────────────────────────                                         │
-│  • Selector de país en login                                               │
-│  • Datos segregados por país                                               │
-│  • Métricas globales vs locales                                            │
-│                                                                            │
-│  FASE 6: INTELIGENCIA (Planificada 📋)                       Q3 2026       │
-│  ────────────────────────────────────                                      │
-│  • Motor de reglas (automatizaciones)                                      │
-│  • Búsqueda fuzzy avanzada                                                 │
-│  • Sugerencias de IA                                                       │
-│  • Predicción de bloqueos                                                  │
-│                                                                            │
-└────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 9. MÉTRICAS TÉCNICAS
-
-### 📊 **Resultados de Tests (14 Enero 2026)**
-
-```
-══════════════════════════════════════════════════════════════════════
-📊 RESUMEN DE RESULTADOS - TEST BACKEND PROFESIONAL
-══════════════════════════════════════════════════════════════════════
-
-📈 Por Módulo:
-──────────────────────────────────────────────────
-  ✅ AUTH            4/4 (100%)
-  ✅ ACCESO          5/5 (100%)
-  ✅ IMPORTACIÓN     5/5 (100%)
-  ✅ PERMISOS        3/3 (100%)
-  ✅ VISIBILIDAD     4/4 (100%)
-  ✅ CLARITY         12/12 (100%)
-  ✅ ADMIN           4/4 (100%)
-  ✅ HEALTH          1/1 (100%)
-  ✅ SECURITY        3/3 (100%)
-  ✅ PLANNING        1/1 (100%)
-
-📊 Totales:
-──────────────────────────────────────────────────
-  ✅ Passed:  42
-  ❌ Failed:  0
-  📋 Total:   42
-  📊 Tasa:    100.0%
-
-══════════════════════════════════════════════════════════════════════
-🎉 ¡TODOS LOS TESTS PASARON!
-══════════════════════════════════════════════════════════════════════
-```
-
-### 🔒 **Validaciones de Seguridad Verificadas**
-
-| Test | Resultado |
-|------|-----------|
-| Endpoints protegidos rechazan sin token | ✅ 401 |
-| Token inválido rechazado | ✅ 401 |
-| Usuario no-admin rechazado en /admin | ✅ 403 |
-| Credenciales inválidas | ✅ 401 |
-
-### 📐 **Estadísticas del Código**
-
-| Métrica | Backend | Frontend | Total |
-|---------|---------|----------|-------|
-| Archivos TypeScript | ~100 | ~200 | ~300 |
-| Entidades | 23 | - | 23 |
-| Controladores | 10 | - | 10 |
-| Servicios | 15 | 10 | 25 |
-| Páginas | - | 56 | 56 |
-| Componentes | - | 80+ | 80+ |
-
----
-
-## 10. ROADMAP Y FUTURO
-
-### 🚀 **Próximos Pasos (Q1-Q2 2026)**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ROADMAP 2026                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ENERO 2026 (En Curso)                                         │
-│  ─────────────────────                                         │
-│  □ Migración masiva de 2,000 empleados                        │
-│  □ Validación de visibilidad en producción                     │
-│  □ Ajustes de permisos basados en feedback                     │
-│                                                                 │
-│  FEBRERO 2026                                                   │
-│  ────────────────                                              │
-│  □ Multi-país: Nicaragua, Guatemala, Honduras                  │
-│  □ Selector de país en sidebar                                 │
-│  □ Métricas segregadas por país                                │
-│                                                                 │
-│  MARZO 2026                                                     │
-│  ────────────                                                  │
-│  □ Motor de reglas básico                                      │
-│  □ Búsqueda fuzzy con Fuse.js                                  │
-│  □ Command Palette mejorado                                    │
-│                                                                 │
-│  Q2 2026                                                        │
-│  ────────                                                      │
-│  □ Integración con calendario Outlook (lectura)                │
-│  □ Notificaciones push reales                                  │
-│  □ App wrapper nativa (Capacitor)                              │
-│                                                                 │
-│  Q3-Q4 2026                                                     │
-│  ─────────                                                     │
-│  □ IA para sugerencias de prioridad                            │
-│  □ Predicción de bloqueos                                      │
-│  □ Dashboards configurables                                    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 🎯 **Visión a Largo Plazo**
-
-> **"Convertirnos en EL estándar de gestión táctica diaria en Claro Latam,
-> cubriendo el gap entre las herramientas estratégicas (Jira) y las
-> comunicaciones instantáneas (Teams), siendo el lugar donde la gente
-> realmente trabaja día a día."**
-
----
-
-## 📝 CONCLUSIÓN
-
-**MOMENTUS** representa una solución robusta y madura para la gestión de productividad empresarial, con características únicas que lo diferencian de la competencia:
-
-1. **Madurez Técnica:** 42 endpoints verificados al 100%, arquitectura escalable
-2. **Valor Único:** Check-in diario y visibilidad jerárquica no ofrecidos por competencia
-3. **ROI Significativo:** Ahorro estimado de $4.9M anuales
-4. **Personalización Total:** Código propio permite cualquier adaptación
-5. **Cero Costo de Licencias:** Inversión única en desarrollo
-
-**El proyecto está listo para producción y escalamiento a 2,000+ usuarios.**
-
----
-
-*Documento generado el 14 de Enero 2026*  
-*Análisis realizado con Antigravity AI*
+## 🤖 INSTRUCCIONES PARA LA IA ANALISTA
+1.  **Al analizar código:** Asume siempre que la base de datos es PostgreSQL, pero **alerta** si el código sugerido usa funciones exclusivas que romperían una migración a SQL Server.
+2.  **Al modificar `VisibilidadService`:** Ten extremo cuidado. Es un castillo de naipes recursivo. Un error aquí deja ciego a un Gerente o expone datos a un Junior.
+3.  **Prioridad:** El rendimiento de lectura es más importante que el de escritura. Los dashboards cargan mucha data agregada.

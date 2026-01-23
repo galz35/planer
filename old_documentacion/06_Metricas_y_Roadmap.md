@@ -5,7 +5,7 @@
 ### Participación
 - **Participación diaria (%)** = (Personas que reportaron) / (Activos del equipo).
 - **Meta:** >90% antes de las 10:00 AM.
-
+asdsa
 ### Flujo de Trabajo (WIP & Throughput)
 - **WIP (Work In Progress):** Tareas en estado `EnCurso` + `Bloqueadas`.
 - **Riesgo Saturación:** WIP/persona > 3.

@@ -5,7 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { RecurrenciaService } from './recurrencia.service';
-import { TareaCrearRapidaDto, CheckinUpsertDto, FechaQueryDto, TareaActualizarDto, ProyectoCrearDto, ProyectoFilterDto, TareaRevalidarDto } from './dto/clarity.dtos';
+import { TareaCrearRapidaDto, CheckinUpsertDto, FechaQueryDto, TareaActualizarDto, ProyectoCrearDto, ProyectoFilterDto, TareaRevalidarDto, BloqueoCrearDto } from './dto/clarity.dtos';
 
 @ApiTags('Clarity Core (Migrated)')
 @ApiBearerAuth()
@@ -246,6 +246,24 @@ export class ClarityController {
             fecha ? new Date(fecha) : new Date(),
             req.user.userId
         );
+    }
+
+    // ==========================================
+    // BLOQUEOS (Faltantes)
+    // ==========================================
+
+    @Post('bloqueos')
+    @ApiOperation({ summary: 'Registrar un bloqueo' })
+    async crearBloqueo(@Body() dto: BloqueoCrearDto, @Request() req) {
+        // Asegurar que idOrigenUsuario tenga valor
+        if (!dto.idOrigenUsuario) dto.idOrigenUsuario = req.user.userId;
+        return this.tasksService.bloqueoCrear(dto);
+    }
+
+    @Patch('bloqueos/:id/resolver')
+    @ApiOperation({ summary: 'Resolver un bloqueo' })
+    async resolverBloqueo(@Param('id') id: number, @Body() body: any, @Request() req) {
+        return this.tasksService.bloqueoResolver(id, body, req.user.userId);
     }
 }
 

@@ -4,6 +4,7 @@
  */
 import { crearRequest, ejecutarQuery, Int, NVarChar, Bit, DateTime, SqlDate, conTransaccion } from '../db/base.repo';
 import { ProyectoDb, TareaDb, PlanTrabajoDb, SolicitudCambioDb, UsuarioDb, UsuarioOrganizacionDb } from '../db/tipos';
+import { cacheGet, cacheSet } from '../common/cache.service';
 
 // ==========================================
 // CONSULTAS DE PROYECTOS
@@ -21,8 +22,33 @@ export async function obtenerProyectosPorUsuario(idUsuario: number) {
     `, { idUsuario: { valor: idUsuario, tipo: Int } });
 }
 
-export async function obtenerTodosProyectos() {
-    return await ejecutarQuery<ProyectoDb>('SELECT * FROM p_Proyectos ORDER BY fechaCreacion DESC');
+export async function obtenerTodosProyectos(filter?: any) {
+    let sql = 'SELECT * FROM p_Proyectos WHERE 1=1';
+    const params: any = {};
+
+    if (filter?.nombre) {
+        sql += ' AND nombre LIKE @nombre';
+        params.nombre = { valor: `%${filter.nombre}%`, tipo: NVarChar };
+    }
+    if (filter?.estado) {
+        sql += ' AND estado = @estado';
+        params.estado = { valor: filter.estado, tipo: NVarChar };
+    }
+    if (filter?.gerencia) {
+        sql += ' AND gerencia = @gerencia';
+        params.gerencia = { valor: filter.gerencia, tipo: NVarChar };
+    }
+    if (filter?.subgerencia) {
+        sql += ' AND subgerencia = @subgerencia';
+        params.subgerencia = { valor: filter.subgerencia, tipo: NVarChar };
+    }
+    if (filter?.area) {
+        sql += ' AND area = @area';
+        params.area = { valor: filter.area, tipo: NVarChar };
+    }
+
+    sql += ' ORDER BY fechaCreacion DESC';
+    return await ejecutarQuery<ProyectoDb>(sql, params);
 }
 
 /**
@@ -31,9 +57,13 @@ export async function obtenerTodosProyectos() {
  * 2. Proyectos donde tengo tareas asignadas
  * 3. Proyectos donde mis subordinados (cadena de jefatura) tienen tareas
  */
-export async function obtenerProyectosVisibles(idUsuario: number, usuario: any) {
-    const sql = `
-        ;WITH Equipo AS (
+export async function obtenerProyectosVisibles(idUsuario: number, usuario: any, filter?: any) {
+    const cacheKey = `equipo_ids:${idUsuario}`;
+    let idsEquipo = cacheGet<number[]>(cacheKey);
+
+    // Si no está en cache, calculamos quiénes son sus subordinados
+    if (!idsEquipo) {
+        const rows = await ejecutarQuery<{ idUsuario: number }>(`
             SELECT u.idUsuario
             FROM p_Usuarios u
             WHERE u.idUsuario = @idUsuario
@@ -44,24 +74,62 @@ export async function obtenerProyectosVisibles(idUsuario: number, usuario: any) 
                      u.carnet_jefe3 = @carnet OR
                      u.carnet_jefe4 = @carnet)
                   )
-        )
+        `, {
+            idUsuario: { valor: idUsuario, tipo: Int },
+            carnet: { valor: usuario.carnet || '', tipo: NVarChar }
+        });
+        idsEquipo = rows.map(r => r.idUsuario);
+        cacheSet(cacheKey, idsEquipo, 15 * 60 * 1000); // Guardar por 15 minutos
+    }
+
+    // Ahora pedimos los proyectos de esos IDs
+    let filterSql = '';
+    const params: any = {};
+
+    if (filter?.nombre) {
+        filterSql += ' AND p.nombre LIKE @nombre';
+        params.nombre = { valor: `%${filter.nombre}%`, tipo: NVarChar };
+    }
+    if (filter?.estado) {
+        filterSql += ' AND p.estado = @estado';
+        params.estado = { valor: filter.estado, tipo: NVarChar };
+    }
+    if (filter?.gerencia) {
+        filterSql += ' AND p.gerencia = @gerencia';
+        params.gerencia = { valor: filter.gerencia, tipo: NVarChar };
+    }
+    if (filter?.subgerencia) {
+        filterSql += ' AND p.subgerencia = @subgerencia';
+        params.subgerencia = { valor: filter.subgerencia, tipo: NVarChar };
+    }
+    if (filter?.area) {
+        filterSql += ' AND p.area = @area';
+        params.area = { valor: filter.area, tipo: NVarChar };
+    }
+
+    const idsStr = idsEquipo.join(',');
+
+    const sql = `
         SELECT p.*
         FROM p_Proyectos p
         WHERE
-            p.idCreador = @idUsuario
-            OR EXISTS (
-                SELECT 1
-                FROM p_Tareas t
-                INNER JOIN p_TareaAsignados ta ON ta.idTarea = t.idTarea
-                INNER JOIN Equipo e ON e.idUsuario = ta.idUsuario
-                WHERE t.idProyecto = p.idProyecto
+            (
+                p.idCreador = @idUsuario
+                OR EXISTS (
+                    SELECT 1
+                    FROM p_Tareas t
+                    INNER JOIN p_TareaAsignados ta ON ta.idTarea = t.idTarea
+                    WHERE t.idProyecto = p.idProyecto
+                      AND ta.idUsuario IN (${idsStr})
+                )
             )
+            ${filterSql}
         ORDER BY p.fechaCreacion DESC;
     `;
 
     return await ejecutarQuery<ProyectoDb>(sql, {
-        idUsuario: { valor: idUsuario, tipo: Int },
-        carnet: { valor: usuario.carnet || '', tipo: NVarChar }
+        ...params,
+        idUsuario: { valor: idUsuario, tipo: Int }
     });
 }
 

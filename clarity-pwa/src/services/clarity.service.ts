@@ -1,3 +1,11 @@
+/**
+ * ¿QUÉ ES?: El servicio principal de la aplicación que interactúa con la API de "Clarity".
+ * ¿PARA QUÉ SE USA?: Contiene todas las funciones que realizan peticiones HTTP específicas para 
+ * tareas, proyectos, el equipo, administración y reportes.
+ * ¿QUÉ SE ESPERA?: Que centralice la lógica de comunicación con el backend, devolviendo datos tipados
+ * y manejando los parámetros necesarios para cada consulta.
+ */
+
 import { api } from './api';
 import type { ApiResponse } from '../types/api';
 import type {
@@ -6,8 +14,12 @@ import type {
 } from '../types/modelos';
 import type { EquipoHoyResponse } from '../types/equipo';
 
+/**
+ * Agrupa todas las funciones relacionadas con la funcionalidad de "Clarity".
+ */
 export const clarityService = {
-    // Mi Día
+    // === MÓDULO: MI DÍA & AGENDA ===
+    // Estas funciones manejan lo que el usuario ve al inicio de su jornada.
     getMiDia: async (fecha: string) => {
         const { data: response } = await api.get<ApiResponse<{
             checkinHoy: Checkin | null;
@@ -35,7 +47,8 @@ export const clarityService = {
         return response.data;
     },
 
-    // Tareas
+    // === MÓDULO: TAREAS ===
+    // Funciones para crear, actualizar, reordenar y gestionar el ciclo de vida de las tareas.
     postTareaRapida: async (dto: TareaCrearRapidaDto) => {
         const { data: response } = await api.post<ApiResponse<Tarea>>('/tareas/rapida', dto);
         return response.data;
@@ -161,7 +174,8 @@ export const clarityService = {
         return response.data;
     },
 
-    // Bloqueos
+    // === MÓDULO: BLOQUEOS ===
+    // Maneja los impedimentos que detienen el progreso de las tareas.
     postBloqueo: async (dto: BloqueoCrearDto) => {
         const { data: response } = await api.post<ApiResponse<Bloqueo>>('/bloqueos', dto);
         return response.data;
@@ -172,7 +186,8 @@ export const clarityService = {
         return response.data;
     },
 
-    // Jefatura
+    // === MÓDULO: JEFATURA & EQUIPO ===
+    // Funciones exclusivas para visualización del equipo por parte de gerentes o jefes.
     getEquipoHoy: async (fecha: string) => {
         const { data: response } = await api.get<ApiResponse<EquipoHoyResponse>>('/equipo/hoy', { params: { fecha } });
         return response.data;
@@ -208,7 +223,8 @@ export const clarityService = {
         return response.data;
     },
 
-    // Proyectos
+    // === MÓDULO: PROYECTOS ===
+    // Gestión de proyectos de alto nivel.
     getProyectos: async (filters?: any) => {
         const { data: response } = await api.get<ApiResponse<{ items: Proyecto[], total: number, page: number, lastPage: number }>>('/proyectos', { params: filters });
         return response.data;
@@ -345,7 +361,8 @@ export const clarityService = {
         return response.data;
     },
 
-    // Reports
+    // === MÓDULO: REPORTES ===
+    // Obtención de métricas, productividad y descarga de archivos Excel.
     getGerenciaResumen: async (fecha: string) => {
         const { data: response } = await api.get<ApiResponse>('/gerencia/resumen', { params: { fecha } });
         return response.data;

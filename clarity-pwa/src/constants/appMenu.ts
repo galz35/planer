@@ -10,7 +10,6 @@ export const APP_MENU = [
         items: [
             { path: '/app/hoy', label: 'Mi Agenda', icon: 'Sun' },
             { path: '/app/pendientes', label: 'Mis Tareas', icon: 'CheckSquare' },
-            { path: '/app/planning/proyectos', label: 'Gestión Proyectos', icon: 'FileCheck' },
             { path: '/app/notas', label: 'Mis Notas', icon: 'FileText' },
         ]
     },

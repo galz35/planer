@@ -20,13 +20,15 @@ export class ClarityController {
     @Get('mi-dia')
     @ApiOperation({ summary: 'Obtener snapshot del día para el empleado' })
     async getMiDia(@Request() req, @Query() query: FechaQueryDto) {
-        return this.tasksService.miDiaGet(req.user.carnet, query.fecha, query.startDate, query.endDate);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.miDiaGet(carnet, query.fecha, query.startDate, query.endDate);
     }
 
     @Post('checkins')
     @ApiOperation({ summary: 'Registrar o actualizar check-in diario' })
     async upsertCheckin(@Body() dto: CheckinUpsertDto, @Request() req) {
-        return this.tasksService.checkinUpsert(dto, req.user.carnet);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.checkinUpsert(dto, carnet);
     }
 
     @Post('tareas/rapida')
@@ -54,7 +56,8 @@ export class ClarityController {
     @Get('tareas/mias')
     @ApiOperation({ summary: 'Listar mis tareas' })
     async getMisTareas(@Request() req, @Query() filters: TaskFilterDto) {
-        return this.tasksService.tareasMisTareas(req.user.carnet, filters.estado, filters.idProyecto, filters.startDate, filters.endDate);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.tareasMisTareas(carnet, filters.estado, filters.idProyecto, filters.startDate, filters.endDate);
     }
 
     @Get('tareas/:id')
@@ -78,7 +81,7 @@ export class ClarityController {
     @Get('agenda/:targetCarnet')
     @ApiOperation({ summary: 'MANAGER: Obtener agenda de un tercero' })
     async getMemberAgenda(@Param('targetCarnet') targetCarnet: string, @Query() query: FechaQueryDto, @Request() req) {
-        const requesterCarnet = req.user.carnet;
+        const requesterCarnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
 
         if (requesterCarnet !== targetCarnet) {
             const hasAccess = await this.tasksService.canManageUserByCarnet(requesterCarnet, targetCarnet);
@@ -99,14 +102,16 @@ export class ClarityController {
     @Delete('tareas/:id')
     @ApiOperation({ summary: 'Eliminar tarea (Físico si es hoy y creador, sino Soft Delete)' })
     async eliminarTarea(@Param('id') id: number, @Request() req) {
-        return this.tasksService.tareaEliminar(id, req.user.carnet);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.tareaEliminar(id, carnet);
     }
 
     @Post('tareas/:id/descartar')
     @ApiOperation({ summary: 'Descartar tarea (Alias para eliminar)' })
     async descartarTarea(@Param('id') id: number, @Body() body: { motivo?: string }, @Request() req) {
         const motivo = body?.motivo || 'Descarte manual';
-        return this.tasksService.tareaEliminar(id, req.user.carnet, motivo);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.tareaEliminar(id, carnet, motivo);
     }
 
     @Post('tareas/:id/avance')
@@ -118,7 +123,8 @@ export class ClarityController {
     @Get('planning/workload')
     @ApiOperation({ summary: 'Obtener carga de trabajo del equipo' })
     async getWorkload(@Request() req) {
-        return this.tasksService.getWorkload(req.user.carnet);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.getWorkload(carnet);
     }
 
     @Get('audit-logs/task/:idTarea')
@@ -257,9 +263,10 @@ export class ClarityController {
     @Get('agenda-recurrente')
     @ApiOperation({ summary: 'Obtener tareas recurrentes para una fecha' })
     async obtenerAgendaRecurrente(@Query('fecha') fecha: string, @Request() req) {
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
         return this.recurrenciaService.obtenerAgendaRecurrente(
             fecha ? new Date(fecha) : new Date(),
-            req.user.carnet
+            carnet
         );
     }
 
@@ -287,12 +294,14 @@ export class ClarityController {
 
     @Get('notas')
     async getNotas(@Request() req) {
-        return this.tasksService.notasListar(req.user.carnet);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.notasListar(carnet);
     }
 
     @Post('notas')
     async crearNota(@Body() body: { title: string, content: string }, @Request() req) {
-        return this.tasksService.notaCrear(req.user.carnet, body.title, body.content);
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.notaCrear(carnet, body.title, body.content);
     }
 
     @Patch('notas/:id')

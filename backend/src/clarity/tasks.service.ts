@@ -26,6 +26,10 @@ export class TasksService {
     // COMPATIBILIDAD CON CONTROLLER (Métodos mapeados)
     // ===============================================
 
+    async resolveCarnet(idUsuario: number): Promise<string> {
+        return (await this.visibilidadService.obtenerCarnetPorId(idUsuario)) || '';
+    }
+
     async canManageUserByCarnet(managerCarnet: string, subordinateCarnet: string): Promise<boolean> {
         if (managerCarnet === subordinateCarnet) return true;
         return await this.visibilidadService.puedeVer(managerCarnet, subordinateCarnet);

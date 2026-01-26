@@ -576,7 +576,7 @@ export const TimelinePage: React.FC = () => {
             {showCreateTask && selectedProjectId && (
                 <CreateTaskModal
                     isOpen={true}
-                    projectId={selectedProjectId}
+                    currentProject={currentProject}
                     onClose={() => setShowCreateTask(false)}
                     onSuccess={handleTaskCreated}
                 />

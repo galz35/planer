@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
 import { clarityService } from '../services/clarity.service';
 import { planningService } from '../services/planning.service';
-import type { Tarea } from '../types/modelos';
+import type { Tarea, Usuario } from '../types/modelos';
+import { useAuth } from '../context/AuthContext';
 
 export interface Changes {
     titulo?: string;
@@ -16,6 +17,8 @@ export interface Changes {
 
 export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: () => void) => {
     const { showToast } = useToast();
+    const { user } = useAuth();
+    const currentUserId = user?.idUsuario || 0;
 
     // -- State --
     const [fullTask, setFullTask] = useState<Tarea | null>(null);
@@ -27,11 +30,14 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
     const [linkEvidencia, setLinkEvidencia] = useState(task.linkEvidencia || '');
     const [comentario, setComentario] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [view, setView] = useState<'Main' | 'Block' | 'Reassign' | 'RequestChange'>('Main');
+    const [requestedField, setRequestedField] = useState<'fechaObjetivo' | 'fechaInicioPlanificada'>('fechaObjetivo');
 
     // Planning / Logic State
     const [planningCheck, setPlanningCheck] = useState<{ puedeEditar: boolean; requiereAprobacion: boolean; tipoProyecto: string } | null>(null);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [idTareaPadre, setIdTareaPadre] = useState<number | undefined>(task.idTareaPadre);
+    const [team, setTeam] = useState<Usuario[]>([]);
 
     // Pending Changes (Approval Workflow)
     const [pendingChanges, setPendingChanges] = useState<Changes | null>(null);
@@ -42,10 +48,11 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
         let mounted = true;
         const load = async () => {
             try {
-                const [t, pCheck, logs] = await Promise.all([
+                const [t, pCheck, logs, workload] = await Promise.all([
                     clarityService.getTaskById(task.idTarea),
                     planningService.checkPermission(task.idTarea),
-                    clarityService.getAuditLogsByTask(task.idTarea)
+                    clarityService.getAuditLogsByTask(task.idTarea),
+                    clarityService.getWorkload()
                 ]);
 
                 if (!mounted) return;
@@ -63,6 +70,7 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
                 }
                 setPlanningCheck(pCheck);
                 setAuditLogs(logs || []);
+                if (workload && workload.users) setTeam(workload.users);
             } catch (error) {
                 console.error("Error loading task details", error);
             }
@@ -118,7 +126,7 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
 
             // Registrar Avance
             await clarityService.postAvance(task.idTarea, {
-                idUsuario: task.idCreador, // TODO: Use actual user ID from context if possible
+                idUsuario: currentUserId,
                 progreso,
                 comentario: comentario || 'Actualización de progreso'
             });
@@ -148,7 +156,7 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
             });
             // Log advancement too
             await clarityService.postAvance(task.idTarea, {
-                idUsuario: task.idCreador,
+                idUsuario: currentUserId,
                 progreso,
                 comentario: comentario || 'Solicitud de cambio enviada'
             });
@@ -207,6 +215,81 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
         }
     };
 
+    const handleCreateBlocker = async (params: { reason: string; who: string; userId: number | null }) => {
+        if (!params.reason.trim()) return alert('Indica el motivo del bloqueo');
+        setSubmitting(true);
+        try {
+            await clarityService.postBloqueo({
+                idOrigenUsuario: task.asignados?.find((a: any) => a.tipo === 'Responsable')?.idUsuario || currentUserId,
+                idTarea: task.idTarea,
+                motivo: params.reason,
+                destinoTexto: params.who || 'Interno',
+                idDestinoUsuario: params.userId || undefined,
+            });
+            showToast('Bloqueo registrado', 'success');
+            onUpdate();
+            onClose();
+        } catch {
+            alert('Error al crear bloqueo');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleAction = async (accion: 'HechaPorOtro' | 'NoAplica' | 'Posponer', targetUserId?: number) => {
+        if (accion === 'Posponer') {
+            if (!confirm('¿Posponer al backlog? Se quitará de tu día.')) return;
+            await clarityService.actualizarTarea(task.idTarea, { estado: 'Pendiente', fechaObjetivo: null, fechaInicioPlanificada: null });
+            onUpdate();
+            onClose();
+            return;
+        }
+
+        if (!confirm('¿Seguro? Esta acción cerrará la tarea.')) return;
+        setSubmitting(true);
+        try {
+            if (accion === 'NoAplica') await clarityService.descartarTarea(task.idTarea);
+            else await clarityService.revalidarTarea(task.idTarea, accion, targetUserId);
+
+            showToast(`Tarea ${accion === 'NoAplica' ? 'descartada' : 'revalidada'}`, 'success');
+            onUpdate();
+            onClose();
+        } catch (e: any) {
+            alert('Error: ' + (e.response?.data?.message || e.message));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleReassign = async (targetUserId: number) => {
+        if (!targetUserId) return alert('Selecciona un responsable');
+        setSubmitting(true);
+        try {
+            await clarityService.revalidarTarea(task.idTarea, 'Reasignar', targetUserId);
+            showToast('Tarea reasignada', 'success');
+            onUpdate();
+            onClose();
+        } catch {
+            alert('Error al reasignar');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleSubmitStrategicChange = async (field: 'fechaObjetivo' | 'fechaInicioPlanificada', value: string, reason: string) => {
+        if (!reason.trim()) return alert('Debes justificar el cambio.');
+        setSubmitting(true);
+        try {
+            await planningService.requestChange(task.idTarea, field, value, reason);
+            showToast('Solicitud enviada al gerente', 'success');
+            setView('Main');
+        } catch {
+            alert('Error al enviar solicitud.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return {
         // State
         form: {
@@ -224,13 +307,20 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
             planningCheck,
             auditLogs,
             submitting,
-            showChangeModal, setShowChangeModal
+            showChangeModal, setShowChangeModal,
+            view, setView,
+            requestedField, setRequestedField,
+            team
         },
         actions: {
             handleSaveProgress,
             confirmChangeRequest,
             addSubtask,
-            toggleSubtaskCompletion
+            toggleSubtaskCompletion,
+            handleCreateBlocker,
+            handleAction,
+            handleReassign,
+            handleSubmitStrategicChange
         }
     };
 };

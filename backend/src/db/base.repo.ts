@@ -248,6 +248,50 @@ export async function ejecutarSP<T = any>(
 }
 
 /**
+ * Execute a Stored Procedure expecting Multiple Result Sets.
+ */
+export async function ejecutarSPMulti<T = any>(
+    spName: string,
+    params?: ParamsMap,
+    tx?: sql.Transaction,
+    origin: string = 'unknown'
+): Promise<T[][]> {
+    const start = Date.now();
+    try {
+        const connection = await getPool();
+        const request = tx ? new sql.Request(tx) : connection.request();
+
+        bindParams(request, params);
+
+        const result = await request.execute<T>(spName);
+
+        const duration = Date.now() - start;
+        if (duration > CONFIG.SLOW_QUERY_THRESHOLD_MS) {
+            enqueueSlowLog({
+                duration,
+                command: `EXEC ${spName} (MULTI)`,
+                type: 'SP',
+                params: JSON.stringify(sanitizeParamsForLog(params)),
+                origin,
+                date: new Date()
+            });
+        }
+
+        return result.recordsets || [];
+
+    } catch (error: any) {
+        const duration = Date.now() - start;
+        logger.error(`❌ SP Multi Error [${spName}] (${duration}ms): ${error.message}`, {
+            params: sanitizeParamsForLog(params),
+            code: error.code
+        });
+
+        if (isConnectionError(error)) resetPool();
+        throw error;
+    }
+}
+
+/**
  * Creates a raw mssql Request object. 
  */
 export async function crearRequest(tx?: sql.Transaction): Promise<sql.Request> {

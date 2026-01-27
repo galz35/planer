@@ -17,36 +17,17 @@ export async function obtenerProyectosPorUsuario(carnet: string) {
 }
 
 export async function obtenerTodosProyectos(filter?: any) {
-    let sql = 'SELECT * FROM p_Proyectos WHERE 1=1';
-    const params: any = {};
-
-    if (filter?.nombre) {
-        sql += ' AND nombre LIKE @nombre';
-        params.nombre = { valor: `%${filter.nombre}%`, tipo: NVarChar };
-    }
-    if (filter?.estado) {
-        sql += ' AND estado = @estado';
-        params.estado = { valor: filter.estado, tipo: NVarChar };
-    }
-    if (filter?.gerencia) {
-        sql += ' AND gerencia = @gerencia';
-        params.gerencia = { valor: filter.gerencia, tipo: NVarChar };
-    }
-    if (filter?.subgerencia) {
-        sql += ' AND subgerencia = @subgerencia';
-        params.subgerencia = { valor: filter.subgerencia, tipo: NVarChar };
-    }
-    if (filter?.area) {
-        sql += ' AND area = @area';
-        params.area = { valor: filter.area, tipo: NVarChar };
-    }
-    if (filter?.tipo) {
-        sql += ' AND tipo = @tipo';
-        params.tipo = { valor: filter.tipo, tipo: NVarChar };
-    }
-
-    sql += ' ORDER BY fechaCreacion DESC';
-    return await ejecutarQuery<ProyectoDb>(sql, params);
+    // 2026-01-27: v2 - Use SP with Pagination Support (Defaulting to large page for backward compat)
+    return await ejecutarSP<ProyectoDb>('sp_Proyectos_Listar', {
+        nombre: { valor: filter?.nombre || null, tipo: NVarChar },
+        estado: { valor: filter?.estado || null, tipo: NVarChar },
+        gerencia: { valor: filter?.gerencia || null, tipo: NVarChar },
+        subgerencia: { valor: filter?.subgerencia || null, tipo: NVarChar },
+        area: { valor: filter?.area || null, tipo: NVarChar },
+        tipo: { valor: filter?.tipo || null, tipo: NVarChar },
+        pageNumber: { valor: 1, tipo: Int },
+        pageSize: { valor: 2000, tipo: Int } // Fetch "all" (limit to 2000)
+    });
 }
 
 /**
@@ -89,6 +70,10 @@ export async function obtenerProyectosVisibles(idUsuario: number, usuario: any, 
 
 // Esta función estaba creando PROYECTOS, no tareas. La de tareas no estaba exportada o estaba en otro lado.
 // Ahora agregamos la V2 para crear Tarea con SP
+/**
+ * @deprecated PRECAUCIÓN (CR-01): Este método es LEGACY y no integra las validaciones de Jerarquía Inteligente v2.1.
+ * NO USAR PARA NUEVO CÓDIGO. Migrar a tasks.repo.crearTarea().
+ */
 export async function crearTarea(dto: {
     titulo: string, descripcion?: string, idProyecto?: number, prioridad: string, effort?: string, tipo?: string,
     fechaInicioPlanificada?: Date | null, fechaObjetivo?: Date | null, idCreador: number, idResponsable?: number,
@@ -188,7 +173,7 @@ export async function obtenerTareaPorId(idTarea: number) {
         creadorCorreo?: string
     }>(`
         SELECT 
-            t.idTarea, t.nombre, t.descripcion, t.estado, t.prioridad, t.fechaCreacion, t.fechaObjetivo, t.fechaCompletado, t.porcentaje, t.idPadre, t.orden, t.esHito, t.idAsignado, t.idPlan,
+            t.idTarea, t.nombre as titulo, t.descripcion, t.estado, t.prioridad, t.fechaCreacion, t.fechaObjetivo, t.fechaCompletado, t.porcentaje, t.idPadre, t.orden, t.esHito, t.idAsignado, t.idPlan,
             t.linkEvidencia, t.tipo, t.esfuerzo, t.comportamiento, t.fechaInicioPlanificada,
             t.porcentaje as progreso,
             p.tipo as proyectoTipo, 
@@ -225,11 +210,29 @@ export async function obtenerTareaPorId(idTarea: number) {
     return tarea;
 }
 
+/**
+ * @deprecated PRECAUCIÓN (CR-01): Este método es LEGACY y no recalcula jerarquía. NO USAR para updates complejos.
+ * Usar tasks.repo.actualizarTarea() envuelto en TasksService.
+ */
 export async function actualizarTarea(idTarea: number, updates: Partial<TareaDb>) {
     // V3: Uso de ejecutarSP para mayor seguridad y evitar warnings de BaseRepo
     // Mapeamos los campos del objeto TareaDb o Updates a los parámetros del SP
-    console.log(`[Repo] Actualizando tarea ${idTarea}:`, updates);
-    await ejecutarSP('sp_ActualizarTarea', {
+    // console.log(`[Repo] Actualizando tarea ${idTarea}:`, updates);
+    // V3: Uso de ejecutarSP (envuelto en query raw con SET options para evitar error de indice filtrado)
+    // Parche crítico: SET QUOTED_IDENTIFIER ON requerido.
+    await ejecutarQuery(`
+        SET QUOTED_IDENTIFIER ON;
+        EXEC sp_ActualizarTarea 
+            @idTarea = @idTarea,
+            @titulo = @titulo,
+            @descripcion = @descripcion,
+            @estado = @estado,
+            @prioridad = @prioridad,
+            @progreso = @progreso,
+            @fechaObjetivo = @fechaObjetivo,
+            @fechaInicioPlanificada = @fechaInicioPlanificada,
+            @linkEvidencia = @linkEvidencia
+    `, {
         idTarea: { valor: idTarea, tipo: Int },
         titulo: { valor: updates.nombre ?? null, tipo: NVarChar },
         descripcion: { valor: updates.descripcion ?? null, tipo: NVarChar },
@@ -242,7 +245,7 @@ export async function actualizarTarea(idTarea: number, updates: Partial<TareaDb>
     });
 
     if ((updates as any).idTareaPadre !== undefined) {
-        await ejecutarQuery(`UPDATE p_Tareas SET idTareaPadre = @p WHERE idTarea = @t`, {
+        await ejecutarQuery(`SET QUOTED_IDENTIFIER ON; UPDATE p_Tareas SET idTareaPadre = @p WHERE idTarea = @t`, {
             p: { valor: (updates as any).idTareaPadre, tipo: Int }, // Puede ser null
             t: { valor: idTarea, tipo: Int }
         });
@@ -285,7 +288,7 @@ export async function actualizarTarea(idTarea: number, updates: Partial<TareaDb>
         }
 
         if (sets.length > 0) {
-            await ejecutarQuery(`UPDATE p_Tareas SET ${sets.join(', ')} WHERE idTarea = @id`, params);
+            await ejecutarQuery(`SET QUOTED_IDENTIFIER ON; UPDATE p_Tareas SET ${sets.join(', ')} WHERE idTarea = @id`, params);
         }
     }
 }
@@ -555,20 +558,47 @@ export async function obtenerTareasCriticas(carnets: string[]) {
     // FIX: Ahora hacemos JOIN con p_TareaAsignados porque esa es la tabla real de asignaciones.
     // Usamos DISTINCT para evitar duplicados si la lógica de asignación es redundante.
     return await ejecutarQuery(`
+        DECLARE @Hoy DATE = CONVERT(DATE, GETDATE());
+        DECLARE @Ini DATETIME2(0) = CONVERT(DATETIME2(0), @Hoy);
+        DECLARE @Fin DATETIME2(0) = DATEADD(DAY, 1, @Ini);
+
+        WITH TareasEquipo AS (
+            -- FUENTE 1: Asignación oficial a un miembro del equipo
+            SELECT ta.idTarea, ta.carnet
+            FROM dbo.p_TareaAsignados ta
+            WHERE ta.carnet IN (${carnetsCsv})
+
+            UNION  -- Dedup automático
+            
+            -- FUENTE 2: Tareas que el equipo puso en su plan de hoy
+            SELECT ct.idTarea, c.usuarioCarnet as carnet
+            FROM dbo.p_CheckinTareas ct
+            INNER JOIN dbo.p_Checkins c ON c.idCheckin = ct.idCheckin
+            WHERE c.usuarioCarnet IN (${carnetsCsv})
+              AND c.fecha >= @Ini AND c.fecha < @Fin
+        )
         SELECT DISTINCT
-            t.idTarea, t.nombre as titulo, t.fechaObjetivo, t.estado, t.prioridad, t.idProyecto,
+            t.idTarea, t.nombre as titulo, t.fechaObjetivo, t.estado, t.prioridad, t.idProyecto, 
+            t.fechaCompletado, t.fechaFinReal,
             u.nombre as asignado, 
-            ta.carnet as usuarioCarnet, 
+            u.gerencia, u.subgerencia, u.area,
+            te.carnet as usuarioCarnet, 
             p.nombre as proyectoNombre
-        FROM p_Tareas t
-        INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
-        INNER JOIN p_Usuarios u ON ta.carnet = u.carnet
-        LEFT JOIN p_Proyectos p ON t.idProyecto = p.idProyecto
-        WHERE ta.carnet IN (${carnetsCsv})
-          AND t.activo = 1
-          AND t.estado NOT IN ('Hecha', 'Eliminada', 'Cancelada', 'Completada')
-          AND t.fechaObjetivo IS NOT NULL
-          AND CAST(t.fechaObjetivo AS DATE) <= CAST(GETDATE() AS DATE)
-        ORDER BY t.fechaObjetivo ASC
+        FROM TareasEquipo te
+        INNER JOIN dbo.p_Tareas t ON t.idTarea = te.idTarea
+        INNER JOIN dbo.p_Usuarios u ON te.carnet = u.carnet
+        LEFT JOIN dbo.p_Proyectos p ON t.idProyecto = p.idProyecto
+        WHERE t.activo = 1
+          AND (
+            -- Caso A: Tarea pendiente que vence hoy o está atrasada
+            (t.estado NOT IN ('Hecha', 'Completada', 'Eliminada', 'Cancelada') AND t.fechaObjetivo < @Fin)
+            OR
+            -- Caso B: Tarea terminada HOY (usando fecha de término real)
+            (t.estado IN ('Hecha', 'Completada') AND (
+                (t.fechaCompletado >= @Ini AND t.fechaCompletado < @Fin) OR 
+                (t.fechaFinReal >= @Ini AND t.fechaFinReal < @Fin)
+            ))
+          )
+        ORDER BY t.fechaObjetivo ASC;
     `);
 }

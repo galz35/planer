@@ -40,7 +40,7 @@ export const Sidebar: React.FC = () => {
     // Groups State for Collapsible Menus
     const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
         'Mi Espacio': true,
-        'Gestión Equipo': true,
+        'Mi Gestión Equipo': true,
         'Estrategia': false
     });
 

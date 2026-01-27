@@ -175,7 +175,7 @@ export interface CheckinDb {
     estadoAnimo: string | null;
     idNodo: number | null;
     fechaCreacion: Date;
-    carnet: string | null;
+    usuariocarnet: string | null;
 }
 
 // Bloqueo (mapeado desde p_Bloqueos)

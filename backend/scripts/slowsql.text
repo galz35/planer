@@ -1,0 +1,648 @@
+7714	EXEC sp_Tareas_ObtenerPorUsuario	{"carnet":"500708","estado":null,"idProyecto":null,"query":null,"startDate":null,"endDate":null}	SP	unknown
+9912	EXEC sp_Tareas_ObtenerPorUsuario	{"carnet":"500708","estado":null,"idProyecto":null,"query":null,"startDate":null,"endDate":null}	SP	unknown
+1159	         SELECT * FROM p_Checkins          WHERE usuarioCarnet = @carnet AND CAST(fecha AS DATE) = CAST(@fecha AS DATE)     	{"carnet":"500708","fecha":"2026-01-26T00:00:00.000Z"}	QUERY	legacy
+1048	         SELECT * FROM p_Checkins          WHERE usuarioCarnet = @carnet AND CAST(fecha AS DATE) = CAST(@fecha AS DATE)     	{"carnet":"500708","fecha":"2026-01-26T00:00:00.000Z"}	QUERY	legacy
+23539	             SELECT DISTINCT                  LTRIM(RTRIM(ogerencia)) AS ogerencia,                 LTRIM(RTRIM(subgerencia)) AS subgerencia,                 LTRIM(RTRIM(area)) AS area             FROM p_Usuarios             WHERE activo = 1               AND ogerencia IS NOT NULL AND LTRIM(RTRIM(ogerencia)) <> ''               AND subgerencia IS NOT NULL AND LTRIM(RTRIM(subgerencia)) <> ''               AND area IS NOT NULL AND LTRIM(RTRIM(area)) <> ''             ORDER BY 1, 2, 3         	null	QUERY	legacy
+25191	             SELECT                 LTRIM(RTRIM(ISNULL(ogerencia, '')))      AS gerencia,                 LTRIM(RTRIM(ISNULL(subgerencia, '')))    AS subgerencia,                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))   AS area             FROM dbo.p_Usuarios             WHERE activo = 1             GROUP BY                 LTRIM(RTRIM(ISNULL(ogerencia, ''))),                 LTRIM(RTRIM(ISNULL(subgerencia, ''))),                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))             ORDER BY 1,2,3;         	null	QUERY	legacy
+25134	EXEC sp_Tareas_ObtenerPorUsuario	{"carnet":"401992","estado":null,"idProyecto":null,"query":null,"startDate":null,"endDate":null}	SP	unknown
+25075	             SELECT                 LTRIM(RTRIM(ISNULL(ogerencia, '')))      AS gerencia,                 LTRIM(RTRIM(ISNULL(subgerencia, '')))    AS subgerencia,                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))   AS area             FROM dbo.p_Usuarios             WHERE activo = 1             GROUP BY                 LTRIM(RTRIM(ISNULL(ogerencia, ''))),                 LTRIM(RTRIM(ISNULL(subgerencia, ''))),                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))             ORDER BY 1,2,3;         	null	QUERY	legacy
+1162	EXEC sp_Tareas_ObtenerPorUsuario	{"carnet":"401992","estado":null,"idProyecto":null,"query":null,"startDate":null,"endDate":null}	SP	unknown
+20853	EXEC sp_Tareas_ObtenerPorUsuario	{"carnet":"401992","estado":null,"idProyecto":null,"query":null,"startDate":null,"endDate":null}	SP	unknown
+19424	             SELECT                 LTRIM(RTRIM(ISNULL(ogerencia, '')))      AS gerencia,                 LTRIM(RTRIM(ISNULL(subgerencia, '')))    AS subgerencia,                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))   AS area             FROM dbo.p_Usuarios             WHERE activo = 1             GROUP BY                 LTRIM(RTRIM(ISNULL(ogerencia, ''))),                 LTRIM(RTRIM(ISNULL(subgerencia, ''))),                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))             ORDER BY 1,2,3;         	null	QUERY	legacy
+16812	EXEC sp_Visibilidad_ObtenerMiEquipo	{"carnet":"401992"}	SP	unknown
+9428	             SELECT DISTINCT                  LTRIM(RTRIM(ogerencia)) AS ogerencia,                 LTRIM(RTRIM(subgerencia)) AS subgerencia,                 LTRIM(RTRIM(area)) AS area             FROM p_Usuarios             WHERE activo = 1               AND ogerencia IS NOT NULL AND LTRIM(RTRIM(ogerencia)) <> ''               AND subgerencia IS NOT NULL AND LTRIM(RTRIM(subgerencia)) <> ''               AND area IS NOT NULL AND LTRIM(RTRIM(area)) <> ''             ORDER BY 1, 2, 3         	null	QUERY	legacy
+19456	EXEC sp_Proyecto_ObtenerVisibles	{"idUsuario":28,"idsEquipo":{"name":"TVP_IntList","schema":"dbo","database":null,"path":"[dbo].[TVP_IntList]","temporary":false,"columns":[{"name":"Id"}],"rows":[[28]]}}	SP	unknown
+38466	EXEC sp_Visibilidad_ObtenerMiEquipo	{"carnet":"401992"}	SP	unknown
+2957	             SELECT                 LTRIM(RTRIM(ISNULL(ogerencia, '')))      AS gerencia,                 LTRIM(RTRIM(ISNULL(subgerencia, '')))    AS subgerencia,                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))   AS area             FROM dbo.p_Usuarios             WHERE activo = 1             GROUP BY                 LTRIM(RTRIM(ISNULL(ogerencia, ''))),                 LTRIM(RTRIM(ISNULL(subgerencia, ''))),                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))             ORDER BY 1,2,3;         	null	QUERY	legacy
+10559	EXEC sp_Usuarios_Buscar	{"termino":"401","limite":10}	SP	unknown
+10214	EXEC sp_Usuarios_Buscar	{"termino":"40199","limite":10}	SP	unknown
+10373	EXEC sp_Usuarios_Buscar	{"termino":"4019","limite":10}	SP	unknown
+10799	EXEC sp_Usuarios_Buscar	{"termino":"40","limite":10}	SP	unknown
+10027	EXEC sp_Usuarios_Buscar	{"termino":"401992","limite":10}	SP	unknown
+1472	EXEC sp_Tareas_ObtenerPorUsuario	{"carnet":"500708","estado":null,"idProyecto":null,"query":null,"startDate":null,"endDate":null}	SP	unknown
+1029	         INSERT INTO p_Auditoria (idUsuario, accion, entidad, entidadId, datosAnteriores, datosNuevos, fecha)         VALUES (@idUsuario, @accion, @entidad, @entidadId, @datosAnteriores, @datosNuevos, GETDATE())     	{"idUsuario":23,"accion":"USUARIO_LOGIN","entidad":"Usuario","entidadId":"23","datosNuevos":"{\"correo\":\"gustavo.lira@claro.com.ni\",\"ip\":\"IP_MOCK\"}"}	QUERY	legacy
+14242	             SELECT                 LTRIM(RTRIM(ISNULL(ogerencia, '')))      AS gerencia,                 LTRIM(RTRIM(ISNULL(subgerencia, '')))    AS subgerencia,                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))   AS area             FROM dbo.p_Usuarios             WHERE activo = 1             GROUP BY                 LTRIM(RTRIM(ISNULL(ogerencia, ''))),                 LTRIM(RTRIM(ISNULL(subgerencia, ''))),                 LTRIM(RTRIM(ISNULL(primer_nivel, '')))             ORDER BY 1,2,3;         	null	QUERY	legacy
+14129	EXEC sp_Proyecto_ObtenerVisibles	{"idUsuario":12,"idsEquipo":{"name":"TVP_IntList","schema":"dbo","database":null,"path":"[dbo].[TVP_IntList]","temporary":false,"columns":[{"name":"Id"}],"rows":[[11],[10],[13],[9]]}}	SP	unknown
+24302	             SELECT DISTINCT                  LTRIM(RTRIM(ogerencia)) AS ogerencia,                 LTRIM(RTRIM(subgerencia)) AS subgerencia,                 LTRIM(RTRIM(area)) AS area             FROM p_Usuarios             WHERE activo = 1               AND ogerencia IS NOT NULL AND LTRIM(RTRIM(ogerencia)) <> ''               AND subgerencia IS NOT NULL AND LTRIM(RTRIM(subgerencia)) <> ''               AND area IS NOT NULL AND LTRIM(RTRIM(area)) <> ''             ORDER BY 1, 2, 3         	null	QUERY	legacy
+24438	EXEC sp_Proyecto_ObtenerVisibles	{"idUsuario":12,"idsEquipo":{"name":"TVP_IntList","schema":"dbo","database":null,"path":"[dbo].[TVP_IntList]","temporary":false,"columns":[{"name":"Id"}],"rows":[[11],[10],[13],[9]]}}	SP	unknown
+24527	EXEC sp_Visibilidad_ObtenerMiEquipo	{"carnet":"400543"}	SP	unknown
+sugerencia de chatgpt 5.2:
+/*==============================================================================
+  CLARITY - SCRIPT UNICO: FIX INDICES + SPs + TEST HARNESS (para Gemini 3)
+  Fecha: 2026-01-27
+  Objetivo:
+   - Corregir índices con orden incorrecto (especialmente p_TareaAsignados)
+   - Eliminar scans por LTRIM/RTRIM/ISNULL en org filters (ogerencia/subgerencia/area)
+   - Quitar CAST(fecha AS DATE) en consultas de Checkins (sargable)
+   - Optimizar sp_Tareas_ObtenerPorUsuario (sin MERGE)
+   - Agregar TESTS al final (medición simple ms)
+==============================================================================*/
+
+USE [Bdplaner];
+GO
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+GO
+
+PRINT '>>> INICIO FIX CLARITY';
+
+--------------------------------------------------------------------------------
+-- 0) LIMPIEZA: FKs duplicadas (si existen)
+--------------------------------------------------------------------------------
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Tareas_Padre')
+BEGIN
+    ALTER TABLE dbo.p_Tareas DROP CONSTRAINT FK_Tareas_Padre;
+    PRINT '    - DROP FK duplicada: FK_Tareas_Padre';
+END
+
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_p_Tareas_Padre')
+BEGIN
+    ALTER TABLE dbo.p_Tareas DROP CONSTRAINT FK_p_Tareas_Padre;
+    PRINT '    - DROP FK duplicada: FK_p_Tareas_Padre';
+END
+GO
+
+--------------------------------------------------------------------------------
+-- 1) COLUMNAS NORMALIZADAS (PERSISTED) PARA EVITAR LTRIM/RTRIM EN QUERIES
+--------------------------------------------------------------------------------
+PRINT '>>> [1] Columnas normalizadas en p_Usuarios';
+
+IF COL_LENGTH('dbo.p_Usuarios', 'ogerencia_norm') IS NULL
+    EXEC('ALTER TABLE dbo.p_Usuarios ADD ogerencia_norm AS NULLIF(LTRIM(RTRIM(ogerencia)), '''') PERSISTED;');
+
+IF COL_LENGTH('dbo.p_Usuarios', 'subgerencia_norm') IS NULL
+    EXEC('ALTER TABLE dbo.p_Usuarios ADD subgerencia_norm AS NULLIF(LTRIM(RTRIM(subgerencia)), '''') PERSISTED;');
+
+IF COL_LENGTH('dbo.p_Usuarios', 'area_norm') IS NULL
+    EXEC('ALTER TABLE dbo.p_Usuarios ADD area_norm AS NULLIF(LTRIM(RTRIM(area)), '''') PERSISTED;');
+
+IF COL_LENGTH('dbo.p_Usuarios', 'primer_nivel_norm') IS NULL
+    EXEC('ALTER TABLE dbo.p_Usuarios ADD primer_nivel_norm AS NULLIF(LTRIM(RTRIM(primer_nivel)), '''') PERSISTED;');
+
+GO
+
+--------------------------------------------------------------------------------
+-- 2) INDICES: CORRECCIONES Y NUEVOS (SAFE: drop/recreate)
+--------------------------------------------------------------------------------
+PRINT '>>> [2] Índices críticos';
+
+-- 2.1 p_TareaAsignados: FIX orden del índice (carnet debe ir primero)
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_p_TareaAsignados_Carnet_Tarea' AND object_id = OBJECT_ID('dbo.p_TareaAsignados'))
+BEGIN
+    DROP INDEX IX_p_TareaAsignados_Carnet_Tarea ON dbo.p_TareaAsignados;
+    PRINT '    - DROP Index: IX_p_TareaAsignados_Carnet_Tarea';
+END
+GO
+CREATE INDEX IX_p_TareaAsignados_Carnet_Tarea
+ON dbo.p_TareaAsignados (carnet, idTarea)
+INCLUDE (esResponsable);
+GO
+PRINT '    + CREATE Index: IX_p_TareaAsignados_Carnet_Tarea (carnet,idTarea) INCLUDE(esResponsable)';
+GO
+
+-- 2.2 p_Checkins: asegurar seek por usuarioCarnet + fecha (ya existe en tu DDL pero lo garantizamos)
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_p_Checkins_Usuario_Fecha' AND object_id = OBJECT_ID('dbo.p_Checkins'))
+BEGIN
+    CREATE INDEX IX_p_Checkins_Usuario_Fecha ON dbo.p_Checkins (usuarioCarnet, fecha);
+    PRINT '    + CREATE Index: IX_p_Checkins_Usuario_Fecha';
+END
+GO
+
+-- 2.3 p_Tareas: índice real para filtros por creadorCarnet/estado/fechas (tu IX actual está mal ordenado y mezcla columnas raras)
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_p_Tareas_Estado_FechaObjetivo' AND object_id = OBJECT_ID('dbo.p_Tareas'))
+BEGIN
+    DROP INDEX IX_p_Tareas_Estado_FechaObjetivo ON dbo.p_Tareas;
+    PRINT '    - DROP Index: IX_p_Tareas_Estado_FechaObjetivo (malo para los WHERE reales)';
+END
+GO
+CREATE INDEX IX_p_Tareas_CreadorCarnet_Filtros
+ON dbo.p_Tareas (activo, creadorCarnet, estado, fechaObjetivo)
+INCLUDE (
+    idTarea, idProyecto, nombre, descripcion, prioridad, porcentaje,
+    fechaCreacion, fechaCompletado, orden, idTareaPadre, idPlan,
+    comportamiento, idGrupo, numeroParte
+);
+GO
+PRINT '    + CREATE Index: IX_p_Tareas_CreadorCarnet_Filtros';
+GO
+
+-- 2.4 p_Usuarios: tu IX_p_Usuarios_Carnet está con llave rara (idUsuario,nombre,correo,...,carnet). Se reemplaza.
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_p_Usuarios_Carnet' AND object_id = OBJECT_ID('dbo.p_Usuarios'))
+BEGIN
+    DROP INDEX IX_p_Usuarios_Carnet ON dbo.p_Usuarios;
+    PRINT '    - DROP Index: IX_p_Usuarios_Carnet (llave incorrecta)';
+END
+GO
+CREATE INDEX IX_p_Usuarios_Carnet
+ON dbo.p_Usuarios (carnet)
+INCLUDE (idUsuario, nombre, nombreCompleto, correo, idRol, activo, rolGlobal, cargo);
+GO
+PRINT '    + CREATE Index: IX_p_Usuarios_Carnet (carnet) INCLUDE(...)';
+GO
+
+-- 2.5 Índice para combos de org (ogerencia/subgerencia/area) SIN LTRIM/RTRIM
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_p_Usuarios_OrgNorm' AND object_id = OBJECT_ID('dbo.p_Usuarios'))
+BEGIN
+    CREATE INDEX IX_p_Usuarios_OrgNorm
+    ON dbo.p_Usuarios (activo, ogerencia_norm, subgerencia_norm, area_norm, primer_nivel_norm);
+    PRINT '    + CREATE Index: IX_p_Usuarios_OrgNorm';
+END
+GO
+
+--------------------------------------------------------------------------------
+-- 3) STORED PROCEDURES: versiones optimizadas
+--------------------------------------------------------------------------------
+
+/*--------------------------------------------------------------------------
+  3.1 Checkins (reemplaza el legacy con CAST(fecha AS DATE))
+---------------------------------------------------------------------------*/
+PRINT '>>> [3] sp_Checkins_ObtenerPorUsuarioFecha (nuevo, sargable)';
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_Checkins_ObtenerPorUsuarioFecha
+    @carnet NVARCHAR(50),
+    @fecha  DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP (1) *
+    FROM dbo.p_Checkins
+    WHERE usuarioCarnet = @carnet
+      AND fecha = @fecha;
+END
+GO
+
+/*--------------------------------------------------------------------------
+  3.2 Org combos (reemplazan queries legacy con LTRIM/RTRIM)
+---------------------------------------------------------------------------*/
+PRINT '>>> [4] sp_Usuarios_OrgCombos_Distinct (nuevo)';
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_Usuarios_OrgCombos_Distinct
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT DISTINCT
+        ogerencia_norm   AS ogerencia,
+        subgerencia_norm AS subgerencia,
+        area_norm        AS area
+    FROM dbo.p_Usuarios
+    WHERE activo = 1
+      AND ogerencia_norm IS NOT NULL
+      AND subgerencia_norm IS NOT NULL
+      AND area_norm IS NOT NULL
+    ORDER BY 1,2,3;
+END
+GO
+
+PRINT '>>> [5] sp_Usuarios_OrgCombos_Group (nuevo)';
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_Usuarios_OrgCombos_Group
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ISNULL(ogerencia_norm,   '') AS gerencia,
+        ISNULL(subgerencia_norm, '') AS subgerencia,
+        ISNULL(primer_nivel_norm,'') AS area
+    FROM dbo.p_Usuarios
+    WHERE activo = 1
+    GROUP BY
+        ISNULL(ogerencia_norm,   ''),
+        ISNULL(subgerencia_norm, ''),
+        ISNULL(primer_nivel_norm,'')
+    ORDER BY 1,2,3;
+END
+GO
+
+/*--------------------------------------------------------------------------
+  3.3 Tareas por usuario (reemplaza MERGE, reduce costo y evita duplicados)
+---------------------------------------------------------------------------*/
+PRINT '>>> [6] sp_Tareas_ObtenerPorUsuario (vTEST optimizada)';
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_Tareas_ObtenerPorUsuario
+    @carnet     NVARCHAR(50),
+    @estado     NVARCHAR(50) = NULL,
+    @idProyecto INT          = NULL,
+    @query      NVARCHAR(100)= NULL,
+    @startDate  DATETIME     = NULL,
+    @endDate    DATETIME     = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF (@query IS NOT NULL AND LTRIM(RTRIM(@query)) = N'') SET @query = NULL;
+
+    DECLARE @idUsuario INT;
+    SELECT TOP (1) @idUsuario = u.idUsuario
+    FROM dbo.p_Usuarios u
+    WHERE u.carnet = @carnet;
+
+    CREATE TABLE #IdsTareas (idTarea INT NOT NULL PRIMARY KEY);
+
+    ;WITH SourceIds AS (
+        -- A) creadas por carnet (rápido por IX_p_Tareas_CreadorCarnet_Filtros)
+        SELECT t.idTarea
+        FROM dbo.p_Tareas t
+        WHERE t.activo = 1
+          AND t.creadorCarnet = @carnet
+          AND (@estado IS NULL OR t.estado = @estado)
+          AND (@idProyecto IS NULL OR t.idProyecto = @idProyecto)
+          AND (@query IS NULL OR (t.nombre LIKE N'%' + @query + N'%' OR t.descripcion LIKE N'%' + @query + N'%'))
+          AND (@startDate IS NULL OR t.fechaObjetivo >= @startDate)
+          AND (@endDate   IS NULL OR t.fechaObjetivo <= @endDate)
+
+        UNION
+
+        -- B) asignadas por carnet
+        SELECT t.idTarea
+        FROM dbo.p_TareaAsignados ta
+        INNER JOIN dbo.p_Tareas t ON t.idTarea = ta.idTarea
+        WHERE t.activo = 1
+          AND ta.carnet = @carnet
+          AND (@estado IS NULL OR t.estado = @estado)
+          AND (@idProyecto IS NULL OR t.idProyecto = @idProyecto)
+          AND (@query IS NULL OR (t.nombre LIKE N'%' + @query + N'%' OR t.descripcion LIKE N'%' + @query + N'%'))
+          AND (@startDate IS NULL OR t.fechaObjetivo >= @startDate)
+          AND (@endDate   IS NULL OR t.fechaObjetivo <= @endDate)
+
+        UNION
+
+        -- C) legacy idCreador (solo si existe)
+        SELECT t.idTarea
+        FROM dbo.p_Tareas t
+        WHERE t.activo = 1
+          AND @idUsuario IS NOT NULL
+          AND t.idCreador = @idUsuario
+          AND (@estado IS NULL OR t.estado = @estado)
+          AND (@idProyecto IS NULL OR t.idProyecto = @idProyecto)
+          AND (@query IS NULL OR (t.nombre LIKE N'%' + @query + N'%' OR t.descripcion LIKE N'%' + @query + N'%'))
+          AND (@startDate IS NULL OR t.fechaObjetivo >= @startDate)
+          AND (@endDate   IS NULL OR t.fechaObjetivo <= @endDate)
+    )
+    INSERT INTO #IdsTareas (idTarea)
+    SELECT DISTINCT idTarea
+    FROM SourceIds
+    OPTION (RECOMPILE);
+
+    SELECT
+        t.idTarea, t.idProyecto,
+        t.nombre AS titulo,
+        t.descripcion, t.estado, t.prioridad, t.esfuerzo, t.tipo,
+        t.fechaCreacion, t.fechaObjetivo, t.fechaCompletado,
+        t.porcentaje AS progreso,
+        t.orden, t.idCreador, t.fechaInicioPlanificada,
+        t.comportamiento, t.idGrupo, t.numeroParte,
+        t.fechaActualizacion AS fechaUltActualizacion,
+        t.idTareaPadre,
+        t.idPlan,
+        p.nombre AS proyectoNombre
+    FROM #IdsTareas x
+    INNER JOIN dbo.p_Tareas t    ON t.idTarea = x.idTarea
+    LEFT  JOIN dbo.p_Proyectos p ON p.idProyecto = t.idProyecto
+    ORDER BY t.fechaObjetivo ASC, t.idTarea ASC
+    OPTION (RECOMPILE);
+
+    DROP TABLE #IdsTareas;
+END
+GO
+
+--------------------------------------------------------------------------------
+-- 4) TEST HARNESS (Gemini 3: ejecutar y comparar ms)
+--------------------------------------------------------------------------------
+PRINT '>>> [7] TEST HARNESS (ms)';
+
+DECLARE @t0 DATETIME2(3), @t1 DATETIME2(3), @ms INT;
+
+-- A) sp_Tareas_ObtenerPorUsuario
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Tareas_ObtenerPorUsuario
+    @carnet='500708', @estado=NULL, @idProyecto=NULL, @query=NULL, @startDate=NULL, @endDate=NULL;
+SET @t1 = SYSUTCDATETIME();
+SET @ms = DATEDIFF(MILLISECOND, @t0, @t1);
+PRINT CONCAT('TEST sp_Tareas_ObtenerPorUsuario ms=', @ms);
+
+-- B) Checkins: reemplazo del legacy CAST
+DECLARE @fechaTest DATE = CONVERT(DATE, GETDATE());
+
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Checkins_ObtenerPorUsuarioFecha @carnet='500708', @fecha=@fechaTest;
+SET @t1 = SYSUTCDATETIME();
+SET @ms = DATEDIFF(MILLISECOND, @t0, @t1);
+PRINT CONCAT('TEST sp_Checkins_ObtenerPorUsuarioFecha ms=', @ms);
+
+-- C) Org combos (antes eran queries legacy con LTRIM/RTRIM)
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Usuarios_OrgCombos_Distinct;
+SET @t1 = SYSUTCDATETIME();
+SET @ms = DATEDIFF(MILLISECOND, @t0, @t1);
+PRINT CONCAT('TEST sp_Usuarios_OrgCombos_Distinct ms=', @ms);
+
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Usuarios_OrgCombos_Group;
+SET @t1 = SYSUTCDATETIME();
+SET @ms = DATEDIFF(MILLISECOND, @t0, @t1);
+PRINT CONCAT('TEST sp_Usuarios_OrgCombos_Group ms=', @ms);
+
+PRINT '>>> FIN FIX CLARITY';
+GO
+
+/*==============================================================================
+  GEMINI 3 - INSTRUCCION DE PRUEBA
+  1) Ejecuta este script en Bdplaner.
+  2) Corre de nuevo tu auditoría (misma data / mismos parámetros).
+  3) Compara:
+     - sp_Tareas_ObtenerPorUsuario (debe bajar fuerte vs 7s-9s)
+     - Checkins legacy CAST (debe desaparecer; usar sp_Checkins_ObtenerPorUsuarioFecha)
+     - Queries de org (deben bajar brutal al usar columnas *_norm + índice)
+==============================================================================*/
+
+Fix mínimo (si p_Checkins.fecha es DATE como en tu script)
+-- ✅ NO toques la columna, convierte el parámetro
+SELECT  c.idCheckin, c.idUsuario, c.fecha, c.estadoAnimo, c.nota, c.entregableTexto,
+        c.prioridad1, c.prioridad2, c.prioridad3, c.energia, c.linkEvidencia
+FROM dbo.p_Checkins c
+WHERE c.usuarioCarnet = @carnet
+  AND c.fecha = CONVERT(date, @fecha);  -- @fecha viene datetime desde la API
+Índice recomendado (para esa búsqueda)
+-- Si consultas por usuarioCarnet+fecha, este es el orden correcto
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_p_Checkins_Usuario_Fecha' AND object_id = OBJECT_ID('dbo.p_Checkins'))
+BEGIN
+    CREATE INDEX IX_p_Checkins_Usuario_Fecha
+    ON dbo.p_Checkins (usuarioCarnet, fecha)
+    INCLUDE (idCheckin, idUsuario, estadoAnimo, nota, entregableTexto, prioridad1, prioridad2, prioridad3, energia, linkEvidencia);
+END
+
+/*==============================================================================
+  CLARITY - HOTFIX PERFORMANCE (SQL Server)
+  - Arregla 2 queries legacy que rompen índices:
+    1) p_Checkins por usuario+fecha (CAST rompe SARG)
+    2) DISTINCT + LTRIM/RTRIM en p_Usuarios (funciones rompen SARG)
+  - Ajusta índices clave (p_TareaAsignados) para sp_Tareas_ObtenerPorUsuario
+  - Incluye TEST HARNESS para medir ms por ejecución (para Gemini 3 / auditoría)
+==============================================================================*/
+USE [Bdplaner];
+GO
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+PRINT '>>> INICIANDO HOTFIX PERFORMANCE...';
+
+--------------------------------------------------------------------------------
+-- 0) UTIL: tabla de resultados de performance
+--------------------------------------------------------------------------------
+IF OBJECT_ID('tempdb..#Perf') IS NOT NULL DROP TABLE #Perf;
+CREATE TABLE #Perf(
+    testName   NVARCHAR(200) NOT NULL,
+    duracionMs INT           NOT NULL,
+    filas      INT           NOT NULL,
+    fecha      DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+--------------------------------------------------------------------------------
+-- 1) FIX #1: p_Checkins (evitar CAST en WHERE)
+--    PROBLEMA:
+--      WHERE usuarioCarnet=@carnet AND CAST(fecha AS DATE)=CAST(@fecha AS DATE)
+--      => si fecha es DATE, CAST es innecesario y puede impedir seek / optimización
+--      => si @fecha llega DATETIME, conviene convertir UNA VEZ a DATE (en variable)
+--------------------------------------------------------------------------------
+
+-- Asegurar índice correcto (usuarioCarnet, fecha)
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name='IX_p_Checkins_Usuario_Fecha'
+      AND object_id = OBJECT_ID('dbo.p_Checkins')
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_p_Checkins_Usuario_Fecha
+    ON dbo.p_Checkins(usuarioCarnet, fecha);
+    PRINT ' + Index creado: IX_p_Checkins_Usuario_Fecha';
+END
+ELSE
+BEGIN
+    PRINT ' = Index existe: IX_p_Checkins_Usuario_Fecha';
+END
+GO
+
+-- SP recomendado para reemplazar el query legacy (NO SELECT *)
+CREATE OR ALTER PROCEDURE dbo.sp_Checkins_ObtenerPorUsuarioFecha
+    @carnet NVARCHAR(50),
+    @fecha  DATETIME -- permite que el backend mande datetime sin romper
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @fechaDia DATE = CONVERT(DATE, @fecha);
+
+    SELECT TOP (1)
+        c.idCheckin,
+        c.usuarioCarnet,
+        c.idUsuario,
+        c.fecha,
+        c.estado,
+        c.estadoAnimo,
+        c.energia,
+        c.prioridad1, c.prioridad2, c.prioridad3,
+        c.entregableTexto,
+        c.nota,
+        c.linkEvidencia,
+        c.creadoEn
+    FROM dbo.p_Checkins c
+    WHERE c.usuarioCarnet = @carnet
+      AND c.fecha = @fechaDia;
+END
+GO
+
+--------------------------------------------------------------------------------
+-- 2) FIX #2: p_Usuarios (evitar LTRIM/RTRIM en consulta)
+--    PROBLEMA:
+--      SELECT DISTINCT LTRIM(RTRIM(col)) ... WHERE LTRIM(RTRIM(col)) <> ''
+--      => funciones en columnas => no SARG => scans caros (tu caso 24s)
+--
+--    SOLUCIÓN RÁPIDA Y SARG:
+--      - columnas computadas PERSISTED con TRIM
+--      - índice filtrado sobre esas columnas para activo=1 y no vacías
+--      - query usa columnas *_trim SIN funciones
+--------------------------------------------------------------------------------
+
+IF COL_LENGTH('dbo.p_Usuarios','ogerencia_trim') IS NULL
+BEGIN
+    ALTER TABLE dbo.p_Usuarios
+      ADD ogerencia_trim AS NULLIF(LTRIM(RTRIM(ogerencia)), N'') PERSISTED;
+    PRINT ' + Col creada: ogerencia_trim';
+END
+IF COL_LENGTH('dbo.p_Usuarios','subgerencia_trim') IS NULL
+BEGIN
+    ALTER TABLE dbo.p_Usuarios
+      ADD subgerencia_trim AS NULLIF(LTRIM(RTRIM(subgerencia)), N'') PERSISTED;
+    PRINT ' + Col creada: subgerencia_trim';
+END
+IF COL_LENGTH('dbo.p_Usuarios','area_trim') IS NULL
+BEGIN
+    ALTER TABLE dbo.p_Usuarios
+      ADD area_trim AS NULLIF(LTRIM(RTRIM(area)), N'') PERSISTED;
+    PRINT ' + Col creada: area_trim';
+END
+GO
+
+-- Índice filtrado (ideal para combos únicos de filtros)
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name='IX_p_Usuarios_OrgTrim_Activos'
+      AND object_id = OBJECT_ID('dbo.p_Usuarios')
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_p_Usuarios_OrgTrim_Activos
+    ON dbo.p_Usuarios(ogerencia_trim, subgerencia_trim, area_trim)
+    WHERE activo = 1
+      AND ogerencia_trim IS NOT NULL
+      AND subgerencia_trim IS NOT NULL
+      AND area_trim IS NOT NULL;
+    PRINT ' + Index creado: IX_p_Usuarios_OrgTrim_Activos';
+END
+ELSE
+BEGIN
+    PRINT ' = Index existe: IX_p_Usuarios_OrgTrim_Activos';
+END
+GO
+
+-- SP recomendado para reemplazar el DISTINCT+LTRIM/RTRIM legacy
+CREATE OR ALTER PROCEDURE dbo.sp_Usuarios_ObtenerOrgCombos
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        u.ogerencia_trim  AS ogerencia,
+        u.subgerencia_trim AS subgerencia,
+        u.area_trim       AS area
+    FROM dbo.p_Usuarios u
+    WHERE u.activo = 1
+      AND u.ogerencia_trim  IS NOT NULL
+      AND u.subgerencia_trim IS NOT NULL
+      AND u.area_trim       IS NOT NULL
+    GROUP BY
+        u.ogerencia_trim,
+        u.subgerencia_trim,
+        u.area_trim
+    ORDER BY 1,2,3;
+END
+GO
+
+--------------------------------------------------------------------------------
+-- 3) sp_Tareas_ObtenerPorUsuario (tu log muestra 7s–9s)
+--    PRIMER ARREGLO: índice de p_TareaAsignados está mal ordenado en tu script
+--      (esResponsable, carnet, idTarea) => para buscar por carnet es peor.
+--    Recomendado: (carnet, idTarea) INCLUDE(esResponsable)
+--------------------------------------------------------------------------------
+
+IF EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name='IX_p_TareaAsignados_Carnet_Tarea'
+      AND object_id = OBJECT_ID('dbo.p_TareaAsignados')
+)
+BEGIN
+    DROP INDEX IX_p_TareaAsignados_Carnet_Tarea ON dbo.p_TareaAsignados;
+    PRINT ' - Drop index: IX_p_TareaAsignados_Carnet_Tarea (orden malo)';
+END
+GO
+
+CREATE NONCLUSTERED INDEX IX_p_TareaAsignados_Carnet_Tarea
+ON dbo.p_TareaAsignados(carnet, idTarea)
+INCLUDE(esResponsable);
+GO
+PRINT ' + Create index: IX_p_TareaAsignados_Carnet_Tarea (carnet,idTarea)';
+
+-- Índice extra (si NO existe) para acelerar filtro por creadorCarnet/activo/estado/fechas
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name='IX_p_Tareas_CreadorCarnet_Activas'
+      AND object_id = OBJECT_ID('dbo.p_Tareas')
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_p_Tareas_CreadorCarnet_Activas
+    ON dbo.p_Tareas(creadorCarnet, activo, estado, idProyecto, fechaObjetivo)
+    INCLUDE(idTarea, nombre, porcentaje, fechaCompletado, fechaActualizacion);
+    PRINT ' + Index creado: IX_p_Tareas_CreadorCarnet_Activas';
+END
+ELSE
+BEGIN
+    PRINT ' = Index existe: IX_p_Tareas_CreadorCarnet_Activas';
+END
+GO
+
+--------------------------------------------------------------------------------
+-- 4) TEST HARNESS (para que Gemini 3 ejecute y valide ms)
+--    IMPORTANTE:
+--      - Corre cada bloque aparte.
+--      - Repite 3 veces si quieres “promedio”.
+--------------------------------------------------------------------------------
+PRINT '>>> INICIANDO TESTS (captura ms + filas)...';
+
+DECLARE @carnetTest NVARCHAR(50) = N'500708';
+DECLARE @fechaTest  DATETIME     = '2026-01-26T00:00:00.000';
+
+-- 4.1 Test: Checkin legacy (MALO) vs SP nuevo (BUENO)
+DECLARE @t0 DATETIME2, @rows INT;
+
+-- Legacy (simulación exacta)
+SET @t0 = SYSUTCDATETIME();
+SELECT *
+FROM dbo.p_Checkins
+WHERE usuarioCarnet = @carnetTest
+  AND CAST(fecha AS DATE) = CAST(@fechaTest AS DATE);
+SET @rows = @@ROWCOUNT;
+INSERT INTO #Perf(testName, duracionMs, filas)
+SELECT N'Legacy: p_Checkins CAST(fecha)=CAST(@fecha)', DATEDIFF(MILLISECOND, @t0, SYSUTCDATETIME()), @rows;
+
+-- Nuevo SP
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Checkins_ObtenerPorUsuarioFecha @carnet=@carnetTest, @fecha=@fechaTest;
+SET @rows = @@ROWCOUNT;
+INSERT INTO #Perf(testName, duracionMs, filas)
+SELECT N'SP: sp_Checkins_ObtenerPorUsuarioFecha', DATEDIFF(MILLISECOND, @t0, SYSUTCDATETIME()), @rows;
+
+-- 4.2 Test: Usuarios Org legacy (MALO) vs SP nuevo (BUENO)
+SET @t0 = SYSUTCDATETIME();
+SELECT DISTINCT
+    LTRIM(RTRIM(ogerencia))   AS ogerencia,
+    LTRIM(RTRIM(subgerencia)) AS subgerencia,
+    LTRIM(RTRIM(area))        AS area
+FROM dbo.p_Usuarios
+WHERE activo = 1
+  AND ogerencia IS NOT NULL AND LTRIM(RTRIM(ogerencia)) <> ''
+  AND subgerencia IS NOT NULL AND LTRIM(RTRIM(subgerencia)) <> ''
+  AND area IS NOT NULL AND LTRIM(RTRIM(area)) <> ''
+ORDER BY 1,2,3;
+SET @rows = @@ROWCOUNT;
+INSERT INTO #Perf(testName, duracionMs, filas)
+SELECT N'Legacy: DISTINCT+LTRIM/RTRIM Org', DATEDIFF(MILLISECOND, @t0, SYSUTCDATETIME()), @rows;
+
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Usuarios_ObtenerOrgCombos;
+SET @rows = @@ROWCOUNT;
+INSERT INTO #Perf(testName, duracionMs, filas)
+SELECT N'SP: sp_Usuarios_ObtenerOrgCombos (trim persisted + index)', DATEDIFF(MILLISECOND, @t0, SYSUTCDATETIME()), @rows;
+
+-- 4.3 Test: sp_Tareas_ObtenerPorUsuario (tu caso lento)
+-- Nota: solo mide 1 ejecución; repetir si quieres.
+SET @t0 = SYSUTCDATETIME();
+EXEC dbo.sp_Tareas_ObtenerPorUsuario
+    @carnet=@carnetTest, @estado=NULL, @idProyecto=NULL, @query=NULL, @startDate=NULL, @endDate=NULL;
+SET @rows = @@ROWCOUNT;
+INSERT INTO #Perf(testName, duracionMs, filas)
+SELECT N'SP: sp_Tareas_ObtenerPorUsuario (post-index fix)', DATEDIFF(MILLISECOND, @t0, SYSUTCDATETIME()), @rows;
+
+-- Resultado final
+SELECT testName, duracionMs, filas, fecha
+FROM #Perf
+ORDER BY duracionMs DESC;
+
+PRINT '>>> HOTFIX PERFORMANCE COMPLETADO.';
+GO

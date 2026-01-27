@@ -226,6 +226,11 @@ export class TareaCrearRapidaDto {
     @IsOptional()
     @IsString()
     linkEvidencia?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsInt()
+    idTareaPadre?: number;
 }
 
 export class TareaActualizarDto {
@@ -302,6 +307,11 @@ export class TareaActualizarDto {
     @IsOptional()
     @IsString()
     linkEvidencia?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsInt()
+    idTareaPadre?: number;
 }
 
 export class TareaRevalidarDto {

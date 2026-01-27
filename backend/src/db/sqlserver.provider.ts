@@ -52,6 +52,11 @@ export async function obtenerPoolSql(configService?: ConfigService): Promise<sql
                 pool = p;
                 console.log('[DB] ✅ Pool SQL Server conectado');
 
+                // FORCE: QUOTED_IDENTIFIER ON para soportar índices filtrados y columnas calculadas
+                p.request().query('SET QUOTED_IDENTIFIER ON')
+                    .then(() => console.log('[DB] 🔧 SET QUOTED_IDENTIFIER ON aplicado'))
+                    .catch(e => console.error('[DB] ⚠️ Falló SET QUOTED_IDENTIFIER:', e.message));
+
                 // Manejar errores del pool
                 pool.on('error', (err) => {
                     console.error('[DB] ❌ Error en pool SQL Server:', err.message);

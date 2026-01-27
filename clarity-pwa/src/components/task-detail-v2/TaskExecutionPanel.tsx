@@ -1,10 +1,9 @@
 import React from 'react';
-import { AlignLeft, MessageSquare, Save, Link } from 'lucide-react';
+import { AlignLeft, MessageSquare, Link } from 'lucide-react';
 import type { Tarea } from '../../types/modelos';
 
 interface Props {
     task: Tarea;
-    fullTask: Tarea | null;
     descripcion: string;
     setDescripcion: (v: string) => void;
     linkEvidencia: string;
@@ -13,17 +12,13 @@ interface Props {
     setProgreso: (v: number) => void;
     comentario: string;
     setComentario: (v: string) => void;
-    onSave: () => void;
-    submitting: boolean;
 }
 
 export const TaskExecutionPanel: React.FC<Props> = ({
-    fullTask,
     descripcion, setDescripcion,
     linkEvidencia, setLinkEvidencia,
     progreso, setProgreso,
-    comentario, setComentario,
-    onSave, submitting
+    comentario, setComentario
 }) => {
     return (
         <div className="space-y-6">
@@ -39,25 +34,7 @@ export const TaskExecutionPanel: React.FC<Props> = ({
                 />
             </div>
 
-            {/* Subtareas Read-Only View (Interactive editing is in History/Hierarchy tab usually, or add here later) */}
-            {fullTask?.subtareas && fullTask.subtareas.length > 0 && (
-                <div className="py-2">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex justify-between items-center">
-                        <span>Checklist / Sub-entregables ({fullTask.subtareas.length})</span>
-                    </div>
-                    <div className="space-y-1.5 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                        {fullTask.subtareas.map(sub => (
-                            <div key={sub.idTarea} className="flex items-center justify-between p-2 rounded hover:bg-white border text-sm transition-colors cursor-pointer">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <div className={`w-3 h-3 rounded-full border ${sub.estado === 'Hecha' ? 'bg-emerald-500 border-emerald-500' : 'bg-transparent border-slate-300'}`}></div>
-                                    <span className={`truncate text-slate-700 ${sub.estado === 'Hecha' ? 'line-through opacity-60' : ''}`}>{sub.titulo}</span>
-                                </div>
-                                <span className={`text-[9px] font-bold px-1.5 py-px rounded-full ${sub.estado === 'Hecha' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{sub.estado}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* Subtareas ocultas por solicitud del usuario */}
 
             <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><Link size={12} /> Link Evidencia (SharePoint / Drive)</label>
@@ -102,13 +79,7 @@ export const TaskExecutionPanel: React.FC<Props> = ({
                 />
             </div>
 
-            <button
-                onClick={onSave}
-                disabled={submitting}
-                className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 hover:bg-black active:scale-[0.98] transition-all flex justify-center items-center gap-2"
-            >
-                <Save size={18} /> Guardar Cambios
-            </button>
+            {/* El botón Guardar ahora está en la cabecera (Header) para acceso rápido */}
         </div>
     );
 };

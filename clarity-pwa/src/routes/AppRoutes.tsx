@@ -24,6 +24,7 @@ import { VisibilidadView } from '../pages/Hoy/views/VisibilidadView';
 
 // Planning Pages
 import { ProyectosPage } from '../pages/Planning/ProyectosPage';
+// import { GestionProyecto2 } from '../pages/Planning/GestionProyecto2';
 import { ApprovalsPage } from '../pages/Planning/ApprovalsPage';
 import { TimelinePage as PlanningTimelinePage } from '../pages/Planning/TimelinePage';
 import { RoadmapPage } from '../pages/Planning/RoadmapPage';
@@ -33,7 +34,7 @@ import { PlanTrabajoPage } from '../pages/Planning/PlanTrabajoPage';
 import { TeamPlanningPage } from '../pages/Planning/TeamPlanningPage';
 
 // Team Pages
-import { ManagerDashboard } from '../pages/Equipo/ManagerDashboard';
+// import { ManagerDashboard } from '../pages/Equipo/ManagerDashboard';
 import { DashboardManager } from '../pages/Equipo/DashboardManager';
 import { MemberAgendaPage } from '../pages/Equipo/MemberAgendaPage';
 import { EquipoBloqueosPage } from '../pages/Equipo/EquipoBloqueosPage';
@@ -102,6 +103,7 @@ export const AppRoutes = () => {
                 <Route element={<AppLayout />}>
                     {/* PLANNING */}
                     <Route path="planning/proyectos" element={<ProyectosPage />} />
+                    {/* <Route path="planning/proyectos-2" element={<GestionProyecto2 />} /> */}
                     <Route path="planning/approvals" element={<ApprovalsPage />} />
                     <Route path="planning/timeline" element={<PlanningTimelinePage />} />
                     <Route path="planning/roadmap" element={<RoadmapPage />} />
@@ -131,8 +133,8 @@ export const AppRoutes = () => {
                         <Route path="calendario" element={<CalendarView />} />
                         <Route path="bitacora" element={<TimelineView />} />
                     </Route>
-                    <Route path="equipo" element={<ManagerDashboard />} />
-                    <Route path="equipo/hoy" element={<ManagerDashboard />} />
+                    {/* <Route path="equipo" element={<ManagerDashboard />} />
+                    <Route path="equipo/hoy" element={<ManagerDashboard />} /> */}
                     <Route path="software/dashboard" element={<DashboardManager />} />
                     <Route path="equipo/planning/:userId" element={<TeamPlanningPage />} />
                     <Route path="equipo/bloqueos" element={<EquipoBloqueosPage />} />

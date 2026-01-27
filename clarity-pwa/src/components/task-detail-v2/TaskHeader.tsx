@@ -78,9 +78,11 @@ export const TaskHeader: React.FC<Props> = ({
                 />
             </div>
 
-            <button onClick={onClose} className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-100 shadow-sm transition-transform active:scale-95">
-                <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+                <button onClick={onClose} className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-100 shadow-sm transition-transform active:scale-95">
+                    <X size={20} />
+                </button>
+            </div>
         </div>
     );
 };

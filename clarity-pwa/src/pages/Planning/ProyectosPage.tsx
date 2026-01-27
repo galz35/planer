@@ -544,7 +544,7 @@ export const ProyectosPage: React.FC = () => {
 
             {/* FILTROS */}
             {showFilters && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-4 animate-in slide-in-from-top-2 duration-200">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase px-1">Estado</label>
                         <select
@@ -640,9 +640,9 @@ export const ProyectosPage: React.FC = () => {
                                 <th className="px-3 py-4 hidden xl:table-cell">Gerencia</th>
                                 <th className="px-3 py-4 hidden xl:table-cell">Subgerencia</th>
                                 <th className="px-3 py-4 hidden xl:table-cell">Área</th>
-                                <th className="px-3 py-4 hidden lg:table-cell">Tipo</th>
-                                <th className="px-3 py-4 hidden md:table-cell">Estado</th>
-                                <th className="px-3 py-4 hidden md:table-cell w-[100px]">Progreso</th>
+                                <th className="px-3 py-4 hidden md:table-cell">Tipo</th>
+                                <th className="px-3 py-4 hidden md:table-cell w-[120px]">Estado</th>
+                                <th className="px-3 py-4 hidden md:table-cell w-[120px]">Progreso</th>
                                 <th className="px-6 py-4 text-right w-[100px]">Acción</th>
                             </tr>
                             {/* FILTROS POR COLUMNA (Datatable style) */}
@@ -698,7 +698,7 @@ export const ProyectosPage: React.FC = () => {
                                         ))}
                                     </select>
                                 </th>
-                                <th className="px-3 py-2 hidden lg:table-cell">
+                                <th className="px-3 py-2 hidden md:table-cell">
                                     <select
                                         className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 outline-none"
                                         value={filters.tipo}
@@ -791,7 +791,7 @@ export const ProyectosPage: React.FC = () => {
                                                     <div className="min-w-0 flex-1 overflow-hidden">
                                                         {/* NOMBRE */}
                                                         <div className="flex items-center gap-2 min-w-0">
-                                                            <div className="font-black text-slate-900 truncate group-hover:text-indigo-700 transition-colors text-sm" title={p.nombre}>
+                                                            <div className="font-black text-slate-900 break-words whitespace-normal group-hover:text-indigo-700 transition-colors text-sm" title={p.nombre}>
                                                                 {p.nombre}
                                                             </div>
 
@@ -812,18 +812,24 @@ export const ProyectosPage: React.FC = () => {
 
                                             {/* COLUMNAS EXCEL-STYLE */}
                                             <td className="px-3 py-5 hidden xl:table-cell">
-                                                <span className="text-xs font-bold text-slate-600">{p.gerencia || 'N/A'}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                                    <span className="text-xs font-bold text-slate-600 truncate max-w-[150px]">{p.gerencia || 'N/A'}</span>
+                                                </div>
                                             </td>
 
                                             <td className="px-3 py-5 hidden xl:table-cell">
-                                                <span className="text-xs font-bold text-slate-600">{p.subgerencia || 'N/A'}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-1 h-3 bg-indigo-100 rounded-full" />
+                                                    <span className="text-xs font-bold text-slate-500 truncate max-w-[150px]">{p.subgerencia || 'N/A'}</span>
+                                                </div>
                                             </td>
 
                                             <td className="px-3 py-5 hidden xl:table-cell">
                                                 <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter text-[10px]">{p.area || 'N/A'}</span>
                                             </td>
 
-                                            <td className="px-3 py-5 hidden lg:table-cell">
+                                            <td className="px-3 py-5 hidden md:table-cell">
                                                 {p.tipo && (
                                                     <span className="inline-flex px-2 py-0.5 rounded-lg text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase">
                                                         {p.tipo}

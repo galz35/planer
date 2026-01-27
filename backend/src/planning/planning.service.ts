@@ -11,6 +11,7 @@ import * as avanceMensualRepo from './avance-mensual.repo';
 import * as grupoRepo from './grupo.repo';
 import { AuditService } from '../common/audit.service';
 import { VisibilidadService } from '../acceso/visibilidad.service';
+import * as tasksRepo from '../clarity/tasks.repo';
 
 @Injectable()
 export class PlanningService {
@@ -260,7 +261,8 @@ export class PlanningService {
         if (!tarea) throw new NotFoundException('Tarea no encontrada');
         await this.assertPuedeVerTarea(idUsuarioResolutor, tarea);
 
-        await planningRepo.actualizarTarea(solicitud.idTarea, { [campoDb]: valorDb });
+        // MIGRACION v2.1: Usar tasksRepo para asegurar Roll-up
+        await tasksRepo.actualizarTarea(solicitud.idTarea, { [campoDb]: valorDb });
 
         await planningRepo.resolverSolicitud(
             idSolicitud,
@@ -315,7 +317,8 @@ export class PlanningService {
             throw new BadRequestException('No hay campos válidos para actualizar.');
         }
 
-        await planningRepo.actualizarTarea(idTarea, safe);
+        // MIGRACION v2.1: Blindaje de actualizaciones operativas
+        await tasksRepo.actualizarTarea(idTarea, safe);
 
         await this.auditService.log({
             accion: 'TAREA_ACTUALIZADA',
@@ -564,12 +567,19 @@ export class PlanningService {
         const today: any[] = [];
 
         tareas.forEach((t: any) => {
-            if (!t.fechaObjetivo) return;
-            // Manejo robusto de fecha
-            const fObj = new Date(t.fechaObjetivo).toISOString().split('T')[0];
+            const fObj = t.fechaObjetivo ? new Date(t.fechaObjetivo).toISOString().split('T')[0] : null;
+            const fComp = t.fechaCompletado ? new Date(t.fechaCompletado).toISOString().split('T')[0] : null;
+            const fFin = t.fechaFinReal ? new Date(t.fechaFinReal).toISOString().split('T')[0] : null;
 
-            if (fObj < hoy) overdue.push(t);
-            else if (fObj === hoy) today.push(t);
+            if (t.estado === 'Hecha' || t.estado === 'Completada') {
+                // Si fue completada HOY (por cualquiera de los dos campos), va a la columna de éxitos del día
+                if (fComp === hoy || fFin === hoy) today.push(t);
+            } else {
+                // Si está pendiente y es del pasado -> Atrasada
+                if (fObj && fObj < hoy) overdue.push(t);
+                // Si está pendiente y es de hoy -> Para entregar hoy
+                else if (fObj === hoy) today.push(t);
+            }
         });
 
         return { overdue, today };

@@ -255,7 +255,7 @@ export const ActivePlanView: React.FC<Props> = ({ checkin, onEdit, toggleTarea, 
                     </div>
 
                     <div>
-                        <h2 className="text-base font-bold">Tu Plan de Hoy</h2>
+                        <h2 className="text-base font-bold">Mi Tarea Principal</h2>
                         <p className="text-xs text-slate-300">{done}/{total} tareas completadas</p>
                     </div>
                 </div>
@@ -306,7 +306,7 @@ export const ActivePlanView: React.FC<Props> = ({ checkin, onEdit, toggleTarea, 
                 {/* Focus */}
                 <div className="bg-white rounded-xl border border-rose-100 shadow-sm overflow-hidden">
                     <div className="px-3 py-2 bg-rose-50 border-b border-rose-100 flex justify-between items-center">
-                        <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wide flex items-center gap-1">🔥 FOCO</h4>
+                        <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wide flex items-center gap-1">🎯 TAREA PRINCIPAL</h4>
                         <span className="text-[10px] font-black text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded-full">
                             {focusTasks.length || 1}
                         </span>
@@ -336,7 +336,7 @@ export const ActivePlanView: React.FC<Props> = ({ checkin, onEdit, toggleTarea, 
                 {/* Extras */}
                 <div className="bg-white rounded-xl border border-emerald-100 shadow-sm overflow-hidden">
                     <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-                        <h4 className="font-bold text-emerald-700 text-xs uppercase tracking-wide flex items-center gap-1">⚡ EXTRAS</h4>
+                        <h4 className="font-bold text-emerald-700 text-xs uppercase tracking-wide flex items-center gap-1">⚡ TAREA RÁPIDAS</h4>
                         <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
                             {extraTasks.length}
                         </span>

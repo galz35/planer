@@ -15,10 +15,10 @@ export const APP_MENU = [
         ]
     },
     {
-        group: 'Gestión Equipo',
+        group: 'Mi Gestión Equipo',
         items: [
-            { path: '/app/equipo/mi-equipo', label: 'Mi Equipo', icon: 'Eye' },
-            // { path: '/app/equipo/bloqueos', label: 'Bloqueos y Riesgos', icon: 'Shield' },
+            { path: '/app/equipo/mi-equipo', label: 'Mi Equipo', icon: 'Users' },
+            { path: '/app/equipo/bloqueos', label: 'Bloqueos y Riesgos', icon: 'Shield' },
         ]
     },
     {

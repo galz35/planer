@@ -1,0 +1,18 @@
+﻿[dotenv@17.2.3] injecting env (10) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+============================================================
+­ƒÜÇ CLARITY PROFESSIONAL PERFORMANCE TEST
+============================================================
+| Endpoint                  | Stat | Latency  | Records  |
+------------------------------------------------------------
+| Login                     | 200 |   2372ms |        1 |
+| Dashboard KPIs            | 200 |    448ms |        1 |
+| Org: Catalogo             | 200 |    188ms |        7 |
+| Org: Estructura           | 200 |    164ms |       13 |
+| Tareas: Mis Tareas        | 200 |   1398ms |        5 |
+| Equipo: Hoy               | 200 |   1125ms |       41 |
+| Personal: Mi Dia          | 200 |   1040ms |        1 |
+| Personal: Notas           | 200 |    420ms |        0 |
+============================================================
+­ƒÅü Test completed at 10:55:02 a.┬ám.
+

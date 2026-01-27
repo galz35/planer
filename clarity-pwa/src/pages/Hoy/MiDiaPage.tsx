@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useRef } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { MiDiaProvider, useMiDiaContext } from './context/MiDiaContext';
@@ -15,6 +15,18 @@ const fechaLocalYYYYMMDD = (d: Date) => {
 
 const MiDiaContent: React.FC = () => {
     const { allDisponibles, today, setToday } = useMiDiaContext();
+    const dateInputRef = useRef<HTMLInputElement>(null);
+
+    const handleDateClick = () => {
+        // Trigger the native date picker
+        if (dateInputRef.current) {
+            if ('showPicker' in HTMLInputElement.prototype) {
+                (dateInputRef.current as any).showPicker();
+            } else {
+                dateInputRef.current.click();
+            }
+        }
+    };
 
     const handlePrevDay = useCallback(() => {
         const d = new Date(today + 'T00:00:00'); // ✅ evita parse raro
@@ -28,9 +40,6 @@ const MiDiaContent: React.FC = () => {
         setToday(fechaLocalYYYYMMDD(d));
     }, [today, setToday]);
 
-    const handleToday = useCallback(() => {
-        setToday(fechaLocalYYYYMMDD(new Date()));
-    }, [setToday]);
 
     const linkClass = useCallback(
         ({ isActive }: { isActive: boolean }) =>
@@ -64,11 +73,19 @@ const MiDiaContent: React.FC = () => {
                         </button>
 
                         <button
-                            onClick={handleToday}
-                            className="px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded flex items-center gap-1"
+                            onClick={handleDateClick}
+                            className="px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded flex items-center gap-1 relative"
                         >
                             <CalendarDays size={14} />
                             {today}
+                            {/* Hidden date input */}
+                            <input
+                                ref={dateInputRef}
+                                type="date"
+                                className="absolute inset-0 opacity-0 pointer-events-none w-0 h-0"
+                                value={today}
+                                onChange={(e) => setToday(e.target.value)}
+                            />
                         </button>
 
                         <button

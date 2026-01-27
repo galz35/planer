@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { clarityService } from '../../../services/clarity.service';
 // import { useAuth } from '../../../context/AuthContext';
-import { ChevronLeft, ChevronRight, Check, X, Save, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import type { Tarea } from '../../../types/modelos';
+import { TaskDetailModalV2 } from '../../../components/task-detail-v2/TaskDetailModalV2';
 
-interface Props {
-    userId?: number;
-    onTaskClick?: (task: Tarea) => void;
-    onTaskComplete?: (taskId: number) => void;
-    onTaskCancel?: (taskId: number) => void;
-}
+
 
 interface DayData {
     date: string;
@@ -21,21 +17,14 @@ interface DayData {
     tasks: Tarea[];
 }
 
-const ESTADOS = ['Pendiente', 'EnCurso', 'Pausa', 'Bloqueada', 'Revision', 'Hecha', 'Descartada'];
-const PRIORIDADES = ['Alta', 'Media', 'Baja'];
-const TIPOS = ['Estrategico', 'Impacto', 'Operativo'];
-const ALCANCES = ['Local', 'Regional', 'AMX'];
-const ESFUERZOS = ['S', 'M', 'L'];
 
-export const AgendaSemanal: React.FC<Props> = ({ onTaskComplete, onTaskCancel }) => {
+
+export const AgendaSemanal: React.FC = () => {
     const [weekOffset, setWeekOffset] = useState(0);
     // const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [weekData, setWeekData] = useState<DayData[]>([]);
     const [selectedTask, setSelectedTask] = useState<Tarea | null>(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState<Partial<Tarea>>({});
-    const [saving, setSaving] = useState(false);
 
     const getDayName = (date: Date): string => ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][date.getDay()];
     const getMonthName = (date: Date): string => ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][date.getMonth()];
@@ -114,59 +103,11 @@ export const AgendaSemanal: React.FC<Props> = ({ onTaskComplete, onTaskCancel })
 
     const selectTask = (task: Tarea) => {
         setSelectedTask(task);
-        setEditForm({
-            titulo: task.titulo,
-            descripcion: task.descripcion || '',
-            estado: task.estado,
-            prioridad: task.prioridad,
-            esfuerzo: task.esfuerzo,
-            tipo: task.tipo || 'Operativo',
-            alcance: task.alcance || 'Local',
-            progreso: task.progreso || 0,
-            comentario: task.comentario || '',
-            motivoBloqueo: task.motivoBloqueo || ''
-        });
-        setIsEditing(false);
     };
 
-    const handleComplete = async (taskId: number) => {
-        setSaving(true);
-        try {
-            await onTaskComplete?.(taskId);
-            await loadWeekData();
-            setSelectedTask(null);
-        } finally {
-            setSaving(false);
-        }
-    };
 
-    const handleCancel = async (taskId: number) => {
-        setSaving(true);
-        try {
-            await onTaskCancel?.(taskId);
-            await loadWeekData();
-            setSelectedTask(null);
-        } finally {
-            setSaving(false);
-        }
-    };
 
-    const handleSave = async () => {
-        if (!selectedTask) return;
-        setSaving(true);
-        try {
-            await clarityService.actualizarTarea(selectedTask.idTarea, editForm as any);
-            await loadWeekData();
-            setIsEditing(false);
-            // Re-seleccionar la tarea actualizada
-            const updated = weekData.flatMap(d => d.tasks).find(t => t.idTarea === selectedTask.idTarea);
-            if (updated) setSelectedTask({ ...selectedTask, ...editForm } as Tarea);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setSaving(false);
-        }
-    };
+
 
     const getStatusColor = (estado: string) => {
         const colors: Record<string, string> = {
@@ -204,9 +145,20 @@ export const AgendaSemanal: React.FC<Props> = ({ onTaskComplete, onTaskCancel })
     }
 
     return (
-        <div className="flex gap-4 h-full">
+        <div className="flex flex-col h-full gap-4">
+            {selectedTask && (
+                <TaskDetailModalV2
+                    task={selectedTask}
+                    mode="execution"
+                    onClose={() => setSelectedTask(null)}
+                    onUpdate={() => {
+                        loadWeekData();
+                        setSelectedTask(null);
+                    }}
+                />
+            )}
             {/* Calendario */}
-            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all ${selectedTask ? 'flex-1' : 'w-full'}`}>
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all w-full`}>
                 {/* Header */}
                 <div className="px-4 py-3 bg-indigo-600 text-white flex items-center justify-between">
                     <button onClick={() => setWeekOffset(wo => wo - 1)} className="p-2 hover:bg-indigo-700 rounded-lg"><ChevronLeft size={18} /></button>
@@ -257,199 +209,7 @@ export const AgendaSemanal: React.FC<Props> = ({ onTaskComplete, onTaskCancel })
                 </div>
             </div>
 
-            {/* Panel de Tarea */}
-            {selectedTask && (
-                <div className="w-[420px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col max-h-[600px]">
-                    {/* Header */}
-                    <div className={`px-4 py-3 ${getStatusColor(selectedTask.estado)} text-white flex justify-between items-center shrink-0`}>
-                        <div>
-                            <p className="text-xs font-bold uppercase">{selectedTask.estado}</p>
-                            <p className="text-[10px] opacity-80">{selectedTask.fechaObjetivo} • {selectedTask.progreso}%</p>
-                        </div>
-                        <button onClick={() => setSelectedTask(null)} className="p-1 hover:bg-white/20 rounded"><X size={18} /></button>
-                    </div>
 
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-4">
-                        {isEditing ? (
-                            <div className="space-y-3">
-                                {/* Título */}
-                                <div>
-                                    <label className="text-[10px] text-gray-400 uppercase font-bold">Título</label>
-                                    <input type="text" value={editForm.titulo || ''} onChange={(e) => setEditForm({ ...editForm, titulo: e.target.value })}
-                                        className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-200 outline-none" />
-                                </div>
-
-                                {/* Descripción */}
-                                <div>
-                                    <label className="text-[10px] text-gray-400 uppercase font-bold">Descripción</label>
-                                    <textarea value={editForm.descripcion || ''} onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
-                                        rows={3} className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-200 outline-none resize-none" />
-                                </div>
-
-                                {/* Estado y Prioridad */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-[10px] text-gray-400 uppercase font-bold">Estado</label>
-                                        <select value={editForm.estado} onChange={(e) => setEditForm({ ...editForm, estado: e.target.value as any })}
-                                            className="w-full mt-1 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                            {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-gray-400 uppercase font-bold">Prioridad</label>
-                                        <select value={editForm.prioridad} onChange={(e) => setEditForm({ ...editForm, prioridad: e.target.value as any })}
-                                            className="w-full mt-1 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                            {PRIORIDADES.map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Tipo, Alcance, Esfuerzo */}
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div>
-                                        <label className="text-[10px] text-gray-400 uppercase font-bold">Tipo</label>
-                                        <select value={editForm.tipo || 'Operativo'} onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value as any })}
-                                            className="w-full mt-1 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                            {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-gray-400 uppercase font-bold">Alcance</label>
-                                        <select value={editForm.alcance || 'Local'} onChange={(e) => setEditForm({ ...editForm, alcance: e.target.value as any })}
-                                            className="w-full mt-1 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                            {ALCANCES.map(a => <option key={a} value={a}>{a}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-gray-400 uppercase font-bold">Esfuerzo</label>
-                                        <select value={editForm.esfuerzo} onChange={(e) => setEditForm({ ...editForm, esfuerzo: e.target.value as any })}
-                                            className="w-full mt-1 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                            {ESFUERZOS.map(e => <option key={e} value={e}>{e}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Progreso */}
-                                <div>
-                                    <label className="text-[10px] text-gray-400 uppercase font-bold">Avance: {editForm.progreso || 0}%</label>
-                                    <input type="range" min="0" max="100" step="5" value={editForm.progreso || 0}
-                                        onChange={(e) => setEditForm({ ...editForm, progreso: Number(e.target.value) })}
-                                        className="w-full mt-1" />
-                                </div>
-
-                                {/* Comentario */}
-                                <div>
-                                    <label className="text-[10px] text-gray-400 uppercase font-bold">Comentario / Notas</label>
-                                    <textarea value={editForm.comentario || ''} onChange={(e) => setEditForm({ ...editForm, comentario: e.target.value })}
-                                        rows={2} className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none resize-none" placeholder="Notas adicionales..." />
-                                </div>
-
-                                {/* Motivo Bloqueo */}
-                                {editForm.estado === 'Bloqueada' && (
-                                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                                        <label className="text-[10px] text-red-600 uppercase font-bold flex items-center gap-1">
-                                            <AlertCircle size={12} /> Motivo del Bloqueo
-                                        </label>
-                                        <textarea value={editForm.motivoBloqueo || ''} onChange={(e) => setEditForm({ ...editForm, motivoBloqueo: e.target.value })}
-                                            rows={2} className="w-full mt-1 px-3 py-2 border border-red-200 rounded-lg text-sm outline-none resize-none bg-white" placeholder="¿Por qué está bloqueada?" />
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-bold text-gray-800">{selectedTask.titulo}</h3>
-
-                                {selectedTask.descripcion ? (
-                                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedTask.descripcion}</p>
-                                ) : (
-                                    <p className="text-sm text-gray-400 italic">Sin descripción</p>
-                                )}
-
-                                {/* Progreso */}
-                                <div>
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-gray-400">Progreso</span>
-                                        <span className="font-bold text-gray-700">{selectedTask.progreso}%</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className={`h-full ${getStatusColor(selectedTask.estado)} transition-all`} style={{ width: `${selectedTask.progreso}%` }}></div>
-                                    </div>
-                                </div>
-
-                                {/* Info Grid */}
-                                <div className="grid grid-cols-3 gap-2 text-xs">
-                                    <div className="bg-gray-50 p-2 rounded-lg text-center">
-                                        <p className="text-gray-400 mb-0.5">Prioridad</p>
-                                        <p className={`font-bold ${selectedTask.prioridad === 'Alta' ? 'text-red-500' : selectedTask.prioridad === 'Media' ? 'text-yellow-600' : 'text-gray-500'}`}>
-                                            {selectedTask.prioridad}
-                                        </p>
-                                    </div>
-                                    <div className="bg-gray-50 p-2 rounded-lg text-center">
-                                        <p className="text-gray-400 mb-0.5">Tipo</p>
-                                        <p className="font-bold text-gray-700">{selectedTask.tipo || '—'}</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-2 rounded-lg text-center">
-                                        <p className="text-gray-400 mb-0.5">Alcance</p>
-                                        <p className="font-bold text-gray-700">{selectedTask.alcance || '—'}</p>
-                                    </div>
-                                </div>
-
-                                {/* Bloqueo */}
-                                {selectedTask.estado === 'Bloqueada' && selectedTask.motivoBloqueo && (
-                                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                                        <p className="text-[10px] text-red-600 uppercase font-bold flex items-center gap-1 mb-1">
-                                            <AlertCircle size={12} /> Bloqueada
-                                        </p>
-                                        <p className="text-sm text-red-700">{selectedTask.motivoBloqueo}</p>
-                                    </div>
-                                )}
-
-                                {/* Comentario */}
-                                {selectedTask.comentario && (
-                                    <div className="bg-blue-50 p-3 rounded-lg">
-                                        <p className="text-[10px] text-blue-600 uppercase font-bold mb-1">Notas</p>
-                                        <p className="text-sm text-blue-700">{selectedTask.comentario}</p>
-                                    </div>
-                                )}
-
-                                {selectedTask.proyecto && (
-                                    <div className="bg-indigo-50 p-3 rounded-lg text-xs">
-                                        <p className="text-indigo-400 mb-0.5">Proyecto</p>
-                                        <p className="font-bold text-indigo-700">{selectedTask.proyecto.nombre}</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="p-4 border-t border-gray-100 space-y-2 shrink-0">
-                        {isEditing ? (
-                            <div className="flex gap-2">
-                                <button onClick={() => setIsEditing(false)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold text-sm hover:bg-gray-200">Cancelar</button>
-                                <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 flex items-center justify-center gap-2">
-                                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Guardar
-                                </button>
-                            </div>
-                        ) : selectedTask.estado !== 'Hecha' && selectedTask.estado !== 'Descartada' ? (
-                            <>
-                                <button onClick={() => handleComplete(selectedTask.idTarea)} disabled={saving} className="w-full py-2.5 bg-green-500 text-white rounded-lg font-bold text-sm hover:bg-green-600 flex items-center justify-center gap-2">
-                                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Completar
-                                </button>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setIsEditing(true)} className="flex-1 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-bold text-sm hover:bg-indigo-200">Editar</button>
-                                    <button onClick={() => handleCancel(selectedTask.idTarea)} disabled={saving} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold text-sm hover:bg-gray-200 flex items-center justify-center gap-2">
-                                        <X size={14} /> Descartar
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <p className="text-center text-sm text-gray-400 py-2">Tarea {selectedTask.estado === 'Hecha' ? 'completada ✓' : 'descartada'}</p>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

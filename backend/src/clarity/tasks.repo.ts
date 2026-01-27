@@ -22,6 +22,7 @@ export interface CreateTaskParams {
     idResponsable?: number;
     requiereEvidencia?: boolean;
     idEntregable?: number;
+    creadorCarnet?: string;
 }
 
 export interface UpdateTaskParams {
@@ -57,9 +58,8 @@ export async function crearTarea(params: CreateTaskParams): Promise<number> {
     const prioridad = params.prioridad || TaskPriority.Media;
     const tipo = params.tipo || TaskType.Administrativa;
 
-    // 2. Ejecutar SP ROBUSTO de creación completa (Un Solo Roundtrip)
-    // Migrado a Zero Inline SQL: 2026-01-25
-    const res = await ejecutarSP<{ idTarea: number }>('sp_Tarea_CrearCompleta', {
+    // 2. Ejecutar SP ROBUSTO de creación completa v2 (2026-01-26)
+    const res = await ejecutarSP<{ idTarea: number }>('sp_Tarea_CrearCompleta_v2', {
         nombre: { valor: params.titulo, tipo: NVarChar },
         idUsuario: { valor: params.idCreador, tipo: Int },
         idProyecto: { valor: params.idProyecto || null, tipo: Int },
@@ -76,11 +76,22 @@ export async function crearTarea(params: CreateTaskParams): Promise<number> {
         idTareaPadre: { valor: params.idTareaPadre || null, tipo: Int },
         idResponsable: { valor: params.idResponsable || null, tipo: Int },
         requiereEvidencia: { valor: params.requiereEvidencia || false, tipo: Bit },
-        idEntregable: { valor: params.idEntregable || null, tipo: Int }
+        idEntregable: { valor: params.idEntregable || null, tipo: Int },
+        creadorCarnet: { valor: params.creadorCarnet || null, tipo: NVarChar },
+        semana: { valor: null, tipo: Int } // Default null, can be extended later if CreateTaskParams supports it
     });
 
     return res[0].idTarea;
 }
+
+export async function recalcularJerarquia(idTarea?: number, idPadreDirecto?: number) {
+    // Inteligencia en BD: Recálculo recursivo de estados y progresos
+    await ejecutarSP('sp_Tarea_RecalcularJerarquia_v2', {
+        idTareaInicio: { valor: idTarea || null, tipo: Int },
+        idPadreDirecto: { valor: idPadreDirecto || null, tipo: Int }
+    });
+}
+
 
 // ==========================================
 // ACTUALIZACIÓN
@@ -89,8 +100,10 @@ export async function crearTarea(params: CreateTaskParams): Promise<number> {
 import * as planningRepo from '../planning/planning.repo';
 
 export async function actualizarTarea(idTarea: number, updates: UpdateTaskParams) {
+    // 1. Obtener estado previo para detectar cambios de jerarquía
+    const tareaPrevia = await obtenerTarea(idTarea);
+
     // V4: Unificación de lógica. Usamos el repo de planning que ya tiene el SP y validaciones
-    // Mapeamos UpdateTaskParams (Clarity) a TareaDb (Planning/DB)
     const dbUpdates: any = {
         nombre: updates.titulo,
         descripcion: updates.descripcion,
@@ -99,14 +112,34 @@ export async function actualizarTarea(idTarea: number, updates: UpdateTaskParams
         porcentaje: updates.progreso,
         fechaObjetivo: updates.fechaObjetivo,
         fechaInicioPlanificada: updates.fechaInicioPlanificada,
-        linkEvidencia: updates.linkEvidencia
+        linkEvidencia: updates.linkEvidencia,
+        idTareaPadre: updates.idTareaPadre
     };
 
+    // 2. Ejecutar Update Base
     await planningRepo.actualizarTarea(idTarea, dbUpdates);
 
-    // Manejo especial de reasignación (esto sigue siendo específico de la lógica de asignados)
+    // 3. Manejo especial de reasignación
     if (updates.idResponsable) {
         await reasignarResponsable(idTarea, updates.idResponsable);
+    }
+
+    // 4. AUTO-ROLLUP: Si hay cambios en jerarquía o métricas, recalcular
+    const hayCambioPadre = updates.idTareaPadre !== undefined && tareaPrevia?.idPadre !== updates.idTareaPadre;
+    const hayCambioMetricas = updates.progreso !== undefined || updates.estado !== undefined;
+
+    if (hayCambioPadre) {
+        // Recalcular Padre Viejo (si tenía)
+        if (tareaPrevia?.idPadre) {
+            await recalcularJerarquia(undefined, tareaPrevia.idPadre);
+        }
+        // Recalcular Nuevo Padre
+        if (updates.idTareaPadre) {
+            await recalcularJerarquia(undefined, updates.idTareaPadre);
+        }
+    } else if (hayCambioMetricas && tareaPrevia?.idPadre) {
+        // Mismo padre, cambiaron métricas
+        await recalcularJerarquia(undefined, tareaPrevia.idPadre);
     }
 }
 

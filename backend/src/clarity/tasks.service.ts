@@ -99,12 +99,14 @@ export class TasksService {
     }
 
     async tareaCrearRapida(dto: TareaCrearRapidaDto) {
-        // Implementación real mapeada arriba
-        // V2: Uso directo de Planning Repo con SP
+        // Resolve carnet before creating
+        const carnet = dto.idUsuario ? await this.visibilidadService.obtenerCarnetPorId(dto.idUsuario) : null;
+
         const idTarea = await tasksRepo.crearTarea({
             titulo: dto.titulo,
             descripcion: dto.descripcion,
             idCreador: dto.idUsuario,
+            creadorCarnet: carnet || undefined, // PASS CARNET HERE
             idProyecto: dto.idProyecto || undefined,
             prioridad: dto.prioridad,
             esfuerzo: dto.esfuerzo,
@@ -112,10 +114,8 @@ export class TasksService {
             fechaInicioPlanificada: dto.fechaInicioPlanificada ? new Date(dto.fechaInicioPlanificada) : undefined,
             fechaObjetivo: dto.fechaObjetivo ? new Date(dto.fechaObjetivo) : undefined,
             comportamiento: dto.comportamiento,
-            // linkEvidencia: dto.linkEvidencia, // tasksRepo will need update if we want link on create, currently supports basic.
-            // But we can add it to 'actualizar' or improve 'crear'.
-            // For now let's map what we have.
-            idResponsable: dto.idResponsable
+            idResponsable: dto.idResponsable,
+            idTareaPadre: dto.idTareaPadre
         });
 
         return await planningRepo.obtenerTareaPorId(idTarea);
@@ -241,15 +241,21 @@ export class TasksService {
         }
 
         // V3: Propagar cambios a la jerarquía (Roll-up)
-        if (updates.porcentaje !== undefined || updates.estado !== undefined || updates.idTareaPadre !== undefined) {
-            // Si el padre cambió, recalculamos el viejo y el nuevo
-            if (updates.idTareaPadre !== undefined && tareaActual.idTareaPadre !== updates.idTareaPadre) {
-                if (tareaActual.idTareaPadre) await this.recalcularJerarquia(tareaActual.idTareaPadre);
-                if (updates.idTareaPadre) await this.recalcularJerarquia(updates.idTareaPadre);
-            } else if (tareaActual.idTareaPadre) {
-                // Si solo cambió % o estado, recalculamos el padre actual
-                await this.recalcularJerarquia(tareaActual.idTareaPadre);
+        const padreCambio = updates.idTareaPadre !== undefined && updates.idTareaPadre !== tareaActual.idTareaPadre;
+        const metricsCambio = updates.porcentaje !== undefined || updates.estado !== undefined;
+
+        if (padreCambio) {
+            // 1. Recalcular Viejo Padre (directamente, porque ya perdimos el link)
+            if (tareaActual.idTareaPadre) {
+                await tasksRepo.recalcularJerarquia(undefined, tareaActual.idTareaPadre);
             }
+            // 2. Recalcular Nuevo Padre (via hijo, ahora ya está linkeado)
+            if (updates.idTareaPadre) {
+                await tasksRepo.recalcularJerarquia(idTarea);
+            }
+        } else if (metricsCambio && tareaActual.idTareaPadre) {
+            // Solo métricas, mismo padre -> Rollup standard
+            await tasksRepo.recalcularJerarquia(idTarea);
         }
 
         // Registrar en auditoría si hubo cambios
@@ -358,7 +364,7 @@ export class TasksService {
 
         // Propagar al padre
         if (tareaActual.idTareaPadre) {
-            await this.recalcularJerarquia(tareaActual.idTareaPadre);
+            await tasksRepo.recalcularJerarquia(idTarea);
         }
 
         // Registrar en auditoría
@@ -377,44 +383,7 @@ export class TasksService {
      * Motor de Inteligencia de Jerarquía (Roll-up)
      * Recalcula progreso y estado del padre basado en sus hijos de forma recursiva.
      */
-    private async recalcularJerarquia(idTareaPadre: number) {
-        try {
-            const padre = await planningRepo.obtenerTareaPorId(idTareaPadre);
-            if (!padre || !padre.subtareas || padre.subtareas.length === 0) return;
-
-            const hijos = padre.subtareas;
-
-            // 1. Calcular promedio de progreso
-            const totalProgreso = hijos.reduce((acc: number, h: any) => acc + (h.progreso || 0), 0);
-            const promedio = Math.round(totalProgreso / hijos.length);
-
-            // 2. Determinar Estado
-            let nuevoEstado = padre.estado;
-            const todosHechos = hijos.every((h: any) => h.estado === 'Hecha');
-            const algunoEnCurso = hijos.some((h: any) => h.estado === 'EnCurso' || h.estado === 'Hecha' || (h.progreso || 0) > 0);
-            const todosPendientes = hijos.every((h: any) => h.estado === 'Pendiente' && (h.progreso || 0) === 0);
-
-            if (todosHechos) nuevoEstado = 'Hecha';
-            else if (todosPendientes) nuevoEstado = 'Pendiente';
-            else if (algunoEnCurso) nuevoEstado = 'EnCurso';
-
-            // 3. Aplicar cambios solo si hay diferencia para evitar loops infinitos o queries innecesarias
-            if (padre.porcentaje !== promedio || padre.estado !== nuevoEstado) {
-                await planningRepo.actualizarTarea(idTareaPadre, {
-                    porcentaje: promedio,
-                    estado: nuevoEstado as any
-                });
-
-                // 4. Recursividad hacia el abuelo
-                if (padre.idTareaPadre) {
-                    await this.recalcularJerarquia(padre.idTareaPadre);
-                }
-            }
-        } catch (error) {
-            console.error(`[Roll-up Error] No se pudo recalcular tarea ${idTareaPadre}:`, error);
-        }
-    }
-
+    // Método privado recalcularJerarquia eliminado en favor de lógica en BD (tasksRepo.recalcularJerarquia)
     async getWorkload(carnet: string) {
         try {
             // 2. Obtener TODOS los empleados que este usuario tiene permiso de ver

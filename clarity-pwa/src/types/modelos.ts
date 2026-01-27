@@ -77,7 +77,7 @@ export interface SolicitudCambio {
 
 export type Prioridad = 'Alta' | 'Media' | 'Baja';
 export type Esfuerzo = 'S' | 'M' | 'L';
-export type EstadoTarea = 'Pendiente' | 'EnCurso' | 'Pausa' | 'Bloqueada' | 'Revision' | 'Hecha' | 'Descartada';
+export type EstadoTarea = 'Pendiente' | 'En Curso' | 'EnCurso' | 'Pausa' | 'Bloqueada' | 'Revision' | 'Revisión' | 'Hecha' | 'Descartada';
 export type TipoTarea = 'Logistica' | 'Administrativa' | 'Estrategica' | 'AMX' | 'Otros' | 'Operativo';
 export type AlcanceTarea = 'Local' | 'Regional' | 'AMX';
 
@@ -93,8 +93,8 @@ export interface Tarea {
     esfuerzo: Esfuerzo;
     tipo?: TipoTarea;
     alcance?: AlcanceTarea;
-    fechaInicioPlanificada?: string;
-    fechaObjetivo?: string;
+    fechaInicioPlanificada?: string | null;
+    fechaObjetivo?: string | null;
     fechaEnCurso?: string;
     fechaHecha?: string;
     idCreador: number;

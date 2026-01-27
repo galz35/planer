@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
+import { Save } from 'lucide-react';
 import type { Tarea } from '../../types/modelos';
 import { useTaskController } from '../../hooks/useTaskController';
 import { TaskHeader } from './TaskHeader';
 import { TaskPlanningPanel } from './TaskPlanningPanel';
 import { TaskExecutionPanel } from './TaskExecutionPanel';
-import { TaskAuditLog } from './TaskAuditLog';
-import { TaskABCSection } from '../ui/TaskABCSection'; // Reuse existing
 import { SolicitudCambioModal } from '../ui/SolicitudCambioModal'; // Reuse existing
-import { TaskSubtasks } from './TaskSubtasks';
+import { TaskManagementActions } from './TaskManagementActions';
+import { BlockView } from './BlockView';
+import { ReassignView } from './ReassignView';
+import { StrategicRequestView } from './StrategicRequestView';
 
 interface Props {
     task: Tarea;
@@ -21,8 +23,6 @@ export const TaskDetailModalV2: React.FC<Props> = ({ task, onClose, onUpdate, mo
     // 1. Hook de Lógica (Controller)
     const { form, meta, actions } = useTaskController(task, onClose, onUpdate);
 
-    // 2. Estado UI Local (Tabs)
-    const [activeTab, setActiveTab] = useState<'Info' | 'Foco' | 'Historial'>('Info');
     // const [requestField, setRequestField] = useState<'fechaObjetivo' | 'fechaInicioPlanificada'>('fechaObjetivo');
     // const [view, setView] = useState<'Main' | 'RequestChange'>('Main'); // Simple view switching
 
@@ -48,33 +48,15 @@ export const TaskDetailModalV2: React.FC<Props> = ({ task, onClose, onUpdate, mo
                     subtasksCount={meta.fullTask?.subtareas?.length}
                 />
 
-                {/* TABS */}
+                {/* TABS OCULTOS POR SOLICITUD - Solo Información visible por defecto */}
+                {/* 
                 <div className="flex px-6 border-b bg-slate-50/30 gap-6 shrink-0">
-                    <button
-                        onClick={() => setActiveTab('Info')}
-                        className={`py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'Info' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        Información
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('Foco')}
-                        className={`py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'Foco' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        Foco & Inteligencia
-                    </button>
-                    {mode === 'planning' && (
-                        <button
-                            onClick={() => setActiveTab('Historial')}
-                            className={`py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'Historial' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                        >
-                            Historial & Jerarquía
-                        </button>
-                    )}
-                </div>
+                    ... (tabs buttons)
+                </div> 
+                */}
 
                 {/* CONTENT AREA */}
                 <div className="p-4 md:p-6 overflow-y-auto bg-white flex-1 relative">
-                    {/* Change Request Modal Overlay (Inner) */}
                     {meta.showChangeModal && (
                         <SolicitudCambioModal
                             isOpen={true}
@@ -86,23 +68,64 @@ export const TaskDetailModalV2: React.FC<Props> = ({ task, onClose, onUpdate, mo
                         />
                     )}
 
-                    {activeTab === 'Info' && (
-                        <div className="space-y-6 animate-in slide-in-from-right-2 duration-200">
-                            {/* Planning Dates Section */}
-                            <TaskPlanningPanel
-                                task={task}
-                                fechaInicioPlanificada={form.fechaInicioPlanificada}
-                                setFechaInicioPlanificada={form.setFechaInicioPlanificada}
-                                fechaObjetivo={form.fechaObjetivo}
-                                setFechaObjetivo={form.setFechaObjetivo}
-                                isLocked={isLocked}
-                                onRequestChange={() => { /* setRequestField(f); TODO: Implement request logic in hook if needed deeper */ }}
-                            />
+                    {/* VIEW SWITCHER */}
+                    {meta.view === 'Block' && (
+                        <BlockView
+                            team={meta.team}
+                            submitting={meta.submitting}
+                            onCancel={() => meta.setView('Main')}
+                            onSubmit={(p) => actions.handleCreateBlocker(p)}
+                        />
+                    )}
 
-                            {/* Execution Section */}
+                    {meta.view === 'Reassign' && (
+                        <ReassignView
+                            task={task}
+                            team={meta.team}
+                            submitting={meta.submitting}
+                            onCancel={() => meta.setView('Main')}
+                            onReassign={(id) => actions.handleReassign(id)}
+                            onAction={(a) => actions.handleAction(a)}
+                        />
+                    )}
+
+                    {meta.view === 'RequestChange' && (
+                        <StrategicRequestView
+                            currentValue={meta.requestedField === 'fechaObjetivo' ? form.fechaObjetivo : form.fechaInicioPlanificada}
+                            submitting={meta.submitting}
+                            onCancel={() => meta.setView('Main')}
+                            onSubmit={(val, reason) => actions.handleSubmitStrategicChange(meta.requestedField, val, reason)}
+                        />
+                    )}
+
+                    {meta.view === 'Main' && (
+                        <div className="space-y-8 animate-in slide-in-from-right-2 duration-200 pb-10">
+
+                            {/* 1. SECCIÓN DE PLANIFICACIÓN (FECHAS) - PRIMERO */}
+                            <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        Planificación y Fechas
+                                    </h4>
+                                    {isLocked && <span className="text-[9px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">🔒 Estratégico</span>}
+                                </div>
+                                <TaskPlanningPanel
+                                    task={task}
+                                    fechaInicioPlanificada={form.fechaInicioPlanificada}
+                                    setFechaInicioPlanificada={form.setFechaInicioPlanificada}
+                                    fechaObjetivo={form.fechaObjetivo}
+                                    setFechaObjetivo={form.setFechaObjetivo}
+                                    isLocked={isLocked}
+                                    onRequestChange={(f) => {
+                                        meta.setRequestedField(f);
+                                        meta.setView('RequestChange');
+                                    }}
+                                />
+                            </div>
+
+                            {/* 2. SECCIÓN DE EJECUCIÓN (NOTAS/AVANCE/COMENTARIO) */}
                             <TaskExecutionPanel
                                 task={task}
-                                fullTask={meta.fullTask}
                                 descripcion={form.descripcion}
                                 setDescripcion={form.setDescripcion}
                                 linkEvidencia={form.linkEvidencia}
@@ -111,50 +134,39 @@ export const TaskDetailModalV2: React.FC<Props> = ({ task, onClose, onUpdate, mo
                                 setProgreso={form.setProgreso}
                                 comentario={form.comentario}
                                 setComentario={form.setComentario}
-                                onSave={actions.handleSaveProgress}
-                                submitting={meta.submitting}
                             />
 
-                            {/* CHECKLIST / SUBTASKS */}
-                            <TaskSubtasks
-                                subtasks={meta.fullTask?.subtareas}
-                                onToggle={(id, status) => actions.toggleSubtaskCompletion(id, status)}
-                                onAdd={(title) => actions.addSubtask(title)}
-                            />
-                        </div>
-                    )}
+                            {/* 3. HISTORIAL OCULTO POR SOLICITUD */}
 
-                    {activeTab === 'Foco' && (
-                        <div className="animate-in slide-in-from-right-2 duration-200">
-                            <TaskABCSection task={task} onUpdate={onUpdate} />
-                        </div>
-                    )}
-
-                    {activeTab === 'Historial' && (
-                        <div className="animate-in slide-in-from-right-2 duration-200">
-                            {/* Hierarchy (Simple view for now, could be its own component) */}
-                            {mode === 'planning' && (
-                                <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h4 className="text-xs font-bold text-slate-500 uppercase">Estructura</h4>
-                                        <button onClick={() => {
-                                            const sub = prompt('Nombre Subtarea:');
-                                            if (sub) actions.addSubtask(sub);
-                                        }} className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold hover:bg-blue-200">
-                                            + Subtarea
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <TaskAuditLog
-                                auditLogs={meta.auditLogs}
-                                creationDate={task.fechaCreacion}
-                                creatorName={task.creador?.nombre}
-                            />
+                            {/* 4. ACCIONES DE GESTIÓN (AL FONDO) */}
+                            <div className="bg-slate-50/30 p-4 rounded-2xl border border-dashed border-slate-200 mt-4">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Acciones de Gestión</h4>
+                                <TaskManagementActions
+                                    onReportBlock={() => meta.setView('Block')}
+                                    onReassign={() => meta.setView('Reassign')}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
+
+                {/* BOTÓN GUARDAR FIJO EN EL FOOTER - ESTILO PREMIUM */}
+                {meta.view === 'Main' && (
+                    <div className="p-4 bg-slate-50 border-t flex justify-center items-center shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] selection:bg-none">
+                        <button
+                            onClick={actions.handleSaveProgress}
+                            disabled={meta.submitting}
+                            className="bg-slate-900 text-white px-16 py-4 rounded-2xl font-bold text-sm shadow-2xl shadow-slate-900/30 hover:bg-black active:scale-[0.97] transition-all disabled:opacity-50 flex items-center gap-3 min-w-[280px] justify-center"
+                        >
+                            {meta.submitting ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Save size={18} />
+                            )}
+                            {meta.submitting ? 'Guardando...' : 'Guardar y Finalizar'}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>,
         document.body

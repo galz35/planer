@@ -9,7 +9,8 @@ import { es } from 'date-fns/locale';
 import {
     Search, Calendar, LayoutList, Shield, Users,
     Briefcase, ChevronRight,
-    BarChart3, AlertCircle, Clock, ChevronLeft
+    BarChart3, AlertCircle, Clock, ChevronLeft,
+    Building2, Filter, Layers, ChevronDown, X
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -98,19 +99,29 @@ const AlertsTable = ({ tasks, title, type, onTaskClick }: { tasks: any[]; title:
                                         <span className="text-[11px] font-medium text-slate-600 truncate max-w-[100px]">{t.asignado}</span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-right align-top">
-                                    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded ${theme.badge} whitespace-nowrap`}>
-                                        {t.fechaObjetivo ? format(new Date(t.fechaObjetivo), 'dd MMM', { locale: es }) : '--'}
-                                    </span>
+                                <td className="px-4 py-3 text-right align-top relative">
+                                    <div className="flex flex-col items-end">
+                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap ${(t.estado === 'Hecha' || t.estado === 'Completada')
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-rose-100 text-rose-700'
+                                            }`}>
+                                            {(t.estado === 'Hecha' || t.estado === 'Completada')
+                                                ? format(new Date(t.fechaCompletado || t.fechaFinReal || t.fechaObjetivo || new Date()), 'dd MMM', { locale: es })
+                                                : (t.fechaObjetivo ? format(new Date(t.fechaObjetivo), 'dd MMM', { locale: es }) : '--')}
+                                        </span>
+                                        {(t.estado === 'Hecha' || t.estado === 'Completada') && t.fechaObjetivo && (
+                                            <span className="text-[8px] text-slate-400 mt-0.5 font-medium italic">Vencía: {format(new Date(t.fechaObjetivo), 'dd/MM')}</span>
+                                        )}
+                                    </div>
+                                    <div className="hidden group-hover:block absolute right-2 mt-2">
+                                        <button
+                                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-white shadow py-1 px-2 rounded-lg"
+                                            onClick={(e) => { e.stopPropagation(); onTaskClick(t); }}
+                                        >
+                                            Ver
+                                        </button>
+                                    </div>
                                 </td>
-                                <div className="hidden group-hover:block absolute right-2 mt-2">
-                                    <button
-                                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-white shadow py-1 px-2 rounded-lg"
-                                        onClick={(e) => { e.stopPropagation(); onTaskClick(t); }}
-                                    >
-                                        Ver
-                                    </button>
-                                </div>
                             </tr>
                         )) : (
                             <tr><td colSpan={3} className="py-12 text-center text-xs text-slate-400 italic">No se encontraron resultados</td></tr>
@@ -120,16 +131,18 @@ const AlertsTable = ({ tasks, title, type, onTaskClick }: { tasks: any[]; title:
             </div>
 
             {/* Pagination Footer */}
-            {totalPages > 1 && (
-                <div className="px-4 py-2 border-t border-slate-50 flex justify-between items-center bg-slate-50/30">
-                    <span className="text-[10px] font-bold text-slate-400">Página {page} de {totalPages}</span>
-                    <div className="flex gap-1">
-                        <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all text-slate-500"><ChevronLeft size={14} /></button>
-                        <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all text-slate-500"><ChevronRight size={14} /></button>
+            {
+                totalPages > 1 && (
+                    <div className="px-4 py-2 border-t border-slate-50 flex justify-between items-center bg-slate-50/30">
+                        <span className="text-[10px] font-bold text-slate-400">Página {page} de {totalPages}</span>
+                        <div className="flex gap-1">
+                            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all text-slate-500"><ChevronLeft size={14} /></button>
+                            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all text-slate-500"><ChevronRight size={14} /></button>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
@@ -139,7 +152,7 @@ export const DashboardManager: React.FC = () => {
     const { showToast } = useToast();
 
     // -- STATE --
-    const [activeTab, setActiveTab] = useState<'projects' | 'team' | 'alerts'>('projects');
+    const [activeTab, setActiveTab] = useState<'projects' | 'team' | 'alerts' | 'projectTasks' | 'orgView' | 'projView'>('projects');
     const [isDelegationModalOpen, setIsDelegationModalOpen] = useState(false);
 
     // Data State
@@ -154,6 +167,12 @@ export const DashboardManager: React.FC = () => {
     const [dueTasks, setDueTasks] = useState<{ today: any[], overdue: any[] }>({ today: [], overdue: [] });
     // Selection for Modal
     const [selectedTask, setSelectedTask] = useState<any>(null);
+    const [orgFilter, setOrgFilter] = useState({ gerencia: '', subgerencia: '', area: '', search: '' });
+    const [expandedSubgerencias, setExpandedSubgerencias] = useState<string[]>([]);
+    const [orgPage, setOrgPage] = useState(1);
+    const [projPage, setProjPage] = useState(1);
+    const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
+    const orgGroupsPerPage = 6;
 
     // -- LOAD DATA METHODS --
     const loadProjects = async () => {
@@ -244,6 +263,36 @@ export const DashboardManager: React.FC = () => {
         return { total, uniqueAreas };
     }, [projects]);
 
+    // -- ORG VIEW LOGIC (TOP LEVEL HOOKS) --
+    const filteredTasksOrg = useMemo(() => {
+        const allTasks = [...dueTasks.today, ...dueTasks.overdue];
+        return allTasks.filter(t =>
+            (!orgFilter.gerencia || t.gerencia === orgFilter.gerencia) &&
+            (!orgFilter.subgerencia || t.subgerencia === orgFilter.subgerencia) &&
+            (!orgFilter.area || t.area === orgFilter.area) &&
+            (!orgFilter.search ||
+                t.titulo.toLowerCase().includes(orgFilter.search.toLowerCase()) ||
+                (t.asignado || '').toLowerCase().includes(orgFilter.search.toLowerCase()) ||
+                (t.area || '').toLowerCase().includes(orgFilter.search.toLowerCase())
+            )
+        ).sort((a, b) => {
+            const aDone = a.estado === 'Hecha' || a.estado === 'Completada' ? 1 : 0;
+            const bDone = b.estado === 'Hecha' || b.estado === 'Completada' ? 1 : 0;
+            return aDone - bDone;
+        });
+    }, [dueTasks, orgFilter]);
+
+    useEffect(() => {
+        if (orgFilter.search && filteredTasksOrg.length > 0) {
+            const groupsWithResults = Array.from(new Set(filteredTasksOrg.map(t => {
+                let key = t.subgerencia || 'Sin Subgerencia';
+                if (key.toUpperCase() === 'NO APLICA' && t.gerencia) key = t.gerencia;
+                return key;
+            })));
+            setExpandedSubgerencias(groupsWithResults);
+        }
+    }, [orgFilter.search, filteredTasksOrg]);
+
     const filteredProjects = useMemo(() => {
         return projects.filter(p => {
             const term = searchTerm.toLowerCase();
@@ -269,23 +318,434 @@ export const DashboardManager: React.FC = () => {
         return filteredProjects.slice(start, start + itemsPerPage);
     }, [filteredProjects, currentPage]);
 
-    // -- RENDER ALERT TABLES (New & Improved) --
-    const renderAlertsTab = () => (
+    // -- RENDER ALERT TABLES (Split into No Project vs Projects) --
+    const renderRevisionTab = () => (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
             <AlertsTable
-                title="Tareas Atrasadas (Críticas)"
-                tasks={dueTasks.overdue}
-                type="danger"
+                title="Entregas de Hoy"
+                tasks={dueTasks.today.filter(t => !t.idProyecto && (!t.proyectoNombre || t.proyectoNombre === 'Sin Proyecto'))}
+                type="success"
                 onTaskClick={handleTaskClick}
             />
             <AlertsTable
-                title="Entregas de Hoy"
-                tasks={dueTasks.today}
-                type="success"
+                title="Tareas Individuales Atrasadas"
+                tasks={dueTasks.overdue.filter(t => !t.idProyecto && (!t.proyectoNombre || t.proyectoNombre === 'Sin Proyecto'))}
+                type="danger"
                 onTaskClick={handleTaskClick}
             />
         </div>
     );
+
+    const renderProjectTasksTab = () => {
+        const projectOverdue = dueTasks.overdue.filter(t => t.idProyecto || (t.proyectoNombre && t.proyectoNombre !== 'Sin Proyecto'));
+        const projectToday = dueTasks.today.filter(t => t.idProyecto || (t.proyectoNombre && t.proyectoNombre !== 'Sin Proyecto'));
+
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 items-start">
+                <AlertsTable
+                    title="Tareas Atrasadas Proyectos"
+                    tasks={projectOverdue}
+                    type="danger"
+                    onTaskClick={handleTaskClick}
+                />
+                <AlertsTable
+                    title="Entregas de Hoy (Proyecto)"
+                    tasks={projectToday}
+                    type="success"
+                    onTaskClick={handleTaskClick}
+                />
+            </div>
+        );
+    };
+
+    const renderProjectViewTab = () => {
+        const allTasks = [...dueTasks.today, ...dueTasks.overdue].filter(t => t.idProyecto || (t.proyectoNombre && t.proyectoNombre !== 'Sin Proyecto'));
+
+        // Ordenar tareas dentro de cada grupo
+        const sortedTasks = allTasks.sort((a, b) => {
+            const aDone = a.estado === 'Hecha' || a.estado === 'Completada' ? 1 : 0;
+            const bDone = b.estado === 'Hecha' || b.estado === 'Completada' ? 1 : 0;
+            return aDone - bDone;
+        });
+
+        const filtered = sortedTasks.filter(t =>
+            (!orgFilter.gerencia || t.gerencia === orgFilter.gerencia) &&
+            (!orgFilter.subgerencia || t.subgerencia === orgFilter.subgerencia) &&
+            (!orgFilter.search ||
+                t.titulo.toLowerCase().includes(orgFilter.search.toLowerCase()) ||
+                (t.asignado || '').toLowerCase().includes(orgFilter.search.toLowerCase()) ||
+                (t.proyectoNombre || '').toLowerCase().includes(orgFilter.search.toLowerCase())
+            )
+        );
+
+        const grouped = filtered.reduce((acc: any, t) => {
+            const key = t.proyectoNombre || 'Proyecto Desconocido';
+            if (!acc[key]) acc[key] = { tasks: [], sub: t.subgerencia };
+            acc[key].tasks.push(t);
+            return acc;
+        }, {});
+
+        const projectKeys = Object.keys(grouped).sort();
+        const totalProjPages = Math.ceil(projectKeys.length / orgGroupsPerPage);
+        const currentProjects = projectKeys.slice((projPage - 1) * orgGroupsPerPage, projPage * orgGroupsPerPage);
+
+        const toggleProj = (p: string) => {
+            setExpandedProjects(prev =>
+                prev.includes(p) ? prev.filter(item => item !== p) : [...prev, p]
+            );
+        };
+
+        return (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {/* Filtros Compactos */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2 items-center">
+                    <div className="flex items-center gap-1 mr-2 text-indigo-500 shrink-0">
+                        <Filter size={12} />
+                        <span className="text-[9px] font-black uppercase">Filtros Proy:</span>
+                    </div>
+
+                    <div className="relative flex-1 min-w-[150px]">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
+                        <input
+                            type="text"
+                            placeholder="Buscar proyecto o tarea..."
+                            className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                            value={orgFilter.search}
+                            onChange={e => { setOrgFilter({ ...orgFilter, search: e.target.value }); setProjPage(1); }}
+                        />
+                    </div>
+
+                    <select
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 min-w-[110px]"
+                        value={orgFilter.gerencia}
+                        onChange={e => { setOrgFilter({ ...orgFilter, gerencia: e.target.value, subgerencia: '' }); setProjPage(1); }}
+                    >
+                        <option value="">Gerencia...</option>
+                        {Array.from(new Set(allTasks.map(t => t.gerencia).filter(Boolean))).sort().map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+
+                    <select
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 min-w-[110px]"
+                        value={orgFilter.subgerencia}
+                        onChange={e => { setOrgFilter({ ...orgFilter, subgerencia: e.target.value }); setProjPage(1); }}
+                    >
+                        <option value="">Subgerencia...</option>
+                        {Array.from(new Set(allTasks.filter(t => !orgFilter.gerencia || t.gerencia === orgFilter.gerencia).map(t => t.subgerencia).filter(Boolean))).sort().map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <button
+                        onClick={() => { setOrgFilter({ gerencia: '', subgerencia: '', area: '', search: '' }); setProjPage(1); }}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all shrink-0"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+
+                {/* Acordeón de Proyectos */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table className="w-full text-left border-collapse table-fixed">
+                        <thead>
+                            <tr className="bg-slate-50/50 text-[9px] font-black uppercase text-slate-400 border-b border-slate-100">
+                                <th className="px-3 py-2 w-[60%]">Proyecto / Entregable</th>
+                                <th className="px-3 py-2 hidden md:table-cell w-[25%]">Responsable</th>
+                                <th className="px-3 py-2 text-right w-[15%]">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {currentProjects.map(projKey => {
+                                const isExpanded = expandedProjects.includes(projKey);
+                                const { tasks, sub } = grouped[projKey];
+                                const doneCount = tasks.filter((t: any) => t.estado === 'Hecha' || t.estado === 'Completada').length;
+
+                                return (
+                                    <React.Fragment key={projKey}>
+                                        <tr
+                                            onClick={() => toggleProj(projKey)}
+                                            className="bg-slate-50/30 hover:bg-slate-50 transition-colors cursor-pointer border-l-2 border-transparent hover:border-l-indigo-600"
+                                        >
+                                            <td colSpan={3} className="px-3 py-2">
+                                                <div className="flex items-center gap-1.5 font-bold">
+                                                    {isExpanded ? <ChevronDown size={12} className="text-indigo-600" /> : <ChevronRight size={12} className="text-slate-400" />}
+                                                    <Briefcase size={10} className="text-indigo-400" />
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-[10px] text-slate-800 uppercase truncate leading-tight">{projKey}</span>
+                                                        <span className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{sub || 'General'}</span>
+                                                    </div>
+                                                    <div className="flex gap-1 ml-auto shrink-0">
+                                                        <span className="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                                            {tasks.length}
+                                                        </span>
+                                                        <span className="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                            {doneCount} OK
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && tasks.map((t: any) => (
+                                            <tr
+                                                key={t.idTarea}
+                                                onClick={() => handleTaskClick(t)}
+                                                className="hover:bg-indigo-50/20 transition-colors cursor-pointer group"
+                                            >
+                                                <td className="px-7 py-1.5">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-[10px] font-bold text-slate-600 group-hover:text-indigo-700 leading-tight uppercase truncate">{t.titulo}</span>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <Clock size={8} className="text-slate-300" />
+                                                            <span className="text-[8px] font-medium text-slate-400">Objetivo: {t.fechaObjetivo ? format(new Date(t.fechaObjetivo), 'dd/MM/yy') : '--'}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-1.5 hidden md:table-cell">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-4 h-4 rounded-full bg-slate-100 text-[7px] font-black flex items-center justify-center text-slate-500 border border-slate-200 shrink-0">
+                                                            {(t.asignado || 'U').charAt(0)}
+                                                        </div>
+                                                        <span className="text-[9px] font-bold text-slate-500 truncate uppercase">@{t.asignado}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-1.5 text-right">
+                                                    <span className={`inline-block px-1 py-0.2 rounded text-[8px] font-black uppercase ${(t.estado === 'Hecha' || t.estado === 'Completada')
+                                                        ? 'bg-emerald-100 text-emerald-700'
+                                                        : 'bg-rose-100 text-rose-700'
+                                                        }`}>
+                                                        {t.estado === 'Hecha' || t.estado === 'Completada' ? 'OK' : 'PEND'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
+                                );
+                            })}
+                            {projectKeys.length === 0 && (
+                                <tr>
+                                    <td colSpan={3} className="py-12 text-center text-[10px] font-bold text-slate-400 italic">No se encontraron proyectos con tareas pendientes hoy</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+
+                    {/* Pagination */}
+                    {totalProjPages > 1 && (
+                        <div className="px-3 py-1.5 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                Pag. {projPage} / {totalProjPages} ({projectKeys.length} Proyectos)
+                            </span>
+                            <div className="flex gap-1">
+                                <button disabled={projPage === 1} onClick={() => setProjPage(p => p - 1)} className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-20 transition-all text-slate-500"><ChevronLeft size={12} /></button>
+                                <button disabled={projPage === totalProjPages} onClick={() => setProjPage(p => p + 1)} className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-20 transition-all text-slate-500"><ChevronRight size={12} /></button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const renderOrgTab = () => {
+        const allTasks = [...dueTasks.today, ...dueTasks.overdue];
+
+        // Remove gerencias, subgerencias, areas from here as they are not used in the new filter structure
+        // const gerencias = Array.from(new Set(allTasks.map(t => t.gerencia).filter(Boolean)));
+        // const subgerencias = Array.from(new Set(allTasks.map(t => t.subgerencia).filter(Boolean)));
+        // const areas = Array.from(new Set(allTasks.map(t => t.area).filter(Boolean)));
+
+        const grouped = filteredTasksOrg.reduce((acc: any, t) => {
+            let key = t.subgerencia || 'Sin Subgerencia';
+            if (key.toUpperCase() === 'NO APLICA' && t.gerencia) {
+                key = t.gerencia;
+            }
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(t);
+            return acc;
+        }, {});
+
+        const groupKeys = Object.keys(grouped).sort();
+        const totalOrgPages = Math.ceil(groupKeys.length / orgGroupsPerPage);
+        const currentGroups = groupKeys.slice((orgPage - 1) * orgGroupsPerPage, orgPage * orgGroupsPerPage);
+
+        const toggleSub = (sub: string) => {
+            setExpandedSubgerencias(prev =>
+                prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
+            );
+        };
+
+        return (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {/* Filtros Compactos */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2 items-center">
+                    <div className="flex items-center gap-1 mr-2 text-indigo-500 shrink-0">
+                        <Filter size={12} />
+                        <span className="text-[9px] font-black uppercase">Filtros:</span>
+                    </div>
+
+                    <div className="relative flex-1 min-w-[150px]">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={10} />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                            value={orgFilter.search}
+                            onChange={e => { setOrgFilter({ ...orgFilter, search: e.target.value }); setOrgPage(1); }}
+                        />
+                    </div>
+
+                    <select
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 min-w-[100px]"
+                        value={orgFilter.gerencia}
+                        onChange={e => { setOrgFilter({ ...orgFilter, gerencia: e.target.value, subgerencia: '', area: '' }); setOrgPage(1); }}
+                    >
+                        <option value="">Gerencia...</option>
+                        {Array.from(new Set(allTasks.map(t => t.gerencia).filter(Boolean))).sort().map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+
+                    <select
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 min-w-[100px]"
+                        value={orgFilter.subgerencia}
+                        onChange={e => { setOrgFilter({ ...orgFilter, subgerencia: e.target.value, area: '' }); setOrgPage(1); }}
+                    >
+                        <option value="">Subgerencia...</option>
+                        {Array.from(new Set(allTasks
+                            .filter(t => !orgFilter.gerencia || t.gerencia === orgFilter.gerencia)
+                            .map(t => t.subgerencia).filter(Boolean)
+                        )).sort().map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <select
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[9px] font-bold outline-none focus:ring-2 focus:ring-indigo-100 min-w-[100px]"
+                        value={orgFilter.area}
+                        onChange={e => { setOrgFilter({ ...orgFilter, area: e.target.value }); setOrgPage(1); }}
+                    >
+                        <option value="">Área...</option>
+                        {Array.from(new Set(allTasks
+                            .filter(t => (!orgFilter.gerencia || t.gerencia === orgFilter.gerencia) && (!orgFilter.subgerencia || t.subgerencia === orgFilter.subgerencia))
+                            .map(t => t.area).filter(Boolean)
+                        )).sort().map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+
+                    <button
+                        onClick={() => { setOrgFilter({ gerencia: '', subgerencia: '', area: '', search: '' }); setOrgPage(1); }}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all ml-auto shrink-0"
+                        title="Limpiar Filtros"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+
+                {/* Acordeón de Subgerencias */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table className="w-full text-left border-collapse table-fixed">
+                        <thead>
+                            <tr className="bg-slate-50/50 text-[9px] font-black uppercase text-slate-400 border-b border-slate-100">
+                                <th className="px-3 py-2 w-[55%]">Grupo / Tarea</th>
+                                <th className="px-3 py-2 hidden md:table-cell w-[30%]">Resp. & Carnet</th>
+                                <th className="px-3 py-2 text-right w-[15%]">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {currentGroups.map(sub => {
+                                const isExpanded = expandedSubgerencias.includes(sub);
+                                const tasks = grouped[sub];
+                                const doneCount = tasks.filter((t: any) => t.estado === 'Hecha' || t.estado === 'Completada').length;
+
+                                return (
+                                    <React.Fragment key={sub}>
+                                        <tr
+                                            onClick={() => toggleSub(sub)}
+                                            className="bg-slate-50/30 hover:bg-slate-50 transition-colors cursor-pointer border-l-2 border-transparent hover:border-l-indigo-400"
+                                        >
+                                            <td colSpan={3} className="px-3 py-2">
+                                                <div className="flex items-center gap-1.5 font-bold">
+                                                    {isExpanded ? <ChevronDown size={12} className="text-indigo-500" /> : <ChevronRight size={12} className="text-slate-400" />}
+                                                    <Building2 size={10} className="text-slate-400" />
+                                                    <span className="text-[10px] text-slate-700 uppercase truncate">{sub}</span>
+                                                    <div className="flex gap-1 ml-auto shrink-0">
+                                                        <span className="text-[8px] font-black px-1 py-0.2 rounded bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                            {doneCount} OK
+                                                        </span>
+                                                        <span className="text-[8px] font-black px-1 py-0.2 rounded bg-rose-50 text-rose-600 border border-rose-100">
+                                                            {tasks.length - doneCount} PEND
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && tasks.map((t: any) => (
+                                            <tr
+                                                key={t.idTarea}
+                                                onClick={() => handleTaskClick(t)}
+                                                className="hover:bg-indigo-50/20 transition-colors cursor-pointer group"
+                                            >
+                                                <td className="px-7 py-1.5">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-[10px] font-bold text-slate-600 group-hover:text-indigo-700 leading-none truncate uppercase">{t.titulo}</span>
+                                                        <span className="text-[8px] font-medium text-slate-400 mt-0.5">{t.area || '--'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-1.5 hidden md:table-cell">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-4 h-4 rounded-full bg-slate-100 text-[7px] font-black flex items-center justify-center text-slate-500 border border-slate-200 shrink-0">
+                                                            {(t.asignado || 'U').charAt(0)}
+                                                        </div>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-[9px] font-bold text-slate-500 tracking-tight leading-none truncate uppercase">@{t.asignado}</span>
+                                                            <span className="text-[7px] font-black text-slate-300 leading-none">{t.usuarioCarnet}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-1.5 text-right">
+                                                    <span className={`inline-block px-1 py-0.2 rounded text-[8px] font-black uppercase tracking-tighter ${(t.estado === 'Hecha' || t.estado === 'Completada')
+                                                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                                        : 'bg-rose-100 text-rose-700 border border-rose-200'
+                                                        }`}>
+                                                        {t.estado === 'Hecha' || t.estado === 'Completada' ? 'OK' : 'PEND'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
+                                );
+                            })}
+                            {groupKeys.length === 0 && (
+                                <tr>
+                                    <td colSpan={3} className="py-12 text-center">
+                                        <Layers size={24} className="mx-auto text-slate-200 mb-1" />
+                                        <p className="text-[10px] font-bold text-slate-400">Sin tareas en este grupo</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+
+                    {/* Controles de Paginación Org */}
+                    {totalOrgPages > 1 && (
+                        <div className="px-3 py-1.5 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                Página {orgPage} de {totalOrgPages} ({groupKeys.length} Grupos)
+                            </span>
+                            <div className="flex gap-1">
+                                <button
+                                    disabled={orgPage === 1}
+                                    onClick={() => setOrgPage(p => p - 1)}
+                                    className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-20 transition-all text-slate-500"
+                                >
+                                    <ChevronLeft size={12} />
+                                </button>
+                                <button
+                                    disabled={orgPage === totalOrgPages}
+                                    onClick={() => setOrgPage(p => p + 1)}
+                                    className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-200 disabled:opacity-20 transition-all text-slate-500"
+                                >
+                                    <ChevronRight size={12} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     // -- RENDER TABLE --
     const renderTable = () => (
@@ -495,16 +955,64 @@ export const DashboardManager: React.FC = () => {
                             <button
                                 onClick={() => setActiveTab('alerts')}
                                 className={`relative px-4 py-3 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap
-                                ${activeTab === 'alerts' ? 'text-rose-600 bg-white rounded-lg shadow-sm' : 'text-slate-400 hover:text-rose-500'}`}
+                                ${activeTab === 'alerts' ? 'text-indigo-600 bg-white rounded-lg shadow-sm' : 'text-slate-400 hover:text-indigo-500'}`}
                             >
-                                Revisión de Tareas
-                                {(dueTasks.overdue.length + dueTasks.today.length) > 0 && (
-                                    <span className="bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded text-[9px] font-black border border-rose-200">
-                                        {dueTasks.overdue.length + dueTasks.today.length}
-                                    </span>
-                                )}
+                                Tareas
+                                {(() => {
+                                    const count = dueTasks.overdue.filter(t => !t.idProyecto && (!t.proyectoNombre || t.proyectoNombre === 'Sin Proyecto')).length +
+                                        dueTasks.today.filter(t => !t.idProyecto && (!t.proyectoNombre || t.proyectoNombre === 'Sin Proyecto')).length;
+                                    return count > 0 && (
+                                        <span className="bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200">
+                                            {count}
+                                        </span>
+                                    );
+                                })()}
                                 {activeTab === 'alerts' && (
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-t-full shadow-sm"></span>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('projectTasks')}
+                                className={`relative px-4 py-3 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap
+                                ${activeTab === 'projectTasks' ? 'text-rose-600 bg-white rounded-lg shadow-sm' : 'text-slate-400 hover:text-rose-500'}`}
+                            >
+                                Proyecto
+                                {(() => {
+                                    const count = dueTasks.overdue.filter(t => t.idProyecto || (t.proyectoNombre && t.proyectoNombre !== 'Sin Proyecto')).length +
+                                        dueTasks.today.filter(t => t.idProyecto || (t.proyectoNombre && t.proyectoNombre !== 'Sin Proyecto')).length;
+                                    return count > 0 && (
+                                        <span className="bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded text-[9px] font-black border border-rose-200">
+                                            {count}
+                                        </span>
+                                    );
+                                })()}
+                                {activeTab === 'projectTasks' && (
                                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-rose-500 rounded-t-full shadow-sm shadow-rose-200"></span>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('orgView')}
+                                className={`relative px-4 py-3 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap
+                                ${activeTab === 'orgView' ? 'text-emerald-600 bg-white rounded-lg shadow-sm' : 'text-slate-400 hover:text-emerald-500'}`}
+                            >
+                                <Building2 size={14} />
+                                Vista Org
+                                {activeTab === 'orgView' && (
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-t-full shadow-sm"></span>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('projView')}
+                                className={`relative px-4 py-3 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap
+                                ${activeTab === 'projView' ? 'text-indigo-600 bg-white rounded-lg shadow-sm' : 'text-slate-400 hover:text-indigo-500'}`}
+                            >
+                                <Briefcase size={14} />
+                                Vista Proy
+                                {activeTab === 'projView' && (
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-t-full shadow-sm"></span>
                                 )}
                             </button>
                         </div>
@@ -541,7 +1049,10 @@ export const DashboardManager: React.FC = () => {
                     </div>
                 )}
                 {activeTab === 'team' && <MiEquipoPage />}
-                {activeTab === 'alerts' && renderAlertsTab()}
+                {activeTab === 'alerts' && renderRevisionTab()}
+                {activeTab === 'projectTasks' && renderProjectTasksTab()}
+                {activeTab === 'orgView' && renderOrgTab()}
+                {activeTab === 'projView' && renderProjectViewTab()}
             </main>
 
             {/* Delegation Button */}

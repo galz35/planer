@@ -122,6 +122,9 @@ export const ExecutionView: React.FC = () => {
                         disponibles={allDisponibles}
                         checkinTasks={checkin?.tareas?.map((t: CheckinTarea) => t.tarea!).filter(Boolean) || []}
                         onSubmit={handleSubmitCheckin}
+                        onTaskCreated={async () => {
+                            await queryClient.invalidateQueries({ queryKey: ['mi-dia'] });
+                        }}
                         userId={userId}
                         userCarnet={user?.carnet} // Prop nueva
                         fecha={today}

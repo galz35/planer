@@ -81,11 +81,19 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
     }, [initialData]);
 
     // Helpers
-    const getTask = (id: number | null) => {
+    const getTask = (id: number | null | string) => {
         if (!id) return null;
-        return disponibles.find(t => t.idTarea === id) || checkinTasks.find(t => t.idTarea === id) || localTasks.find(t => t.idTarea === id);
+        const numericId = Number(id);
+        return disponibles.find(t => Number(t.idTarea) === numericId) ||
+            checkinTasks.find(t => Number(t.idTarea) === numericId) ||
+            localTasks.find(t => Number(t.idTarea) === numericId);
     };
-    const isSelected = (id: number) => entregoIds.includes(id) || avanzoIds.includes(id) || extraIds.includes(id);
+    const isSelected = (id: number | string) => {
+        const numId = Number(id);
+        return entregoIds.some(i => Number(i) === numId) ||
+            avanzoIds.some(i => Number(i) === numId) ||
+            extraIds.some(i => Number(i) === numId);
+    };
 
     // List Management Helpers
     const addSlot = (type: 'Entrego' | 'Avanzo' | 'Extra') => {
@@ -118,9 +126,9 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
         if (!selectingFor) return;
         const { type, index } = selectingFor;
 
-        setEntregoIds(prev => prev.map(id => id === task.idTarea ? null : id));
-        setAvanzoIds(prev => prev.map(id => id === task.idTarea ? null : id));
-        setExtraIds(prev => prev.map(id => id === task.idTarea ? null : id));
+        setEntregoIds(prev => prev.map(id => (id !== null && Number(id) === Number(task.idTarea)) ? null : id));
+        setAvanzoIds(prev => prev.map(id => (id !== null && Number(id) === Number(task.idTarea)) ? null : id));
+        setExtraIds(prev => prev.map(id => (id !== null && Number(id) === Number(task.idTarea)) ? null : id));
 
         if (type === 'Entrego') setEntregoIds(prev => { const n = [...prev]; n[index] = task.idTarea; return n; });
         if (type === 'Avanzo') setAvanzoIds(prev => { const n = [...prev]; n[index] = task.idTarea; return n; });
@@ -150,7 +158,14 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
             if (onTaskCreated) await onTaskCreated();
 
             const realProject = projects.find(p => p.idProyecto === projectId);
-            const tempTask = { ...newT, proyecto: realProject || { nombre: 'Inbox' } } as unknown as Tarea;
+
+            // ✅ Robustez: Asegurar que tenga título (backend usa 'nombre' a veces)
+            const titulo = (newT as any).titulo || (newT as any).nombre || val;
+            const tempTask = {
+                ...newT,
+                titulo,
+                proyecto: realProject || { nombre: 'Inbox' }
+            } as unknown as Tarea;
 
             setLocalTasks(prev => [...prev, tempTask]);
             handleSelectTask(tempTask);
@@ -345,7 +360,9 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
 
             {selectingFor && (
                 <TaskSelectorOverlay
-                    disponibles={disponibles}
+                    disponibles={selectingFor.type === 'Entrego'
+                        ? disponibles.filter(t => !t.idProyecto && (t.fechaObjetivo?.startsWith(fecha)))
+                        : disponibles}
                     selectionContext={selectingFor}
                     onClose={() => setSelectingFor(null)}
                     onSelect={handleSelectTask}
@@ -426,7 +443,7 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3 min-h-[12rem]">
                     <div className="flex items-center gap-2 pb-2 border-b border-slate-50">
                         <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-[10px] ring-4 ring-rose-50">1</div>
-                        <h4 className="font-bold text-slate-800 text-sm">Objetivo Principal</h4>
+                        <h4 className="font-bold text-slate-800 text-sm">Tarea Principal</h4>
                     </div>
                     <div className="space-y-2 flex-1">
                         {entregoIds.map((id, idx) => renderCard('Entrego', id, idx))}
@@ -458,7 +475,7 @@ export const CheckinForm: React.FC<Props> = ({ disponibles, checkinTasks = [], o
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3 min-h-[12rem]">
                     <div className="flex items-center gap-2 pb-2 border-b border-slate-50">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-[10px] ring-4 ring-emerald-50">5</div>
-                        <h4 className="font-bold text-slate-800 text-sm">Victorias Rápidas</h4>
+                        <h4 className="font-bold text-slate-800 text-sm">Tarea Rápidas</h4>
                     </div>
                     <div className="space-y-2 flex-1">
                         {extraIds.map((id, idx) => renderCard('Extra', id, idx))}

@@ -1,0 +1,2 @@
+CREATE   PROCEDURE [dbo].[sp_Tareas_ObtenerMultiplesUsuarios] @carnetsList NVARCHAR(MAX) AS BEGIN SET NOCOUNT ON; SELECT t.idTarea, t.nombre as titulo, t.descripcion, t.estado, t.prioridad, t.fechaInicioPlanificada, t.fechaObjetivo, t.porcentaje, t.idProyecto, ta.carnet as usuarioCarnet FROM p_Tareas t INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea INNER JOIN STRING_SPLIT(@carnetsList, ',') as L ON ta.carnet = L.value WHERE t.activo = 1; END
+GO

@@ -231,7 +231,7 @@ export const Sidebar: React.FC = () => {
                         <img src="/momentus-logo2.png" alt="Momentus" className="h-12 w-auto" />
                         <div className="animate-fade-in overflow-hidden">
                             <h1 className="font-black text-xl text-slate-900 tracking-tight leading-tight uppercase">PLANNER-EF</h1>
-                            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest leading-none">Inspiración Franklin Flores</p>
+                            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest leading-none">Eficiencia y Enfoque</p>
                         </div>
                     </div>
                 )}

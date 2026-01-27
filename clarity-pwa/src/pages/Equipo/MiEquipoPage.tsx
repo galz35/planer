@@ -227,13 +227,13 @@ export const MiEquipoPage: React.FC = () => {
             let filtered: Tarea[] = [];
             if (type === 'hoy') {
                 filtered = tasks.filter(t => {
-                    const tDate = getDatePart(t.fechaObjetivo);
+                    const tDate = getDatePart(t.fechaObjetivo || undefined);
                     // Planificadas = Today + Future (matches SQL logic)
                     return ['Pendiente', 'EnCurso', 'Pausa', 'Bloqueada', 'Revision'].includes(t.estado) && tDate >= todayStr;
                 });
             } else if (type === 'retrasada') {
                 filtered = tasks.filter(t => {
-                    const tDate = getDatePart(t.fechaObjetivo);
+                    const tDate = getDatePart(t.fechaObjetivo || undefined);
                     return ['Pendiente', 'EnCurso', 'Pausa', 'Bloqueada', 'Revision'].includes(t.estado) && tDate && tDate < todayStr;
                 });
             } else if (type === 'hecha') {
@@ -787,8 +787,8 @@ export const MiEquipoPage: React.FC = () => {
                                                             <div className="text-center py-12 text-slate-400 italic">No hay tareas pendientes</div>
                                                         ) : (
                                                             getTasksByTab().map(t => {
-                                                                const overdue = isOverdue(t.fechaObjetivo);
-                                                                const today = isToday(t.fechaObjetivo);
+                                                                const overdue = isOverdue(t.fechaObjetivo || undefined);
+                                                                const today = isToday(t.fechaObjetivo || undefined);
                                                                 return (
                                                                     <div key={t.idTarea} className={`bg-white p-4 rounded-xl border shadow-sm transition-all hover:shadow-md flex items-start gap-3 ${overdue ? 'border-red-200 bg-red-50/30' : today ? 'border-indigo-200' : 'border-slate-100'}`}>
                                                                         <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${overdue ? 'bg-red-500' : today ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
@@ -901,13 +901,13 @@ export const MiEquipoPage: React.FC = () => {
                                                     </div>
 
                                                     {/* Overdue Warning */}
-                                                    {selectedTasks.some(t => isOverdue(t.fechaObjetivo) && t.estado !== 'Hecha') && (
+                                                    {selectedTasks.some(t => isOverdue(t.fechaObjetivo || undefined) && t.estado !== 'Hecha') && (
                                                         <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex items-start gap-3">
                                                             <AlertCircle className="text-red-600 mt-0.5" size={20} />
                                                             <div>
                                                                 <h4 className="font-bold text-red-800 text-sm">Tareas Atrasadas Detectadas</h4>
                                                                 <p className="text-xs text-red-600 mt-1">
-                                                                    Este usuario tiene {selectedTasks.filter(t => isOverdue(t.fechaObjetivo) && t.estado !== 'Hecha').length} tareas fuera de fecha.
+                                                                    Este usuario tiene {selectedTasks.filter(t => isOverdue(t.fechaObjetivo || undefined) && t.estado !== 'Hecha').length} tareas fuera de fecha.
                                                                 </p>
                                                                 <button
                                                                     onClick={() => setActiveTab('agenda')}
@@ -958,7 +958,7 @@ export const MiEquipoPage: React.FC = () => {
                                                     <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${t.estado === 'Hecha' ? 'bg-emerald-500' :
                                                         t.estado === 'Bloqueada' ? 'bg-orange-500' :
                                                             t.estado === 'Descartada' ? 'bg-slate-400' :
-                                                                isOverdue(t.fechaObjetivo) ? 'bg-rose-500' : 'bg-indigo-500'
+                                                                isOverdue(t.fechaObjetivo || undefined) ? 'bg-rose-500' : 'bg-indigo-500'
                                                         }`} />
 
                                                     <div className="flex-1 min-w-0">

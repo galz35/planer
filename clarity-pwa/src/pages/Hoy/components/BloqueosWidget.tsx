@@ -132,7 +132,7 @@ export const BloqueosWidget: React.FC<Props> = ({ userId, onUpdate }) => {
                                         <h4 className="font-bold text-gray-800">{task.titulo}</h4>
                                         <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                                             <span className="flex items-center gap-1">
-                                                <Clock size={12} /> {getDaysAgo(task.fechaObjetivo)} días
+                                                <Clock size={12} /> {getDaysAgo(task.fechaObjetivo || undefined)} días
                                             </span>
                                             {task.proyecto && (
                                                 <span>📁 {task.proyecto.nombre}</span>

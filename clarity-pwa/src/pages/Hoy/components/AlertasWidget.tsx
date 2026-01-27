@@ -151,7 +151,7 @@ export const AlertasWidget: React.FC<Props> = ({ userId, onUpdate }) => {
                     </div>
                     <div className="divide-y divide-gray-100 max-h-[300px] overflow-y-auto">
                         {atrasadas.map(task => {
-                            const days = getDaysOverdue(task.fechaObjetivo);
+                            const days = getDaysOverdue(task.fechaObjetivo || undefined);
                             return (
                                 <div key={task.idTarea} className={`p-3 border-l-4 ${getPrioColor(task.prioridad)} hover:bg-gray-50`}>
                                     <div className="flex items-center justify-between gap-3">

@@ -16,6 +16,7 @@ export interface MiDiaContextType {
     setToday: (date: string) => void;
     revalidarTarea: (variables: { idTarea: number; accion: 'Sigue' | 'HechaPorOtro' | 'NoAplica' }) => void;
     toggleTarea: (variables: { idTarea: number; estadoActual: string }) => void;
+    isMutating: boolean;
     mutatingTaskId?: number | null;
     isSupervisorMode?: boolean;
 }

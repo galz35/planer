@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, MessageSquare, Link } from 'lucide-react';
+import { AlignLeft, MessageSquare, Link, Trash2 } from 'lucide-react';
 import type { Tarea } from '../../types/modelos';
 
 interface Props {
@@ -12,13 +12,16 @@ interface Props {
     setProgreso: (v: number) => void;
     comentario: string;
     setComentario: (v: string) => void;
+    onDeleteComment: (idLog: number) => void;
 }
 
 export const TaskExecutionPanel: React.FC<Props> = ({
+    task,
     descripcion, setDescripcion,
     linkEvidencia, setLinkEvidencia,
     progreso, setProgreso,
-    comentario, setComentario
+    comentario, setComentario,
+    onDeleteComment
 }) => {
     return (
         <div className="space-y-6">
@@ -71,6 +74,31 @@ export const TaskExecutionPanel: React.FC<Props> = ({
 
             <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><MessageSquare size={12} /> Agregar Comentario / Bitácora</label>
+
+                {/* Lista de comentarios de HOY del usuario */}
+                {task.avances && task.avances.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                        {task.avances
+                            .filter(a => {
+                                const isToday = new Date(a.fecha).toDateString() === new Date().toDateString();
+                                return isToday && a.comentario && a.comentario !== 'Actualización de progreso' && a.comentario !== 'Solicitud de cambio enviada';
+                            })
+                            .map(a => (
+                                <div key={a.idLog} className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs flex justify-between items-start group">
+                                    <div className="text-slate-600 italic">"{a.comentario}"</div>
+                                    <button
+                                        onClick={() => onDeleteComment && onDeleteComment(a.idLog)}
+                                        className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all p-1"
+                                        title="Eliminar este comentario"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))
+                        }
+                    </div>
+                )}
+
                 <textarea
                     value={comentario}
                     onChange={(e) => setComentario(e.target.value)}

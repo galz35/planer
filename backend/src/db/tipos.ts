@@ -84,6 +84,7 @@ export interface ProyectoDb {
     subgerencia: string | null;
     gerencia: string | null;
     idCreador?: number;
+    progreso?: number;
 }
 
 // Tarea (mapeado desde p_Tareas)

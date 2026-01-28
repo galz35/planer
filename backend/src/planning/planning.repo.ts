@@ -151,12 +151,27 @@ export async function actualizarDatosProyecto(idProyecto: number, updates: Parti
     await ejecutarQuery(`UPDATE p_Proyectos SET ${sets.join(', ')} WHERE idProyecto = @idProyecto`, params);
 }
 
-export async function eliminarProyecto(idProyecto: number) {
-    await ejecutarQuery('DELETE FROM p_Proyectos WHERE idProyecto = @idProyecto', { idProyecto: { valor: idProyecto, tipo: Int } });
+export async function eliminarProyecto(idProyecto: number, forceCascade: boolean = false) {
+    await ejecutarSP('sp_Proyecto_Eliminar_V2', {
+        idProyecto: { valor: idProyecto, tipo: Int },
+        forceCascade: { valor: forceCascade ? 1 : 0, tipo: Bit }
+    });
 }
 
 export async function obtenerProyectoPorId(idProyecto: number) {
-    const res = await ejecutarQuery<ProyectoDb>('SELECT * FROM p_Proyectos WHERE idProyecto = @idProyecto', { idProyecto: { valor: idProyecto, tipo: Int } });
+    const res = await ejecutarQuery<ProyectoDb>(`
+        SELECT *, 
+            progreso = ISNULL((
+                SELECT ROUND(AVG(CAST(CASE WHEN t.estado = 'Hecha' THEN 100 ELSE ISNULL(t.porcentaje, 0) END AS FLOAT)), 0)
+                FROM p_Tareas t
+                WHERE t.idProyecto = p.idProyecto 
+                  AND t.idTareaPadre IS NULL 
+                  AND t.activo = 1
+                  AND t.estado NOT IN ('Descartada', 'Eliminada', 'Anulada', 'Cancelada')
+            ), 0)
+        FROM p_Proyectos p
+        WHERE idProyecto = @idProyecto
+    `, { idProyecto: { valor: idProyecto, tipo: Int } });
     return res[0];
 }
 
@@ -205,6 +220,18 @@ export async function obtenerTareaPorId(idTarea: number) {
         `, { id: { valor: idTarea, tipo: Int } });
 
         (tarea as any).subtareas = subtareas;
+
+        // Cargar avances (comentarios)
+        try {
+            const avances = await ejecutarQuery<any>(`
+                IF OBJECT_ID(N'dbo.p_TareaAvances', N'U') IS NOT NULL
+                SELECT idLog, idTarea, idUsuario, progreso, comentario, fecha
+                FROM p_TareaAvances
+                WHERE idTarea = @id
+                ORDER BY fecha DESC
+            `, { id: { valor: idTarea, tipo: Int } });
+            (tarea as any).avances = avances || [];
+        } catch (e) { (tarea as any).avances = []; }
     }
 
     return tarea;

@@ -107,7 +107,15 @@ AS
 BEGIN
     SET NOCOUNT ON;
     -- Lógica Carnet-First: Busca proyectos donde soy Creador, Responsable o Asignado
-    SELECT DISTINCT p.*
+    SELECT DISTINCT p.*,
+        progreso = ISNULL((
+            SELECT ROUND(AVG(CAST(CASE WHEN t.estado = 'Hecha' THEN 100 ELSE ISNULL(t.porcentaje, 0) END AS FLOAT)), 0)
+            FROM p_Tareas t
+            WHERE t.idProyecto = p.idProyecto 
+              AND t.idTareaPadre IS NULL 
+              AND t.activo = 1
+              AND t.estado NOT IN ('Descartada', 'Eliminada', 'Anulada', 'Cancelada')
+        ), 0)
     FROM p_Proyectos p
     LEFT JOIN p_Tareas t ON p.idProyecto = t.idProyecto
     LEFT JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea 
@@ -433,7 +441,14 @@ BEGIN
         responsableCarnet,
         creadorCarnet,
         tipo,
-        porcentaje = (SELECT AVG(porcentaje) FROM p_Tareas t WHERE t.idProyecto = p.idProyecto AND t.activo = 1)
+        progreso = ISNULL((
+            SELECT ROUND(AVG(CAST(CASE WHEN t.estado = 'Hecha' THEN 100 ELSE ISNULL(t.porcentaje, 0) END AS FLOAT)), 0)
+            FROM p_Tareas t
+            WHERE t.idProyecto = p.idProyecto 
+              AND t.idTareaPadre IS NULL 
+              AND t.activo = 1
+              AND t.estado NOT IN ('Descartada', 'Eliminada', 'Anulada', 'Cancelada')
+        ), 0)
     FROM p_Proyectos p
     WHERE 
         (@nombre IS NULL OR p.nombre LIKE '%' + @nombre + '%')
@@ -445,7 +460,7 @@ BEGIN
     ORDER BY p.fechaCreacion DESC
     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
     OPTION (RECOMPILE); 
-END
+END;
 GO
 CREATE OR ALTER PROCEDURE dbo.sp_Tarea_CrearCompleta_v2
 (

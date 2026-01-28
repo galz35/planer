@@ -125,7 +125,7 @@ export const TaskDetailModalV2: React.FC<Props> = ({ task, onClose, onUpdate, mo
 
                             {/* 2. SECCIÓN DE EJECUCIÓN (NOTAS/AVANCE/COMENTARIO) */}
                             <TaskExecutionPanel
-                                task={task}
+                                task={meta.fullTask || task}
                                 descripcion={form.descripcion}
                                 setDescripcion={form.setDescripcion}
                                 linkEvidencia={form.linkEvidencia}
@@ -134,6 +134,7 @@ export const TaskDetailModalV2: React.FC<Props> = ({ task, onClose, onUpdate, mo
                                 setProgreso={form.setProgreso}
                                 comentario={form.comentario}
                                 setComentario={form.setComentario}
+                                onDeleteComment={actions.deleteComment}
                             />
 
                             {/* 3. HISTORIAL OCULTO POR SOLICITUD */}

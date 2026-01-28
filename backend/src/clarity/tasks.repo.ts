@@ -143,6 +143,42 @@ export async function actualizarTarea(idTarea: number, updates: UpdateTaskParams
 }
 
 // ==========================================
+// AVANCES (COMENTARIOS)
+// ==========================================
+
+export async function crearAvance(dto: { idTarea: number, idUsuario: number, progreso: number, comentario: string }) {
+    // 1. Auto-create table if not exists (Schema Heal)
+    await ejecutarQuery(`
+        IF OBJECT_ID(N'dbo.p_TareaAvances', N'U') IS NULL
+        BEGIN
+            CREATE TABLE dbo.p_TareaAvances(
+                idLog int IDENTITY(1,1) PRIMARY KEY,
+                idTarea int NOT NULL,
+                idUsuario int NOT NULL,
+                progreso int NULL,
+                comentario nvarchar(max) NULL,
+                fecha datetime DEFAULT GETDATE()
+            );
+        END
+    `);
+
+    // 2. Insert
+    await ejecutarQuery(`
+        INSERT INTO p_TareaAvances (idTarea, idUsuario, progreso, comentario, fecha)
+        VALUES (@idTarea, @idUsuario, @progreso, @comentario, GETDATE())
+    `, {
+        idTarea: { valor: dto.idTarea, tipo: Int },
+        idUsuario: { valor: dto.idUsuario, tipo: Int },
+        progreso: { valor: dto.progreso, tipo: Int },
+        comentario: { valor: dto.comentario, tipo: NVarChar }
+    });
+}
+
+export async function eliminarAvance(idLog: number) {
+    await ejecutarQuery('DELETE FROM p_TareaAvances WHERE idLog = @id', { id: { valor: idLog, tipo: Int } });
+}
+
+// ==========================================
 // UTILS
 // ==========================================
 

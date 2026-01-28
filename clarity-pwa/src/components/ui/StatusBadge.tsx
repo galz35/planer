@@ -2,9 +2,10 @@ import React from 'react';
 
 interface StatusBadgeProps {
     status: string;
+    isDelayed?: boolean;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, isDelayed }) => {
     const colors: Record<string, string> = {
         'Pendiente': 'bg-slate-100 text-slate-600 border-slate-200',
         'En Curso': 'bg-sky-50 text-sky-600 border-sky-100',
@@ -26,8 +27,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         'Revision': 'Revisión',
     };
 
+    const finalClass = isDelayed
+        ? 'bg-rose-100/80 text-rose-700 border-rose-200 shadow-sm'
+        : (colors[status] || colors['Pendiente']);
+
     return (
-        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${colors[status] || colors['Pendiente']} uppercase tracking-wider whitespace-nowrap inline-flex items-center justify-center`}>
+        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${finalClass} uppercase tracking-wider whitespace-nowrap inline-flex items-center justify-center`}>
             {labels[status] || status}
         </span>
     );

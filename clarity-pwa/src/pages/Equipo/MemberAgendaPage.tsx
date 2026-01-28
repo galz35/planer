@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Outlet, useParams, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { MemberAgendaProvider } from '../Hoy/context/MemberAgendaContext';
 import { useMiDiaContext } from '../Hoy/context/MiDiaContext';
 import { List, Calendar, BookOpen, ChevronLeft, ChevronRight, ShieldAlert, ArrowLeft } from 'lucide-react';
@@ -9,15 +9,23 @@ const MemberAgendaContent: React.FC = () => {
     const { today, setToday } = useMiDiaContext();
 
     const handlePrevDay = () => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - 1);
-        setToday(d.toISOString().split('T')[0]);
+        const [y, m, d] = today.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        date.setDate(date.getDate() - 1);
+        const ny = date.getFullYear();
+        const nm = String(date.getMonth() + 1).padStart(2, '0');
+        const nd = String(date.getDate()).padStart(2, '0');
+        setToday(`${ny}-${nm}-${nd}`);
     };
 
     const handleNextDay = () => {
-        const d = new Date(today);
-        d.setDate(d.getDate() + 1);
-        setToday(d.toISOString().split('T')[0]);
+        const [y, m, d] = today.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        date.setDate(date.getDate() + 1);
+        const ny = date.getFullYear();
+        const nm = String(date.getMonth() + 1).padStart(2, '0');
+        const nd = String(date.getDate()).padStart(2, '0');
+        setToday(`${ny}-${nm}-${nd}`);
     };
 
     const handleToday = () => {
@@ -75,13 +83,20 @@ const MemberAgendaContent: React.FC = () => {
 };
 
 export const MemberAgendaPage: React.FC = () => {
-    const { userId } = useParams<{ userId: string }>();
+    const { carnet } = useParams<{ carnet: string }>();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [empNombre, setEmpNombre] = React.useState<string>('...');
-    const [empCarnet, setEmpCarnet] = React.useState<string>('');
+
+    // Initialize from URL params if available
+    const urlNombre = searchParams.get('nombre');
+    const urlCarnet = searchParams.get('carnet');
+
+    const [empNombre, setEmpNombre] = React.useState<string>(urlNombre || '...');
+    const [empCarnet, setEmpCarnet] = React.useState<string>(carnet || urlCarnet || '');
+    const [empId, setEmpId] = React.useState<number | null>(null);
 
     React.useEffect(() => {
-        if (!userId) return;
+        if (!carnet) return;
         // userId could be ID or carnet, but typical flow sends ID.
         // We try to fetch minimal info. If userId is numeric, we assume ID.
         // If your API supports getEmpleado by ID or access has a lookup, use it.
@@ -101,42 +116,43 @@ export const MemberAgendaPage: React.FC = () => {
             try {
                 // Try to match from team list since we likely came from MiEquipoPage
                 const team = await clarityService.getMyTeam();
-                const match = team.find((m: any) => String(m.usuario.idUsuario) === userId || String(m.usuario.carnet) === userId);
+                const match = team.find((m: any) => String(m.usuario.carnet) === carnet || String(m.usuario.idUsuario) === carnet);
 
                 if (match) {
                     setEmpNombre(match.usuario.nombre || 'Sin Nombre');
                     setEmpCarnet(match.usuario.carnet || '');
+                    setEmpId(match.usuario.idUsuario);
                 } else {
                     // Fallback: Try specific endpoint if exists
                     try {
-                        const user = await clarityService.getEquipoMiembro(Number(userId));
+                        const user = await clarityService.getEquipoMiembro(Number(carnet));
                         if (user) {
                             setEmpNombre(user.nombre || 'Sin Nombre');
                             setEmpCarnet(user.carnet || '');
                         }
                     } catch (e2) {
                         // Ignore secondary error
-                        setEmpNombre(`Usuario #${userId}`);
+                        setEmpNombre(`Usuario #${carnet}`);
                     }
                 }
             } catch (e) {
                 console.error("Error fetching member info", e);
-                setEmpNombre(`Usuario #${userId}`);
+                setEmpNombre(`Usuario ${carnet}`);
             }
         };
         fetchInfo();
-    }, [userId]);
+    }, [carnet]);
 
-    if (!userId) return <div>Usuario no especificado</div>;
+    if (!carnet) return <div>Usuario no especificado</div>;
 
     return (
-        <MemberAgendaProvider userId={userId}>
+        <MemberAgendaProvider userId={String(empId || carnet)} userCarnet={empCarnet || carnet}>
             <div className="min-h-screen flex flex-col relative">
                 {/* Supervisor Banner */}
                 <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 sticky top-0 z-50 flex justify-between items-center shadow-sm">
                     <div className="flex items-center gap-2 text-amber-800 text-xs font-bold uppercase tracking-wide">
                         <ShieldAlert size={16} />
-                        <span>Modo Supervisor: Editando Agenda de {empNombre} <span className="opacity-50">({empCarnet || userId})</span></span>
+                        <span>Modo Supervisor: {empNombre} <span className="opacity-50">({empCarnet || carnet})</span></span>
                     </div>
                     <button onClick={() => navigate('/app/equipo')} className="flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded transition-colors">
                         <ArrowLeft size={12} /> Volver al Equipo

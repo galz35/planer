@@ -302,49 +302,43 @@ export const ActivePlanView: React.FC<Props> = ({ checkin, onEdit, toggleTarea, 
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                 {/* Focus */}
-                <div className="bg-white rounded-xl border border-rose-100 shadow-sm overflow-hidden">
-                    <div className="px-3 py-2 bg-rose-50 border-b border-rose-100 flex justify-between items-center">
-                        <h4 className="font-bold text-rose-700 text-xs uppercase tracking-wide flex items-center gap-1">🎯 TAREA PRINCIPAL</h4>
-                        <span className="text-[10px] font-black text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded-full">
+                <div className="bg-white rounded-xl border border-rose-100 shadow-sm overflow-hidden flex flex-col">
+                    <div className="px-4 py-3 bg-rose-50 border-b border-rose-100 flex justify-between items-center">
+                        <h4 className="font-bold text-rose-700 text-xs uppercase tracking-widest flex items-center gap-2">🎯 Tarea Principal (Foco)</h4>
+                        <span className="text-[10px] font-black text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full">
                             {focusTasks.length || 1}
                         </span>
                     </div>
-                    <div className="p-2 space-y-1.5 max-h-48 overflow-y-auto">
+                    <div className="p-3 space-y-2 flex-1">
                         {focusTasks.length > 0
                             ? focusTasks.map(t => <TaskRow key={t.idTarea} task={t} variant="Focus" />)
                             : <GoalRow />}
                     </div>
                 </div>
 
-                {/* Advance */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                        <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wide flex items-center gap-1">🔨 PARA AVANZAR</h4>
-                        <span className="text-[10px] font-black text-slate-700 bg-slate-200 px-1.5 py-0.5 rounded-full">
-                            {advanceTasks.length}
+                {/* Others (Avanzo + Extra) */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                        <h4 className="font-bold text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">📋 Otras Tareas (Gestión)</h4>
+                        <span className="text-[10px] font-black text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">
+                            {advanceTasks.length + extraTasks.length}
                         </span>
                     </div>
-                    <div className="p-2 space-y-1.5 max-h-48 overflow-y-auto">
+                    <div className="p-3 space-y-2 flex-1 overflow-y-auto max-h-[500px]">
                         {advanceTasks.length > 0
                             ? advanceTasks.map(t => <TaskRow key={t.idTarea} task={t} variant="Normal" />)
-                            : <p className="text-slate-400 text-xs italic p-2">Nada asignado.</p>}
-                    </div>
-                </div>
+                            : advanceTasks.length === 0 && extraTasks.length === 0 && <p className="text-slate-400 text-xs italic p-4 text-center">Sin tareas pendientes.</p>}
 
-                {/* Extras */}
-                <div className="bg-white rounded-xl border border-emerald-100 shadow-sm overflow-hidden">
-                    <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-                        <h4 className="font-bold text-emerald-700 text-xs uppercase tracking-wide flex items-center gap-1">⚡ TAREA RÁPIDAS</h4>
-                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
-                            {extraTasks.length}
-                        </span>
-                    </div>
-                    <div className="p-2 space-y-1.5 max-h-48 overflow-y-auto">
-                        {extraTasks.length > 0
-                            ? extraTasks.map(t => <TaskRow key={t.idTarea} task={t} variant="Extra" />)
-                            : <p className="text-slate-400 text-xs italic p-2">Nada extra hoy.</p>}
+                        {extraTasks.length > 0 && (
+                            <div className="pt-4 mt-2 border-t border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase mb-3 tracking-widest px-1">Tareas Rápidas</p>
+                                <div className="space-y-2">
+                                    {extraTasks.map(t => <TaskRow key={t.idTarea} task={t} variant="Extra" />)}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

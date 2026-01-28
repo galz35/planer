@@ -120,6 +120,12 @@ export class ClarityController {
         return this.tasksService.registrarAvance(id, body.progreso, body.comentario, req.user.userId);
     }
 
+    @Delete('tareas/avance/:id')
+    @ApiOperation({ summary: 'Eliminar comentario (avance)' })
+    async eliminarAvance(@Param('id') id: number, @Request() req) {
+        return this.tasksService.eliminarAvance(id, req.user.userId);
+    }
+
     @Get('planning/workload')
     @ApiOperation({ summary: 'Obtener carga de trabajo del equipo' })
     async getWorkload(@Request() req) {
@@ -153,6 +159,12 @@ export class ClarityController {
     @ApiOperation({ summary: 'Crear proyecto' })
     async crearProyecto(@Body() dto: ProyectoCrearDto, @Request() req) {
         return this.tasksService.proyectoCrear(dto, req.user.userId);
+    }
+
+    @Post('proyectos/:id/clonar')
+    @ApiOperation({ summary: 'Clonar proyecto y sus tareas (sin asignar)' })
+    async clonarProyecto(@Param('id') id: number, @Body() body: { nombre: string }, @Request() req) {
+        return this.tasksService.proyectoClonar(id, body.nombre, req.user.userId);
     }
 
     @Get('proyectos/:id')

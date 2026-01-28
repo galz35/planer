@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, Search, X, Users, Calendar, Link2, ChevronDown, Check, Briefcase } from 'lucide-react';
 import { clarityService } from '../../services/clarity.service';
+import { useAuth } from '../../context/AuthContext';
 import type { Proyecto, Prioridad, Esfuerzo, ComportamientoTarea, TipoTarea } from '../../types/modelos';
 import type { Empleado } from '../../types/acceso';
 
@@ -18,10 +19,12 @@ const TIPOS_TRABAJO = [
     { value: 'Logistica', label: 'Logística' },
     { value: 'Administrativa', label: 'Administrativa' },
     { value: 'Estrategica', label: 'Estratégica' },
+    { value: 'CENAM', label: 'CENAM' },
     { value: 'Otros', label: 'Otros' }
 ];
 
 export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProject, projectId, onTaskCreated, onSuccess, defaultTeam }) => {
+    const { user } = useAuth();
     // Form State
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
@@ -47,6 +50,8 @@ export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProje
     const inputRef = useRef<HTMLInputElement>(null);
 
     const idProyecto = currentProject?.idProyecto || projectId;
+    const pType = currentProject?.tipo || '';
+    const isTypeLocked = pType === 'CENAM' || pType.toLowerCase() === 'administrativo';
 
     // Load Areas
     useEffect(() => {
@@ -65,16 +70,49 @@ export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProje
             setLinkEvidencia('');
             setPrioridad('Media');
             setEsfuerzo('M');
-            setTipoTrabajo('Administrativa');
+
+            // Default Type Logic based on Project
+            let defaultType: TipoTarea = 'Administrativa';
+            const pType = currentProject?.tipo || '';
+
+            if (pType === 'CENAM') defaultType = 'CENAM';
+            else if (pType.toLowerCase() === 'administrativo') defaultType = 'Administrativa';
+            else if (pType === 'Logistica') defaultType = 'Logistica';
+            else if (pType === 'Estrategico' || pType === 'Estrategica') defaultType = 'Estrategica';
+            else if (pType === 'AMX') defaultType = 'AMX';
+
+            setTipoTrabajo(defaultType);
+
             setFechaInicio(new Date().toISOString().split('T')[0]);
             setFechaFin(new Date().toISOString().split('T')[0]);
             setComportamiento('SIMPLE');
             setSearchAsignado('');
             setSelectedArea('');
-            setSelectedAsignados([]);
+
+            // Auto-assign logic: if user has no personnel in charge (defaultTeam empty or only includes them)
+            // or if they are an 'Empleado' without subordinates.
+            if (user) {
+                const hasPersonnel = defaultTeam && defaultTeam.length > 0;
+                const isOnlyMe = defaultTeam?.length === 1 && (defaultTeam[0].idUsuario === user.idUsuario || defaultTeam[0].carnet === user.carnet);
+
+                if (!hasPersonnel || isOnlyMe) {
+                    setSelectedAsignados([{
+                        idUsuario: user.idUsuario,
+                        nombreCompleto: user.nombreCompleto || user.nombre,
+                        carnet: user.carnet,
+                        cargo: user.cargo,
+                        area: user.departamento || user.area
+                    } as any]);
+                } else {
+                    setSelectedAsignados([]);
+                }
+            } else {
+                setSelectedAsignados([]);
+            }
+
             setApiResults([]);
         }
-    }, [isOpen]);
+    }, [isOpen, user, defaultTeam]);
 
     // Click Outside Dropdown
     useEffect(() => {
@@ -362,7 +400,8 @@ export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProje
                                 <select
                                     value={tipoTrabajo}
                                     onChange={e => setTipoTrabajo(e.target.value as TipoTarea)}
-                                    className="w-full h-full bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 appearance-none cursor-pointer"
+                                    disabled={isTypeLocked}
+                                    className={`w-full h-full bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 appearance-none ${isTypeLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     {TIPOS_TRABAJO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                 </select>

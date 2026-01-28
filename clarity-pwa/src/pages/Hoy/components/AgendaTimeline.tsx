@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { CheckCircle2, Circle, AlertTriangle, PlayCircle, Pause, ChevronDown, ChevronUp, Check, X, Save, Loader2, AlertCircle } from 'lucide-react';
 import type { Tarea } from '../../../types/modelos';
 import { TipoBadge } from '../../../components/ui/TipoBadge';
+import { useMiDiaContext } from '../context/MiDiaContext';
 
 interface Props {
     onTaskClick?: (task: Tarea) => void;
@@ -25,6 +26,7 @@ const ALCANCES = ['Local', 'Regional', 'AMX'];
 const ESFUERZOS = ['S', 'M', 'L'];
 
 export const AgendaTimeline: React.FC<Props> = ({ onTaskComplete, onTaskCancel }) => {
+    const { userId, userCarnet, isSupervisorMode } = useMiDiaContext();
     const [loading, setLoading] = useState(true);
     const [days, setDays] = useState<DayGroup[]>([]);
     const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set(['0', '1']));
@@ -43,11 +45,14 @@ export const AgendaTimeline: React.FC<Props> = ({ onTaskComplete, onTaskCancel }
         setLoading(true);
         try {
             let tasks: Tarea[] = [];
-            if (user?.carnet) {
-                const res = await clarityService.getTareasHistorico(user.carnet, 30);
+
+            if (!isSupervisorMode) {
+                // Own agenda: getTareasUsuario typically includes current backlog + recent tasks
+                const res = await clarityService.getTareasUsuario(Number(userId));
                 tasks = res || [];
-            } else {
-                const res = await clarityService.getMisTareas({});
+            } else if (userCarnet) {
+                // Supervisor: use historical lookup by carnet
+                const res = await clarityService.getTareasHistorico(userCarnet, 30);
                 tasks = res || [];
             }
             console.log('[AgendaTimeline] Tasks received:', tasks?.length, tasks);
@@ -103,7 +108,7 @@ export const AgendaTimeline: React.FC<Props> = ({ onTaskComplete, onTaskCancel }
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user?.carnet, userCarnet, userId, isSupervisorMode]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -200,9 +205,9 @@ export const AgendaTimeline: React.FC<Props> = ({ onTaskComplete, onTaskCancel }
     }
 
     return (
-        <div className="flex gap-4 h-full">
+        <div className="flex flex-col xl:flex-row gap-4 h-full overflow-hidden">
             {/* Timeline */}
-            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition-all ${selectedTask ? 'flex-1' : 'w-full'}`}>
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition-all ${selectedTask ? 'hidden xl:flex xl:flex-1' : 'w-full flex-1'}`}>
                 <div className="px-4 py-3 bg-slate-700 text-white shrink-0">
                     <h3 className="text-sm font-bold">📖 Mi Bitácora</h3>
                     <p className="text-xs text-slate-300">Historial de actividades</p>
@@ -280,7 +285,7 @@ export const AgendaTimeline: React.FC<Props> = ({ onTaskComplete, onTaskCancel }
 
             {/* Panel de Tarea */}
             {selectedTask && (
-                <div className="w-[420px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col max-h-[600px]">
+                <div className="w-full xl:w-[420px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full lg:max-h-full">
                     <div className={`px-4 py-3 ${getStatusColor(selectedTask.estado)} text-white flex justify-between items-center shrink-0`}>
                         <div>
                             <p className="text-xs font-bold uppercase">{selectedTask.estado}</p>

@@ -91,7 +91,7 @@ export const clarityService = {
     },
 
 
-    actualizarTarea: async (idTarea: number, dto: Partial<Pick<Tarea, 'titulo' | 'descripcion' | 'estado' | 'prioridad' | 'esfuerzo' | 'fechaObjetivo' | 'fechaInicioPlanificada' | 'linkEvidencia' | 'idTareaPadre'>> & { motivo?: string }) => {
+    actualizarTarea: async (idTarea: number, dto: Partial<Pick<Tarea, 'titulo' | 'descripcion' | 'estado' | 'prioridad' | 'esfuerzo' | 'fechaObjetivo' | 'fechaInicioPlanificada' | 'linkEvidencia' | 'idTareaPadre' | 'idResponsable'>> & { motivo?: string }) => {
         const { data: response } = await api.patch<ApiResponse<Tarea>>(`/tareas/${idTarea}`, dto);
         return response.data;
     },
@@ -138,6 +138,11 @@ export const clarityService = {
 
     deleteTarea: async (idTarea: number) => {
         const { data: response } = await api.delete<ApiResponse>(`/tareas/${idTarea}`);
+        return response.data;
+    },
+
+    deleteAvance: async (idLog: number) => {
+        const { data: response } = await api.delete<ApiResponse>(`/tareas/avance/${idLog}`);
         return response.data;
     },
 
@@ -243,7 +248,11 @@ export const clarityService = {
     // === MÓDULO: PROYECTOS ===
     // Gestión de proyectos de alto nivel.
     getProyectos: async (filters?: any) => {
-        const { data: response } = await api.get<ApiResponse<{ items: Proyecto[], total: number, page: number, lastPage: number }>>('/proyectos', { params: filters });
+        const cleanFilters = filters ? Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+        ) : {};
+        console.log('[ClarityService] getProyectos params:', cleanFilters);
+        const { data: response } = await api.get<ApiResponse<{ items: Proyecto[], total: number, page: number, lastPage: number }>>('/proyectos', { params: cleanFilters });
         return response.data;
     },
 
@@ -254,6 +263,11 @@ export const clarityService = {
 
     deleteProyecto: async (id: number) => {
         const { data: response } = await api.delete<ApiResponse>(`/proyectos/${id}`);
+        return response.data;
+    },
+
+    cloneProyecto: async (idProyecto: number, nombre: string) => {
+        const { data: response } = await api.post<ApiResponse<Proyecto>>(`/proyectos/${idProyecto}/clonar`, { nombre });
         return response.data;
     },
 

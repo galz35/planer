@@ -290,6 +290,21 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
         }
     };
 
+    const deleteComment = async (idLog: number) => {
+        if (!confirm('¿Eliminar este comentario?')) return;
+        try {
+            await clarityService.deleteAvance(idLog);
+            showToast('Comentario eliminado', 'success');
+
+            // Refresh logic
+            const updated = await clarityService.getTaskById(task.idTarea);
+            if (updated) setFullTask(updated);
+            onUpdate();
+        } catch (e: any) {
+            alert('Error eliminando comentario');
+        }
+    };
+
     return {
         // State
         form: {
@@ -320,7 +335,8 @@ export const useTaskController = (task: Tarea, onClose: () => void, onUpdate: ()
             handleCreateBlocker,
             handleAction,
             handleReassign,
-            handleSubmitStrategicChange
+            handleSubmitStrategicChange,
+            deleteComment
         }
     };
 };

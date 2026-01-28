@@ -78,7 +78,7 @@ export interface SolicitudCambio {
 export type Prioridad = 'Alta' | 'Media' | 'Baja';
 export type Esfuerzo = 'S' | 'M' | 'L';
 export type EstadoTarea = 'Pendiente' | 'En Curso' | 'EnCurso' | 'Pausa' | 'Bloqueada' | 'Revision' | 'Revisión' | 'Hecha' | 'Descartada';
-export type TipoTarea = 'Logistica' | 'Administrativa' | 'Estrategica' | 'AMX' | 'Otros' | 'Operativo';
+export type TipoTarea = 'Logistica' | 'Administrativa' | 'Estrategica' | 'AMX' | 'Otros' | 'Operativo' | 'CENAM';
 export type AlcanceTarea = 'Local' | 'Regional' | 'AMX';
 
 export interface Tarea {
@@ -125,6 +125,16 @@ export interface Tarea {
     linkEvidencia?: string;
     idTareaPadre?: number;
     subtareas?: Tarea[];
+    avances?: TareaAvance[];
+}
+
+export interface TareaAvance {
+    idLog: number;
+    idTarea: number;
+    idUsuario: number;
+    progreso: number;
+    comentario: string;
+    fecha: string;
 }
 
 export interface TareaRegistrarAvanceDto {

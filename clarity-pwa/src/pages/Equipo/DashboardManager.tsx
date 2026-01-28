@@ -248,9 +248,39 @@ export const DashboardManager: React.FC = () => {
     const handleTaskUpdate = () => {
         loadAlerts();
         loadProjects();
-        // No cerramos el modal automáticamente aquí para permitir seguir editando,
-        // o cerramos si es lo esperado. El usuario solo pidió "ver informacion".
-        // Si guarda cambios, actualizamos el fondo.
+    };
+
+    const calculateDelay = (p: Proyecto) => {
+        const start = p.fechaInicio ? new Date(p.fechaInicio) : null;
+        const end = p.fechaFin ? new Date(p.fechaFin) : null;
+        const progress = Number(p.progreso ?? 0);
+        const today = new Date();
+
+        if (!start || !end) return 0;
+        if (progress >= 100) return 0;
+        if (today < start) return 0;
+
+        const totalDuration = end.getTime() - start.getTime();
+        const elapsed = today.getTime() - start.getTime();
+
+        if (totalDuration <= 0) return today > end ? 100 - progress : 0;
+
+        const expected = Math.min(100, (elapsed / totalDuration) * 100);
+        const delay = Math.max(0, expected - progress);
+        return Math.round(delay);
+    };
+
+    const renderAtraso = (p: Proyecto) => {
+        const delay = calculateDelay(p);
+        if (delay <= 0) return <span className="text-[10px] font-bold text-slate-300">0%</span>;
+
+        const color = delay > 30 ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-amber-600 bg-amber-50 border-amber-100';
+
+        return (
+            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-black border ${color}`}>
+                {delay}%
+            </span>
+        );
     };
 
     // -- KPIS & FILTERS --
@@ -780,8 +810,8 @@ export const DashboardManager: React.FC = () => {
                     <thead>
                         {/* Headers */}
                         <tr className="bg-white border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            <th className="px-6 py-4 w-[40%]">Detalle Proyecto</th>
-                            <th className="px-6 py-4 w-[25%]">
+                            <th className="px-6 py-4 w-[35%]">Detalle Proyecto</th>
+                            <th className="px-6 py-4 w-[20%]">
                                 <div className="space-y-2">
                                     <span>Area / Gerencia</span>
                                     <input
@@ -793,7 +823,8 @@ export const DashboardManager: React.FC = () => {
                                     />
                                 </div>
                             </th>
-                            <th className="px-6 py-4 w-[20%] text-center">Avance</th>
+                            <th className="px-6 py-4 w-[15%] text-center">Avance</th>
+                            <th className="px-6 py-4 w-[15%] text-center">Atraso</th>
                             <th className="px-6 py-4 w-[15%] text-right">
                                 <div className="space-y-2 flex flex-col items-end">
                                     <span>Estado</span>
@@ -816,7 +847,7 @@ export const DashboardManager: React.FC = () => {
                     <tbody className="divide-y divide-slate-50">
                         {loading ? (
                             <tr>
-                                <td colSpan={5} className="py-24 text-center">
+                                <td colSpan={6} className="py-24 text-center">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                                         <span className="text-xs font-bold text-slate-400">Cargando datos...</span>
@@ -825,7 +856,7 @@ export const DashboardManager: React.FC = () => {
                             </tr>
                         ) : projects.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="py-16 text-center text-slate-400 text-xs font-medium italic">
+                                <td colSpan={6} className="py-16 text-center text-slate-400 text-xs font-medium italic">
                                     No se encontraron proyectos activos
                                 </td>
                             </tr>
@@ -870,6 +901,9 @@ export const DashboardManager: React.FC = () => {
                                                 />
                                             </div>
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        {renderAtraso(p)}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black uppercase border tracking-wide ${p.estado === 'EnEjecucion' || p.estado === 'Confirmado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :

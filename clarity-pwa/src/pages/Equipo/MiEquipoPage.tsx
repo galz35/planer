@@ -542,8 +542,11 @@ export const MiEquipoPage: React.FC = () => {
                                                         <button
                                                             onClick={(ev) => {
                                                                 ev.stopPropagation();
-                                                                const uid = e.idUsuario || getClarityId(e.correo);
-                                                                if (uid) navigate(`/app/agenda/${uid}`);
+                                                                if (e.carnet) {
+                                                                    const query = new URLSearchParams();
+                                                                    if (e.nombreCompleto) query.append('nombre', e.nombreCompleto);
+                                                                    navigate(`/app/agenda/${e.carnet}?${query.toString()}`);
+                                                                }
                                                             }}
                                                             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all mr-1"
                                                             title="Ver Agenda"
@@ -703,9 +706,13 @@ export const MiEquipoPage: React.FC = () => {
                                             <p className="text-slate-400 text-sm truncate mb-3">{selectedEmpleado.cargo} • {getOrgLocation(selectedEmpleado)}</p>
 
                                             <div className="flex gap-2 flex-wrap">
-                                                {(selectedEmpleado.idUsuario || getClarityId(selectedEmpleado.correo)) && (
+                                                {selectedEmpleado.carnet && (
                                                     <button
-                                                        onClick={() => navigate(`/app/agenda/${selectedEmpleado.idUsuario || getClarityId(selectedEmpleado.correo)}`)}
+                                                        onClick={() => {
+                                                            const query = new URLSearchParams();
+                                                            if (selectedEmpleado.nombreCompleto) query.append('nombre', selectedEmpleado.nombreCompleto);
+                                                            navigate(`/app/agenda/${selectedEmpleado.carnet}?${query.toString()}`);
+                                                        }}
                                                         className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-xs font-bold flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/30"
                                                     >
                                                         <CalendarIcon size={14} /> Ver Agenda Completa

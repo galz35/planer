@@ -26,7 +26,7 @@ export const APP_MENU = [
         items: [
             { path: '/app/planning/carga', label: 'Carga Laboral', icon: 'BarChart' },
             // { path: '/app/planning/proyectos', label: 'Gestión Proyectos', icon: 'FileCheck' },
-            { path: '/app/software/dashboard', label: 'Anality', icon: 'PieChart' },
+            { path: '/app/software/dashboard', label: 'Dashboard', icon: 'PieChart' },
             { path: '/app/planning/approvals', label: 'Aprobaciones', icon: 'FileCheck' },
         ]
     },

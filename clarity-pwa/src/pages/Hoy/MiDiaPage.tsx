@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { MiDiaProvider, useMiDiaContext } from './context/MiDiaContext';
 import { TopBar } from '../../components/layout/TopBar';
-import { List, Calendar, BookOpen, BarChart3, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { List, Calendar, BarChart3, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 
 // ✅ Fecha local segura (evita bug UTC)
 const fechaLocalYYYYMMDD = (d: Date) => {
@@ -107,10 +107,12 @@ const MiDiaContent: React.FC = () => {
                             Calendario
                         </NavLink>
 
-                        <NavLink to="bitacora" className={linkClass}>
-                            <BookOpen size={14} />
-                            Bitácora
-                        </NavLink>
+                        {/* 
+                         <NavLink to="bitacora" className={linkClass}>
+                             <BookOpen size={14} />
+                             Bitácora
+                         </NavLink> 
+                        */}
 
                         <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
 
@@ -146,7 +148,7 @@ const MiDiaContent: React.FC = () => {
 export const MiDiaPage: React.FC = () => {
     const { user } = useAuth();
     return (
-        <MiDiaProvider userId={user?.idUsuario || 0}>
+        <MiDiaProvider userId={user?.idUsuario || 0} userCarnet={user?.carnet}>
             <MiDiaContent />
         </MiDiaProvider>
     );

@@ -367,6 +367,16 @@ export class TasksService {
             await tasksRepo.recalcularJerarquia(idTarea);
         }
 
+        // [2026-01-28] Persistir comentario como Avance real
+        if (comentario) {
+            await tasksRepo.crearAvance({
+                idTarea,
+                idUsuario,
+                progreso: updates.porcentaje || progreso,
+                comentario
+            });
+        }
+
         // Registrar en auditoría
         await this.auditService.log({
             accion: 'TAREA_ACTUALIZADA',
@@ -377,6 +387,12 @@ export class TasksService {
         });
 
         return await planningRepo.obtenerTareaPorId(idTarea);
+    }
+
+    async eliminarAvance(idLog: number, idUsuario: number) {
+        // TODO: Validate ownership if critical
+        await tasksRepo.eliminarAvance(idLog);
+        return { success: true };
     }
 
     /**
@@ -523,6 +539,52 @@ export class TasksService {
             tipo: dto.tipo
         });
         return await planningRepo.obtenerProyectoPorId(idProyecto);
+    }
+
+    async proyectoClonar(idOriginal: number, nuevoNombre: string, idUsuario: number) {
+        // 1. Get original project
+        const original = await planningRepo.obtenerProyectoPorId(idOriginal);
+        if (!original) throw new NotFoundException('Proyecto original no encontrado');
+
+        // 2. Create new project (Clone metadata)
+        const idNuevo = await planningRepo.crearProyecto({
+            nombre: nuevoNombre,
+            descripcion: original.descripcion || undefined,
+            idNodoDuenio: original.idNodoDuenio || undefined,
+            area: original.area || undefined,
+            subgerencia: original.subgerencia || undefined,
+            gerencia: original.gerencia || undefined,
+            fechaInicio: undefined,
+            fechaFin: undefined,
+            idCreador: idUsuario,
+            tipo: original.tipo || undefined
+        });
+
+        // 3. Get tasks
+        const tareas = await clarityRepo.obtenerTareasPorProyecto(idOriginal);
+
+        // 4. Clone tasks (Resetting status and assignees)
+        for (const t of tareas) {
+            await tasksRepo.crearTarea({
+                titulo: t.titulo,
+                descripcion: t.descripcion,
+                idCreador: idUsuario,
+                idProyecto: idNuevo,
+                prioridad: t.prioridad,
+                esfuerzo: t.esfuerzo,
+                tipo: t.tipo || 'Administrativa',
+                // Reset dates
+                fechaInicioPlanificada: undefined,
+                fechaObjetivo: undefined,
+                // Reset status
+                estado: 'Pendiente',
+                // NO ASSIGNEE
+                idResponsable: undefined,
+                comportamiento: t.comportamiento
+            });
+        }
+
+        return await planningRepo.obtenerProyectoPorId(idNuevo);
     }
 
     async proyectoObtener(id: number) {

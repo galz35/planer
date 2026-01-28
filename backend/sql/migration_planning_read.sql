@@ -30,7 +30,15 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Filtros dinámicos manejados con lógica segura
-    SELECT DISTINCT p.*
+    SELECT DISTINCT p.*,
+        progreso = ISNULL((
+            SELECT ROUND(AVG(CAST(CASE WHEN t.estado = 'Hecha' THEN 100 ELSE ISNULL(t.porcentaje, 0) END AS FLOAT)), 0)
+            FROM p_Tareas t
+            WHERE t.idProyecto = p.idProyecto 
+              AND t.idTareaPadre IS NULL 
+              AND t.activo = 1
+              AND t.estado NOT IN ('Descartada', 'Eliminada', 'Anulada', 'Cancelada')
+        ), 0)
     FROM dbo.p_Proyectos p
     WHERE 
         (

@@ -128,7 +128,7 @@ export const AppRoutes = () => {
                     <Route path="pendientes" element={<PendientesPage />} />
 
                     {/* GERENCIA / EQUIPO */}
-                    <Route path="agenda/:userId" element={<MemberAgendaPage />}>
+                    <Route path="agenda/:carnet" element={<MemberAgendaPage />}>
                         <Route index element={<ExecutionView />} />
                         <Route path="calendario" element={<CalendarView />} />
                         <Route path="bitacora" element={<TimelineView />} />

@@ -1,5 +1,7 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+﻿
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { clarityService } from '../../services/clarity.service';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -32,26 +34,12 @@ import { es } from 'date-fns/locale';
 // --- TYPES ---
 type ViewMode = 'list' | 'board' | 'gantt' | 'roadmap';
 interface TeamMember { idUsuario: number; nombre: string; correo: string; carnet?: string; }
-interface Comment { id: number; user: string; text: string; timestamp: string; }
+interface Comment { id: number; idLog?: number; user: string; text: string; timestamp: string; isMine?: boolean; dateObj?: Date; }
 
 // --- COMPONENTS ---
 
 /* ---------- HOOKS DE RENDIMIENTO (NUEVO) ---------- */
-function useOutsideClick<T extends HTMLElement>(onOutside: () => void, enabled: boolean) {
-    const ref = useRef<T | null>(null);
 
-    useEffect(() => {
-        if (!enabled) return;
-        const onDown = (e: MouseEvent) => {
-            if (!ref.current) return;
-            if (!ref.current.contains(e.target as Node)) onOutside();
-        };
-        document.addEventListener("mousedown", onDown);
-        return () => document.removeEventListener("mousedown", onDown);
-    }, [enabled, onOutside]);
-
-    return ref;
-}
 
 function useDebouncedValue<T>(value: T, ms = 200) {
     const [v, setV] = useState(value);
@@ -69,10 +57,10 @@ const ViewTabs: React.FC<{ value: ViewMode; onChange: (v: ViewMode) => void }> =
             type="button"
             onClick={() => onChange(k)}
             title={title}
-            className={`p-2 rounded-lg transition-all ${value === k
+            className={`p - 2 rounded - lg transition - all ${value === k
                 ? "bg-white shadow-sm text-slate-900 scale-105 border border-slate-200"
                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                }`}
+                } `}
         >
             <Icon size={18} />
         </button>
@@ -93,7 +81,7 @@ const ViewTabs: React.FC<{ value: ViewMode; onChange: (v: ViewMode) => void }> =
 
 
 const UserAvatar: React.FC<{ name: string, color?: string }> = ({ name, color }) => (
-    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ${color || 'bg-slate-600'}`}>
+    <div className={`w - 6 h - 6 rounded - full flex items - center justify - center text - [10px] font - bold text - white shadow - sm ${color || 'bg-slate-600'} `}>
         {(name || '?').charAt(0).toUpperCase()}
     </div>
 );
@@ -108,17 +96,95 @@ const QuickAssignDropdown: React.FC<{
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
 
+    // Refs for Portal
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+
     const filteredTeam = team.filter(m =>
         (m.nombre || '').toLowerCase().includes(search.toLowerCase()) ||
         (m.correo || '').toLowerCase().includes(search.toLowerCase()) ||
         (m.carnet || '').toLowerCase().includes(search.toLowerCase())
     );
 
-    const ref = useOutsideClick<HTMLDivElement>(() => setIsOpen(false), isOpen);
+    // Calculate position on open
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            // Basic adjustment to keep it on screen could be added here
+            setPosition({
+                top: rect.bottom + 8,
+                left: rect.left
+            });
+        }
+    }, [isOpen]);
+
+    // Handle outside click including Portal
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as Node;
+            if (dropdownRef.current?.contains(target)) return;
+            if (buttonRef.current?.contains(target)) return;
+            setIsOpen(false);
+        };
+        window.addEventListener('mousedown', handleClick);
+        return () => window.removeEventListener('mousedown', handleClick);
+    }, [isOpen]);
+
+    // Handle Window Resize/Scroll close to avoid floating weirdness
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleScroll = () => setIsOpen(false);
+        window.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('resize', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll, true);
+            window.removeEventListener('resize', handleScroll);
+        };
+    }, [isOpen]);
+
+    const dropdownContent = (
+        <div
+            ref={dropdownRef}
+            style={{
+                position: 'fixed',
+                top: position.top,
+                left: position.left,
+                zIndex: 99999
+            }}
+            className="w-56 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        >
+            <div className="p-2 border-b border-slate-50 bg-slate-50/50">
+                <input
+                    className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-slate-300"
+                    placeholder="Buscar miembro..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    autoFocus
+                />
+            </div>
+            <div className="max-h-64 overflow-y-auto p-1 custom-scrollbar">
+                {filteredTeam.length > 0 ? filteredTeam.map(member => (
+                    <button
+                        key={member.idUsuario}
+                        onClick={() => { onAssign(member.idUsuario); setIsOpen(false); }}
+                        className="w-full flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg transition-colors text-left group"
+                    >
+                        <UserAvatar name={member.nombre} />
+                        <span className="text-xs text-slate-600 font-medium group-hover:text-slate-900">{member.nombre}</span>
+                    </button>
+                )) : (
+                    <div className="p-3 text-center text-[10px] text-slate-400">No se encontraron miembros</div>
+                )}
+            </div>
+        </div>
+    );
 
     return (
-        <div className="relative quick-assign-container" ref={ref}>
+        <div className="relative">
             <button
+                ref={buttonRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 hover:bg-slate-100 p-1 rounded-full pr-2 transition-colors border border-transparent hover:border-slate-200"
             >
@@ -135,32 +201,7 @@ const QuickAssignDropdown: React.FC<{
                 <ChevronDown size={10} className="text-slate-400" />
             </button>
 
-            {isOpen && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                    <div className="p-2 border-b border-slate-50 bg-slate-50/50">
-                        <input
-                            className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-slate-300"
-                            placeholder="Buscar miembro..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onClick={(e) => e.stopPropagation()} // Stop click
-                            autoFocus
-                        />
-                    </div>
-                    <div className="max-h-48 overflow-y-auto p-1">
-                        {filteredTeam.map(member => (
-                            <button
-                                key={member.idUsuario}
-                                onClick={() => { onAssign(member.idUsuario); setIsOpen(false); }}
-                                className="w-full flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg transition-colors text-left group"
-                            >
-                                <UserAvatar name={member.nombre} />
-                                <span className="text-xs text-slate-600 font-medium group-hover:text-slate-900">{member.nombre}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {isOpen && createPortal(dropdownContent, document.body)}
         </div>
     );
 };
@@ -282,7 +323,7 @@ const BoardView: React.FC<{ tasks: Tarea[], team: TeamMember[], onAssign: (tid: 
                 <div key={status} className="w-[320px] shrink-0 flex flex-col bg-slate-100/40 rounded-3xl border border-slate-200/50 max-h-full backdrop-blur-sm">
                     <div className="p-5 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(status)}`} />
+                            <div className={`w - 2.5 h - 2.5 rounded - full ${getStatusColor(status)} `} />
                             <h3 className="font-black text-[11px] text-slate-500 uppercase tracking-[0.2em]">{getStatusLabel(status)}</h3>
                         </div>
                         <span className="bg-white/80 border border-slate-200 text-slate-900 text-[10px] font-black px-3 py-1 rounded-full shadow-sm">
@@ -290,31 +331,44 @@ const BoardView: React.FC<{ tasks: Tarea[], team: TeamMember[], onAssign: (tid: 
                         </span>
                     </div>
                     <div className="px-3 pb-4 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-                        {tasks.filter(t => t.estado === status || (status === 'En Curso' && t.estado === 'EnCurso') || (status === 'Revisión' && (t.estado === 'Revision' || t.estado === 'Revisión'))).map(task => (
-                            <div key={task.idTarea} onClick={() => onTaskClick(task)} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-xl transition-all group cursor-pointer active:scale-[0.98] border-b-4 border-b-slate-100 hover:border-b-indigo-500">
-                                <div className="flex justify-between items-start mb-4">
-                                    <span className="text-[10px] text-slate-400 font-black tracking-widest uppercase">ID-{task.idTarea}</span>
-                                    <div className="flex items-center gap-2">
-                                        {(task as any).isLockedByManager && <Lock size={10} className="text-indigo-400" />}
-                                        <TipoBadge tipo={task.tipo} />
+                        {tasks.filter(t => t.estado === status || (status === 'En Curso' && t.estado === 'EnCurso') || (status === 'Revisión' && (t.estado === 'Revision' || t.estado === 'Revisión'))).map(task => {
+                            const daysDelayed = task.fechaObjetivo && task.estado !== 'Hecha' && isAfter(startOfDay(new Date()), new Date(task.fechaObjetivo))
+                                ? differenceInDays(startOfDay(new Date()), new Date(task.fechaObjetivo))
+                                : 0;
+                            const isDone = task.estado === 'Hecha';
+                            const isDelayed = daysDelayed > 0;
+
+                            let cardClass = "p-5 rounded-2xl border shadow-sm hover:shadow-xl transition-all group cursor-pointer active:scale-[0.98] border-b-4 ";
+                            if (isDone) cardClass += "bg-emerald-50/60 border-emerald-100 border-b-emerald-200 hover:border-b-emerald-400";
+                            else if (isDelayed) cardClass += "bg-orange-50/60 border-orange-100 border-b-orange-200 hover:border-b-orange-400";
+                            else cardClass += "bg-white border-slate-200/60 border-b-slate-100 hover:border-b-indigo-500";
+
+                            return (
+                                <div key={task.idTarea} onClick={() => onTaskClick(task)} className={cardClass}>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <span className={`text - [10px] font - black tracking - widest uppercase ${isDone || isDelayed ? 'text-slate-500' : 'text-slate-400'} `}>ID-{task.idTarea}</span>
+                                        <div className="flex items-center gap-2">
+                                            {(task as any).isLockedByManager && <Lock size={10} className="text-indigo-400" />}
+                                            <TipoBadge tipo={task.tipo} />
+                                        </div>
+                                    </div>
+                                    <h4 className="text-sm font-black text-slate-800 leading-relaxed mb-4 group-hover:text-indigo-600 transition-colors uppercase tracking-tight line-clamp-2">{task.titulo}</h4>
+                                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+                                        <QuickAssignDropdown
+                                            currentAssignee={task.asignados && task.asignados.length > 0 ? { id: task.asignados[0].idUsuario, nombre: task.asignados[0].usuario?.nombre || 'U' } : null}
+                                            team={team}
+                                            onAssign={(uid) => onAssign(task.idTarea, uid)}
+                                        />
+                                        {task.fechaObjetivo && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-[10px] font-black text-slate-500">
+                                                <CalendarIcon size={12} className="text-slate-400" />
+                                                {format(new Date(task.fechaObjetivo), 'dd MMM')}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                <h4 className="text-sm font-black text-slate-800 leading-relaxed mb-4 group-hover:text-indigo-600 transition-colors uppercase tracking-tight line-clamp-2">{task.titulo}</h4>
-                                <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
-                                    <QuickAssignDropdown
-                                        currentAssignee={task.asignados && task.asignados.length > 0 ? { id: task.asignados[0].idUsuario, nombre: task.asignados[0].usuario?.nombre || 'U' } : null}
-                                        team={team}
-                                        onAssign={(uid) => onAssign(task.idTarea, uid)}
-                                    />
-                                    {task.fechaObjetivo && (
-                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-[10px] font-black text-slate-500">
-                                            <CalendarIcon size={12} className="text-slate-400" />
-                                            {format(new Date(task.fechaObjetivo), 'dd MMM')}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             ))}
@@ -324,53 +378,188 @@ const BoardView: React.FC<{ tasks: Tarea[], team: TeamMember[], onAssign: (tid: 
 
 const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    // Configuración visual
+    const COL_WIDTH = 48; // px por día
+    const ROW_HEIGHT = 52; // px por tarea
+
+
     const days = useMemo(() => {
         const start = startOfMonth(currentDate);
         const end = endOfMonth(currentDate);
         return eachDayOfInterval({ start, end });
     }, [currentDate]);
 
+    const viewStart = startOfMonth(currentDate);
+    const viewEnd = endOfMonth(currentDate);
+
+    // Helper para posición de la barra
+    const getTaskStyle = (task: Tarea) => {
+        if (!task.fechaInicioPlanificada || !task.fechaObjetivo) return null;
+
+        // Parse dates explicitly as local time to avoid UTC inconsistencies
+        // "2026-01-28" -> parts -> new Date(2026, 0, 28) = Local Midnight
+        const parseLocal = (dateStr: string | Date) => {
+            const s = String(dateStr).split('T')[0];
+            const [y, m, d] = s.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
+
+        const start = parseLocal(task.fechaInicioPlanificada);
+        const end = parseLocal(task.fechaObjetivo);
+
+        // Si la tarea está fuera del rango de vista, no mostramos o mostramos parcial
+        if (isAfter(start, viewEnd) || isAfter(viewStart, end)) return null;
+
+        // Clamping dates to view range for rendering
+        const renderStart = start < viewStart ? viewStart : start;
+        const renderEnd = end > viewEnd ? viewEnd : end;
+
+        const offsetDays = differenceInDays(renderStart, viewStart);
+        const durationDays = differenceInDays(renderEnd, renderStart) + 1;
+
+        return {
+            left: `${offsetDays * COL_WIDTH} px`,
+            width: `${durationDays * COL_WIDTH} px`
+        };
+    };
+
+    const getBarColor = (status: string) => {
+        switch (status) {
+            case 'Hecha': return 'bg-emerald-500 hover:bg-emerald-400 border-emerald-600';
+            case 'En Curso': return 'bg-indigo-500 hover:bg-indigo-400 border-indigo-600';
+            case 'Bloqueada': return 'bg-rose-500 hover:bg-rose-400 border-rose-600';
+            case 'Revisión': return 'bg-purple-500 hover:bg-purple-400 border-purple-600';
+            default: return 'bg-slate-400 hover:bg-slate-300 border-slate-500';
+        }
+    };
+
     return (
-        <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
-                <div className="flex items-center gap-4">
-                    <h3 className="font-bold text-slate-700">{format(currentDate, 'MMMM yyyy', { locale: es })}</h3>
-                    <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1">
-                        <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-1 hover:bg-slate-100 rounded"><ChevronLeft size={16} /></button>
-                        <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-1 hover:bg-slate-100 rounded"><ChevronRight size={16} /></button>
+        <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+                <div className="flex items-center gap-6">
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                        <span className="capitalize">{format(currentDate, 'MMMM', { locale: es })}</span>
+                        <span className="text-slate-300 font-medium">{format(currentDate, 'yyyy')}</span>
+                    </h3>
+                    <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-100 p-1 shadow-sm">
+                        <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2 hover:bg-white hover:text-indigo-600 hover:shadow-md rounded-lg transition-all text-slate-500"><ChevronLeft size={18} /></button>
+                        <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-xs font-bold text-slate-500 hover:text-indigo-600 hover:bg-white hover:shadow-md rounded-lg transition-all">Hoy</button>
+                        <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-2 hover:bg-white hover:text-indigo-600 hover:shadow-md rounded-lg transition-all text-slate-500"><ChevronRight size={18} /></button>
                     </div>
                 </div>
+                <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-400"></span> Pendiente</div>
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-indigo-500"></span> En Curso</div>
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-500"></span> Hecha</div>
+                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-rose-500"></span> Bloqueada</div>
+                </div>
             </div>
-            <div className="flex-1 overflow-auto">
-                <div className="min-w-max">
-                    <div className="flex border-b border-slate-100">
-                        <div className="w-64 shrink-0 p-3 border-r border-slate-100 font-bold text-xs text-slate-500 bg-slate-50 sticky left-0 z-10">Tarea</div>
-                        {days.map(day => (
-                            <div key={day.toString()} className={`w-10 shrink-0 p-2 text-center border-r border-slate-50 text-[10px] font-bold ${isWeekend(day) ? 'bg-slate-50 text-slate-300' : 'text-slate-600'}`}>
-                                {format(day, 'd')}
+
+            <div className="flex-1 flex overflow-hidden relative">
+                {/* Sidebar: Lista de Tareas */}
+                <div className="w-80 shrink-0 border-r border-slate-200 bg-white flex flex-col z-20 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.1)]">
+                    <div className="h-20 border-b border-slate-100 flex items-center px-6 bg-slate-50/50 backdrop-blur-sm">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Listado de Tareas</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden hover:overflow-y-auto custom-scrollbar">
+                        {tasks.map(task => (
+                            <div key={task.idTarea} className="flex flex-col justify-center px-6 border-b border-slate-50 hover:bg-indigo-50/30 transition-colors group" style={{ height: ROW_HEIGHT }}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`w - 1.5 h - 1.5 rounded - full shrink - 0 ${task.estado === 'Hecha' ? 'bg-emerald-400' : task.estado === 'En Curso' ? 'bg-indigo-400' : 'bg-slate-300'} `} />
+                                    <span className="text-sm font-bold text-slate-700 truncate group-hover:text-indigo-700 transition-colors">{task.titulo}</span>
+                                </div>
+                                <div className="pl-4 text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span className="font-medium">{task.responsableNombre ? task.responsableNombre.split(' ')[0] : 'Sin Asignar'}</span>
+                                    {task.fechaObjetivo && <span>• {format(new Date(task.fechaObjetivo), 'dd MMM')}</span>}
+                                </div>
                             </div>
                         ))}
                     </div>
-                    {tasks.map(task => (
-                        <div key={task.idTarea} className="flex border-b border-slate-50 hover:bg-slate-50/50">
-                            <div className="w-64 shrink-0 p-3 border-r border-slate-100 text-xs font-medium text-slate-700 truncate sticky left-0 bg-white z-10 flex items-center gap-2">
-                                <StatusBadge status={task.estado} />
-                                {task.titulo}
+                </div>
+
+                {/* Timeline Area */}
+                <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar bg-slate-50/30 relative" id="gantt-scroll-area">
+                    <div style={{ width: days.length * COL_WIDTH, minWidth: '100%' }}>
+
+                        {/* Headers */}
+                        <div className="sticky top-0 z-10 bg-white shadow-sm">
+                            {/* Day Numbers */}
+                            <div className="flex border-b border-slate-200 h-10">
+                                {days.map(day => (
+                                    <div
+                                        key={day.toString()}
+                                        className={`shrink - 0 flex items - center justify - center border - r border - slate - 100 text - [10px] font - bold ${isWeekend(day) ? 'bg-slate-50/80 text-slate-300' : 'text-slate-500'} `}
+                                        style={{ width: COL_WIDTH }}
+                                    >
+                                        {format(day, 'd')}
+                                    </div>
+                                ))}
                             </div>
-                            {days.map(day => {
-                                const isTaskDay = task.fechaInicioPlanificada && task.fechaObjetivo &&
-                                    isAfter(day, new Date(task.fechaInicioPlanificada)) &&
-                                    isAfter(new Date(task.fechaObjetivo), day);
+                            {/* Day Names */}
+                            <div className="flex border-b border-slate-200 h-10 bg-slate-50/50">
+                                {days.map(day => (
+                                    <div
+                                        key={day.toString()}
+                                        className={`shrink - 0 flex items - center justify - center border - r border - slate - 100 text - [9px] font - black uppercase tracking - wider ${isWeekend(day) ? 'text-slate-300' : 'text-indigo-300'} `}
+                                        style={{ width: COL_WIDTH }}
+                                    >
+                                        {format(day, 'EEE', { locale: es })}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Grid & Bars */}
+                        <div className="relative">
+
+                            {/* Background Grid Columns */}
+                            <div className="absolute inset-0 flex pointer-events-none">
+                                {days.map(day => {
+                                    const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                                    return (
+                                        <div
+                                            key={day.toString()}
+                                            className={`shrink - 0 border - r border - slate - 100 / 60 h - full relative ${isWeekend(day) ? 'bg-slate-50/30' : ''} `}
+                                            style={{ width: COL_WIDTH }}
+                                        >
+                                            {isToday && (
+                                                <div className="absolute inset-y-0 left-1/2 w-0.5 bg-indigo-500/20 z-0">
+                                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full absolute -top-1 -left-0.5 shadow-sm"></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Task Rows */}
+                            {tasks.map(task => {
+                                const style = getTaskStyle(task);
                                 return (
-                                    <div key={day.toString()} className={`w-10 shrink-0 border-r border-slate-50 h-10 relative ${isWeekend(day) ? 'bg-slate-50/50' : ''}`}>
-                                        {isTaskDay && (
-                                            <div className="absolute inset-y-2 inset-x-0 bg-slate-800 rounded-full opacity-80" />
+                                    <div key={task.idTarea} className="relative border-b border-slate-100/50 hover:bg-white/50 transition-colors" style={{ height: ROW_HEIGHT }}>
+                                        {style && (
+                                            <div
+                                                className={`absolute top - 1 / 2 - translate - y - 1 / 2 h - 8 rounded - lg shadow - sm border box - border group cursor - pointer overflow - hidden flex items - center px - 3 transition - all hover: scale - [1.02] hover: shadow - lg hover: z - 10 ${getBarColor(task.estado)} `}
+                                                style={{ left: style.left, width: style.width }}
+                                                title={`${task.titulo} (${task.estado})`}
+                                            >
+                                                {/* Striped pattern for In Progress */}
+                                                {task.estado === 'En Curso' && (
+                                                    <div className="absolute inset-0 opacity-10 bg-[linear-gradient(45deg,transparent_25%,#fff_25%,#fff_50%,transparent_50%,transparent_75%,#fff_75%,#fff_100%)] bg-[length:10px_10px]"></div>
+                                                )}
+
+                                                <span className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-md truncate relative z-10 w-full">
+                                                    {parseInt(style.width) > 40 ? task.titulo : ''}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 );
                             })}
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
         </div>
@@ -382,11 +571,21 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
 export const PlanTrabajoPage: React.FC = () => {
     const { user } = useAuth();
     const { showToast } = useToast();
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const projectIdFromUrl = searchParams.get('projectId');
 
+    // Detect initial view mode from URL
+    const initialViewMode: ViewMode = useMemo(() => {
+        const v = searchParams.get('view') || searchParams.get('gant');
+        if (v === 'cronograma' || v === 'gantt') return 'gantt';
+        if (v === 'board' || v === 'kanban') return 'board';
+        if (v === 'roadmap') return 'roadmap';
+        return 'list';
+    }, [searchParams]);
+
     // Mode & Selection
-    const [viewMode, setViewMode] = useState<ViewMode>('list');
+    const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
     const [projects, setProjects] = useState<Proyecto[]>([]);
     const [selectedProject, setSelectedProject] = useState<Proyecto | null>(null);
     const [tasks, setTasks] = useState<Tarea[]>([]);
@@ -422,12 +621,21 @@ export const PlanTrabajoPage: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     // Filters
-    const [filterText, setFilterText] = useState('');
-    const [filterAssignee, setFilterAssignee] = useState<number | ''>('');
+    const [filterText, setFilterText] = useState(''); // Global
+    const [filterAssignee, setFilterAssignee] = useState<number | ''>(''); // Legacy Global
     const [isAssigneeFilterOpen, setIsAssigneeFilterOpen] = useState(false);
     const [assigneeFilterSearch, setAssigneeFilterSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7; // Items per page
+
+    // Column Filters (Datatable style)
+    const [colFilters, setColFilters] = useState({
+        titulo: '',
+        prioridad: '',
+        estado: '',
+        asignado: '', // ID as string
+        fecha: ''     // string match or date
+    });
 
     // Hierarchy Filters
     // Project Selector State
@@ -502,25 +710,92 @@ export const PlanTrabajoPage: React.FC = () => {
 
 
 
-    const openTaskDetails = (task: Tarea) => {
+    const openTaskDetails = async (task: Tarea) => {
+        // Load comments from task.avances
+        let initialComments: Comment[] = [];
+        if (task.avances) {
+            initialComments = task.avances.map(a => ({
+                id: a.idLog,
+                idLog: a.idLog,
+                user: team.find(m => m.idUsuario === a.idUsuario)?.nombre || 'Usuario',
+                text: a.comentario,
+                timestamp: format(new Date(a.fecha), 'd MMM HH:mm', { locale: es }),
+                isMine: user?.idUsuario === a.idUsuario,
+                dateObj: new Date(a.fecha)
+            }));
+            // Sort by date desc
+            initialComments.sort((a, b) => (b.dateObj?.getTime() || 0) - (a.dateObj?.getTime() || 0));
+        }
+
+        setComments(prev => ({
+            ...prev,
+            [task.idTarea]: initialComments
+        }));
+
         setSelectedTask({ ...task });
         setIsPanelOpen(true);
     };
 
-    const handleAddComment = () => {
-        if (!selectedTask || !newComment.trim()) return;
-        const newC: Comment = {
-            id: Date.now(),
-            user: "Yo",
-            text: newComment,
-            timestamp: "Ahora"
-        };
-        setComments(prev => ({
-            ...prev,
-            [selectedTask.idTarea]: [...(prev[selectedTask.idTarea] || []), newC]
-        }));
-        setNewComment('');
-        showToast('Comentario agregado', 'success');
+    const handleAddComment = async () => {
+        if (!selectedTask || !newComment.trim() || !user) return;
+
+        try {
+            await clarityService.postAvance(selectedTask.idTarea, {
+                idUsuario: user.idUsuario,
+                progreso: selectedTask.progreso,
+                comentario: newComment
+            });
+
+            // Resync to get ID and updated list
+            const updatedTask = await clarityService.getTaskById(selectedTask.idTarea);
+            if (updatedTask && updatedTask.avances) {
+                const freshComments = updatedTask.avances.map(a => ({
+                    id: a.idLog,
+                    idLog: a.idLog,
+                    user: team.find(m => m.idUsuario === a.idUsuario)?.nombre || 'Yo',
+                    text: a.comentario,
+                    timestamp: format(new Date(a.fecha), 'd MMM HH:mm', { locale: es }),
+                    isMine: user.idUsuario === a.idUsuario,
+                    dateObj: new Date(a.fecha)
+                })).sort((a, b) => (b.dateObj?.getTime() || 0) - (a.dateObj?.getTime() || 0));
+
+                setComments(prev => ({ ...prev, [selectedTask.idTarea]: freshComments }));
+
+                // Update list and selection
+                setTasks(prev => prev.map(t => t.idTarea === selectedTask.idTarea ? updatedTask : t));
+                setSelectedTask(updatedTask);
+            }
+
+            setNewComment('');
+            showToast('Comentario agregado', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Error al agregar comentario', 'error');
+        }
+    };
+
+    const handleDeleteComment = async (commentId: number) => {
+        if (!window.confirm('¿Eliminar comentario?')) return;
+        try {
+            await clarityService.deleteAvance(commentId);
+            setComments(prev => ({
+                ...prev,
+                [selectedTask!.idTarea]: prev[selectedTask!.idTarea].filter(c => c.id !== commentId)
+            }));
+
+            // Sync local task state
+            setTasks(prev => prev.map(t => {
+                if (t.idTarea === selectedTask!.idTarea && t.avances) {
+                    return { ...t, avances: t.avances.filter(a => a.idLog !== commentId) };
+                }
+                return t;
+            }));
+
+            showToast('Comentario eliminado', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Error eliminando comentario', 'error');
+        }
     };
 
     const handleReportBlocker = () => {
@@ -537,7 +812,7 @@ export const PlanTrabajoPage: React.FC = () => {
         if (!selectedTask) return;
         setIsSaving(true);
         try {
-            const { data } = await api.patch(`/tareas/${selectedTask.idTarea}`, {
+            const { data } = await api.patch(`/ tareas / ${selectedTask.idTarea} `, {
                 titulo: selectedTask.titulo,
                 estado: selectedTask.estado,
                 prioridad: selectedTask.prioridad,
@@ -742,7 +1017,7 @@ export const PlanTrabajoPage: React.FC = () => {
         setTasks(newTasks);
 
         try {
-            await api.post('/asignaciones', { idTarea: taskId, idUsuarioAsignado: userId });
+            await clarityService.actualizarTarea(taskId, { idResponsable: userId });
             showToast('Tarea reasignada', 'success');
         } catch (error) {
             setTasks(oldTasks); // Revert
@@ -823,21 +1098,59 @@ export const PlanTrabajoPage: React.FC = () => {
 
     const finalFilteredTasks = useMemo(() => {
         const q = (debouncedFilterText || "").trim().toLowerCase();
+
+        // Column filters
+        const fTitle = colFilters.titulo.toLowerCase();
+        const fPrio = colFilters.prioridad;
+        const fStatus = colFilters.estado;
+        const fAssignee = colFilters.asignado ? Number(colFilters.asignado) : null;
+        const fDate = colFilters.fecha.toLowerCase();
+
         return tasks.filter(t => {
-            const matchText = !q || t.titulo.toLowerCase().includes(q);
-            const matchAssignee = filterAssignee === '' || t.idResponsable === Number(filterAssignee) || t.asignados?.some(a => a.idUsuario === Number(filterAssignee));
-            return matchText && matchAssignee;
+            // Global Search
+            const matchGlobal = !q || t.titulo.toLowerCase().includes(q);
+
+            // Legacy Global Assignee
+            const matchLegacyAssignee = filterAssignee === '' || t.idResponsable === Number(filterAssignee) || t.asignados?.some(a => a.idUsuario === Number(filterAssignee));
+
+            // Column Filters
+            const matchTitle = !fTitle || t.titulo.toLowerCase().includes(fTitle);
+            const matchPrio = !fPrio || t.prioridad === fPrio;
+            const matchStatus = !fStatus || t.estado === fStatus;
+
+            let matchAssignee = true;
+            if (fAssignee) {
+                matchAssignee = t.idResponsable === fAssignee || (t.asignados && t.asignados.some(a => a.idUsuario === fAssignee)) || false;
+            }
+
+            let matchDate = true;
+            if (fDate) {
+                const dateStr = t.fechaObjetivo ? format(new Date(t.fechaObjetivo), 'd MMM', { locale: es }).toLowerCase() :
+                    (t.fechaInicioPlanificada ? format(new Date(t.fechaInicioPlanificada), 'd MMM', { locale: es }).toLowerCase() : '');
+                matchDate = dateStr.includes(fDate);
+            }
+
+            return matchGlobal && matchLegacyAssignee && matchTitle && matchPrio && matchStatus && matchAssignee && matchDate;
         });
-    }, [tasks, debouncedFilterText, filterAssignee]);
+    }, [tasks, debouncedFilterText, filterAssignee, colFilters]);
 
     // --- HIERARCHY LOGIC (NUEVO) ---
     const hierarchyData = useMemo(() => {
+        // Sorting Helper: Fecha Ascendente (Nulls/Far future at bottom), then ID Desc
+        const sortTasksByDate = (a: Tarea, b: Tarea) => {
+            const dateA = a.fechaObjetivo ? new Date(a.fechaObjetivo).getTime() : (a.fechaInicioPlanificada ? new Date(a.fechaInicioPlanificada).getTime() : 8640000000000000); // Max Date
+            const dateB = b.fechaObjetivo ? new Date(b.fechaObjetivo).getTime() : (b.fechaInicioPlanificada ? new Date(b.fechaInicioPlanificada).getTime() : 8640000000000000);
+
+            if (dateA !== dateB) return dateA - dateB;
+            return b.idTarea - a.idTarea;
+        };
+
         // Si hay filtros, usamos la lista plana para no ocultar resultados
         const isFiltering = (debouncedFilterText || "").trim() !== '' || filterAssignee !== '';
 
         if (isFiltering) {
             return {
-                roots: finalFilteredTasks,
+                roots: [...finalFilteredTasks].sort(sortTasksByDate),
                 childrenMap: new Map<number, Tarea[]>(),
                 isFlat: true
             };
@@ -857,16 +1170,10 @@ export const PlanTrabajoPage: React.FC = () => {
             }
         });
 
-        // Auto-expand tasks that have children by default? Or collapsed? 
-        // User prefers to see structure, but maybe we default to expanded for active work contexts.
-        // Let's keep them collapsed or check if we should auto-init state.
-        // Actually, let's auto-init expanded state once if needed, but 'useMemo' shouldn't do side effects.
-        // We will default to collapsed in state init or handle it in render.
+        // Ordenar por fecha
+        roots.sort(sortTasksByDate);
 
-        // Ordenar: Los padres mÃ¡s recientes primero
-        roots.sort((a, b) => b.idTarea - a.idTarea);
-
-        // Ordenar hijos por orden o id
+        // Ordenar hijos por orden (o fecha si prefieren, pero subtasks suelen tener orden lógico)
         childrenMap.forEach(kids => kids.sort((a, b) => (a.orden || 0) - (b.orden || 0)));
 
         return { roots, childrenMap, isFlat: false };
@@ -875,7 +1182,7 @@ export const PlanTrabajoPage: React.FC = () => {
     return (
         <div className="flex h-[calc(100vh-4rem)] bg-white overflow-hidden font-sans text-slate-800 flex-col">
             {/* HEADER COMPACTO */}
-            <header className="h-14 border-b border-slate-200 flex items-center justify-between px-4 bg-white shrink-0 z-20 shadow-sm relative">
+            <header className="h-14 border-b border-slate-200 flex items-center justify-between px-4 bg-white shrink-0 z-40 shadow-sm relative">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-slate-800 font-black tracking-tight">
                         <Briefcase size={20} />
@@ -883,6 +1190,16 @@ export const PlanTrabajoPage: React.FC = () => {
                     </div>
 
                     <div className="h-6 w-px bg-slate-200 mx-2"></div>
+
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-bold text-xs transition-all"
+                    >
+                        <ChevronLeft size={16} />
+                        <span>Regresar</span>
+                    </button>
+
+                    <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
                     {/* Project Selector - Custom Dropdown with Search & Groups */}
                     {viewMode !== 'roadmap' && (
@@ -895,8 +1212,8 @@ export const PlanTrabajoPage: React.FC = () => {
                                     <span className="font-black truncate w-full text-left">{selectedProject ? selectedProject.nombre : 'Seleccionar Proyecto...'}</span>
                                     {selectedProject && (
                                         <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                                            <span className={`flex items-center gap-1 ${selectedProject.estado === 'Activo' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${selectedProject.estado === 'Activo' ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                                            <span className={`flex items - center gap - 1 ${selectedProject.estado === 'Activo' ? 'text-emerald-600' : 'text-slate-500'} `}>
+                                                <span className={`w - 1.5 h - 1.5 rounded - full ${selectedProject.estado === 'Activo' ? 'bg-emerald-500' : 'bg-slate-300'} `}></span>
                                                 {selectedProject.estado}
                                             </span>
                                             {selectedProject.fechaInicio && (
@@ -908,7 +1225,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
-                                <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isProjectSelectorOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown size={14} className={`text - slate - 400 shrink - 0 transition - transform duration - 300 ${isProjectSelectorOpen ? 'rotate-180' : ''} `} />
                             </button>
 
                             {isProjectSelectorOpen && (
@@ -971,7 +1288,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                 setIsProjectSelectorOpen(false);
                                                                 setProjectSearch('');
                                                             }}
-                                                            className={`flex-1 text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center justify-between ${selectedProject?.idProyecto === p.idProyecto ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'}`}
+                                                            className={`flex - 1 text - left px - 3 py - 2 rounded - xl text - sm font - bold transition - all flex items - center justify - between ${selectedProject?.idProyecto === p.idProyecto ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'} `}
                                                         >
                                                             <div className="flex items-center gap-2">
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -983,7 +1300,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    if (window.confirm(`¿Estás seguro de eliminar el proyecto "${p.nombre}"? Esta acción no se puede deshacer.`)) {
+                                                                    if (window.confirm(`¿Estás seguro de eliminar el proyecto "${p.nombre}" ? Esta acción no se puede deshacer.`)) {
                                                                         clarityService.deleteProyecto(p.idProyecto).then(() => {
                                                                             setProjects(prev => prev.filter(proj => proj.idProyecto !== p.idProyecto));
                                                                             if (selectedProject?.idProyecto === p.idProyecto) setSelectedProject(null);
@@ -1015,7 +1332,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                 setIsProjectSelectorOpen(false);
                                                                 setProjectSearch('');
                                                             }}
-                                                            className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-between opacity-90 hover:opacity-100 ${selectedProject?.idProyecto === p.idProyecto ? 'bg-amber-50 text-amber-900 border border-amber-100' : 'text-slate-600 hover:bg-slate-50'}`}
+                                                            className={`w - full text - left px - 3 py - 2 rounded - xl text - sm font - medium transition - all flex items - center justify - between opacity - 90 hover: opacity - 100 ${selectedProject?.idProyecto === p.idProyecto ? 'bg-amber-50 text-amber-900 border border-amber-100' : 'text-slate-600 hover:bg-slate-50'} `}
                                                         >
                                                             <div className="flex items-center gap-2">
                                                                 <Lock size={10} className="text-amber-500" />
@@ -1039,7 +1356,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                 setIsProjectSelectorOpen(false);
                                                                 setProjectSearch('');
                                                             }}
-                                                            className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-between opacity-70 hover:opacity-100 ${selectedProject?.idProyecto === p.idProyecto ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}
+                                                            className={`w - full text - left px - 3 py - 2 rounded - xl text - sm font - medium transition - all flex items - center justify - between opacity - 70 hover: opacity - 100 ${selectedProject?.idProyecto === p.idProyecto ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'} `}
                                                         >
                                                             {p.nombre}
                                                         </button>
@@ -1102,7 +1419,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                 showToast("Error al actualizar el estado del proyecto", "error");
                             }
                         }}
-                        className={`ml-2 flex items-center gap-1 px-3 py-1.5 font-bold text-xs rounded-lg transition-colors ${(selectedProject as any).enllavado ? 'bg-amber-100 border border-amber-300 text-amber-800' : 'bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100'}`}
+                        className={`ml - 2 flex items - center gap - 1 px - 3 py - 1.5 font - bold text - xs rounded - lg transition - colors ${(selectedProject as any).enllavado ? 'bg-amber-100 border border-amber-300 text-amber-800' : 'bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100'} `}
                         title={(selectedProject as any).enllavado ? "El plan está oficializado. Click para permitir ediciones." : "Enllavar Proyecto para oficializar y evitar cambios"}
                     >
                         {(selectedProject as any).enllavado ? <Unlock size={14} /> : <Lock size={14} />}
@@ -1172,7 +1489,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                 setAssigneeFilterSearch('');
                                                                 setCurrentPage(1);
                                                             }}
-                                                            className={`w-full text-left px-4 py-2 text-xs hover:bg-slate-50 flex items-center justify-between group ${filterAssignee === '' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
+                                                            className={`w - full text - left px - 4 py - 2 text - xs hover: bg - slate - 50 flex items - center justify - between group ${filterAssignee === '' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'} `}
                                                         >
                                                             <span>Todos</span>
                                                         </button>
@@ -1189,10 +1506,10 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                             setAssigneeFilterSearch('');
                                                                             setCurrentPage(1);
                                                                         }}
-                                                                        className={`w-full text-left px-4 py-2 text-xs hover:bg-slate-50 flex items-center justify-between group ${filterAssignee === member.idUsuario ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
+                                                                        className={`w - full text - left px - 4 py - 2 text - xs hover: bg - slate - 50 flex items - center justify - between group ${filterAssignee === member.idUsuario ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'} `}
                                                                     >
                                                                         <span className="truncate">{member.nombre}</span>
-                                                                        <span className={`px-1.5 py-0.5 rounded text-[10px] ml-2 font-bold ${filterAssignee === member.idUsuario ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>{count}</span>
+                                                                        <span className={`px - 1.5 py - 0.5 rounded text - [10px] ml - 2 font - bold ${filterAssignee === member.idUsuario ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'} `}>{count}</span>
                                                                     </button>
                                                                 );
                                                             })}
@@ -1243,11 +1560,63 @@ export const PlanTrabajoPage: React.FC = () => {
                                     {viewMode === 'list' && (
                                         <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                             {/* Table Header - Compact */}
+                                            {/* Table Header - Compact */}
                                             <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-3 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0 sticky top-0 z-30">
-                                                <div className="col-span-6 pl-2">Tarea</div>
-                                                <div className="col-span-2">Estado / Asignado</div>
-                                                <div className="col-span-2 text-center">Fechas</div>
-                                                <div className="col-span-2 text-center">Progreso</div>
+                                                <div className="col-span-4 pl-2">Tarea</div>
+                                                <div className="col-span-2">Estado</div>
+                                                <div className="col-span-2">Asignado</div>
+                                                <div className="col-span-2">Fechas</div>
+                                                <div className="col-span-2 text-right pr-2">Acciones</div>
+                                            </div>
+
+                                            {/* FILTER ROW */}
+                                            <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50/50 border-b border-slate-100 shrink-0 z-20">
+                                                <div className="col-span-4 pl-2">
+                                                    <input
+                                                        placeholder="Filtrar tarea..."
+                                                        className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:border-indigo-400 outline-none"
+                                                        value={colFilters.titulo}
+                                                        onChange={e => setColFilters(prev => ({ ...prev, titulo: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <select
+                                                        className="w-full bg-white border border-slate-200 rounded px-1 py-1 text-xs focus:border-indigo-400 outline-none"
+                                                        value={colFilters.estado}
+                                                        onChange={e => setColFilters(prev => ({ ...prev, estado: e.target.value }))}
+                                                    >
+                                                        <option value="">Estado...</option>
+                                                        {['Pendiente', 'En Curso', 'Bloqueada', 'Revisión', 'Hecha'].map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <select
+                                                        className="w-full bg-white border border-slate-200 rounded px-1 py-1 text-xs focus:border-indigo-400 outline-none"
+                                                        value={colFilters.asignado}
+                                                        onChange={e => setColFilters(prev => ({ ...prev, asignado: e.target.value }))}
+                                                    >
+                                                        <option value="">Asignado...</option>
+                                                        {team.map(m => <option key={m.idUsuario} value={m.idUsuario}>{m.nombre}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <input
+                                                        placeholder="Fecha..."
+                                                        className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:border-indigo-400 outline-none"
+                                                        value={colFilters.fecha}
+                                                        onChange={e => setColFilters(prev => ({ ...prev, fecha: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="col-span-2 flex justify-end pr-2">
+                                                    {(colFilters.titulo || colFilters.estado || colFilters.asignado || colFilters.fecha) && (
+                                                        <button
+                                                            onClick={() => setColFilters({ titulo: '', prioridad: '', estado: '', asignado: '', fecha: '' })}
+                                                            className="text-[10px] text-rose-500 hover:text-rose-700 font-bold flex items-center gap-1 bg-rose-50 px-2 py-1 rounded"
+                                                        >
+                                                            <X size={10} /> LIMPIAR
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
@@ -1279,20 +1648,27 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                             ? { id: t.asignados[0].idUsuario, nombre: t.asignados[0].usuario?.nombre || 'U' }
                                                                             : null);
 
+                                                                const isDone = t.estado === 'Hecha';
+                                                                const isDelayed = daysDelayed > 0;
+
+                                                                let rowClass = "group relative transition-all cursor-pointer border-b border-slate-50 ";
+                                                                if (selectedTask?.idTarea === t.idTarea) rowClass += "bg-indigo-50/80 ";
+                                                                else if (isDone) rowClass += "bg-emerald-50/40 hover:bg-emerald-100/50 ";
+                                                                else if (isDelayed) rowClass += "bg-orange-50/40 hover:bg-orange-100/50 ";
+                                                                else rowClass += "hover:bg-slate-50 ";
+
+                                                                if (hasChildren && !isDone && !isDelayed && selectedTask?.idTarea !== t.idTarea) rowClass += "bg-slate-50/30 ";
+
                                                                 return (
                                                                     <div
                                                                         key={t.idTarea}
-                                                                        className={`group relative hover:bg-slate-50 transition-colors cursor-pointer 
-                                                                            ${selectedTask?.idTarea === t.idTarea ? 'bg-indigo-50/30' : ''} 
-                                                                            ${t.estado === 'Bloqueada' ? 'bg-rose-50/20' : ''}
-                                                                            ${hasChildren ? 'bg-slate-50/30 font-semibold' : ''}
-                                                                        `}
+                                                                        className={rowClass}
                                                                         onClick={(e) => { e.stopPropagation(); openTaskDetails(t); }}
                                                                     >
                                                                         {/* Mobile/Compact View */}
-                                                                        <div className={`md:hidden p-4 space-y-3 ${isChild ? 'pl-8 border-l-4 border-slate-100' : ''}`}>
+                                                                        <div className={`md:hidden p - 4 space - y - 3 ${isChild ? 'pl-8 border-l-4 border-slate-100' : ''} `}>
                                                                             <div className="flex justify-between items-start gap-3">
-                                                                                <h4 className={`font-bold text-sm text-slate-800 leading-snug ${t.estado === 'Hecha' ? 'line-through opacity-60' : ''}`}>
+                                                                                <h4 className={`font - bold text - sm text - slate - 800 leading - snug ${t.estado === 'Hecha' ? 'line-through opacity-60' : ''} `}>
                                                                                     {isChild && <span className="text-slate-400 mr-1">↳</span>}
                                                                                     {t.titulo}
                                                                                 </h4>
@@ -1302,30 +1678,29 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                         </div>
 
                                                                         {/* Desktop Grid View - Premium Redesign */}
-                                                                        <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 items-center text-xs h-12">
-                                                                            <div className="col-span-6 flex items-center gap-2 pr-2 min-w-0">
+                                                                        <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 items-center text-xs h-10">
+                                                                            <div className="col-span-4 flex items-center gap-2 pr-2 min-w-0">
                                                                                 {/* Indentation Spacer */}
                                                                                 {isChild && <div className="w-6 shrink-0 flex justify-end"><div className="w-3 h-px bg-slate-300 rounded-full"></div></div>}
 
-                                                                                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${t.prioridad === 'Alta' ? 'bg-rose-500' : t.prioridad === 'Media' ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                                                                    title={`Prioridad ${t.prioridad}`}
-                                                                                />
-
                                                                                 <div className="flex flex-col min-w-0 flex-1">
                                                                                     <div className="flex items-center gap-2">
-                                                                                        <p className={`font-semibold text-slate-700 truncate group-hover:text-indigo-700 transition-colors ${t.estado === 'Hecha' ? 'text-slate-400 line-through decoration-slate-300' : ''} ${hasChildren ? 'text-sm font-bold' : 'text-xs'}`}>
+                                                                                        {hasChildren && <Link2 size={12} className="text-indigo-400 rotate-45 shrink-0" />}
+                                                                                        <p className={`truncate transition - colors ${t.estado === 'Hecha' ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700 group-hover:text-indigo-700'} ${hasChildren ? 'font-black' : 'font-medium'} `}>
                                                                                             {t.titulo}
                                                                                         </p>
                                                                                         <span className="text-[9px] text-slate-300 font-mono hidden xl:inline opacity-0 group-hover:opacity-100">#{t.idTarea}</span>
-                                                                                        {hasChildren && <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 rounded-full font-bold h-4 flex items-center">{hierarchyData.childrenMap.get(t.idTarea)?.length}</span>}
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="col-span-2 flex items-center justify-start gap-2 overflow-hidden">
-                                                                                <div className="scale-90 origin-left"><StatusBadge status={t.estado} /></div>
+                                                                            <div className="col-span-2 flex items-center justify-start overflow-hidden">
+                                                                                <div className="scale-90 origin-left"><StatusBadge status={t.estado} isDelayed={isDelayed} /></div>
+                                                                            </div>
+
+                                                                            <div className="col-span-2 flex items-center justify-start overflow-hidden">
                                                                                 {!hasChildren && (
-                                                                                    <div onClick={(e) => e.stopPropagation()} className="scale-90">
+                                                                                    <div onClick={(e) => e.stopPropagation()} className="scale-90 -ml-2">
                                                                                         <QuickAssignDropdown
                                                                                             currentAssignee={assignedUser}
                                                                                             team={team}
@@ -1335,32 +1710,32 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                                 )}
                                                                             </div>
 
-                                                                            <div className="col-span-2 flex items-center justify-center text-[10px] text-slate-500">
+                                                                            <div className="col-span-2 flex items-center justify-start text-[10px] text-slate-500 font-semibold">
                                                                                 {t.fechaInicioPlanificada || t.fechaObjetivo ? (
-                                                                                    <div className="flex items-center gap-1 whitespace-nowrap">
-                                                                                        <span>{t.fechaInicioPlanificada ? format(new Date(t.fechaInicioPlanificada), 'd MMM', { locale: es }) : ''}</span>
+                                                                                    <div className={`flex items - center gap - 1 whitespace - nowrap ${isDelayed ? 'text-rose-600' : ''} `}>
+                                                                                        <CalendarIcon size={10} className={isDelayed ? 'text-rose-400' : 'text-slate-300'} />
+                                                                                        <span>{t.fechaInicioPlanificada ? format(new Date(Number(String(t.fechaInicioPlanificada).split('-')[0]), Number(String(t.fechaInicioPlanificada).split('-')[1]) - 1, Number(String(t.fechaInicioPlanificada).split('-')[2].substring(0, 2))), 'd MMM', { locale: es }) : ''}</span>
                                                                                         {(t.fechaInicioPlanificada && t.fechaObjetivo) && <span className="text-slate-300">-</span>}
-                                                                                        <span className={`${daysDelayed > 0 ? 'text-rose-600 font-bold' : ''}`}>
-                                                                                            {t.fechaObjetivo ? format(new Date(t.fechaObjetivo), 'd MMM', { locale: es }) : ''}
+                                                                                        <span className={`${daysDelayed > 0 ? 'text-rose-600 font-bold' : ''} `}>
+                                                                                            {t.fechaObjetivo ? format(new Date(Number(String(t.fechaObjetivo).split('-')[0]), Number(String(t.fechaObjetivo).split('-')[1]) - 1, Number(String(t.fechaObjetivo).split('-')[2].substring(0, 2))), 'd MMM', { locale: es }) : ''}
                                                                                         </span>
                                                                                     </div>
                                                                                 ) : <span className="text-slate-200">--</span>}
                                                                             </div>
 
-                                                                            <div className="col-span-2 flex items-center gap-2 pl-2">
-                                                                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                            <div className="col-span-2 flex items-center gap-2 pl-2 justify-end">
+                                                                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[60px]">
                                                                                     <div
-                                                                                        className={`h-full rounded-full transition-all ${t.estado === 'Hecha' ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                                                                                        style={{ width: `${t.progreso}%` }}
+                                                                                        className={`h - full rounded - full transition - all ${t.estado === 'Hecha' ? 'bg-emerald-500' : 'bg-indigo-500'} `}
+                                                                                        style={{ width: `${t.progreso}% ` }}
                                                                                     ></div>
                                                                                 </div>
-                                                                                <span className="text-[9px] font-bold text-slate-400 w-6 text-right">{t.progreso}%</span>
 
-                                                                                <div className="w-12 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                <div className="flex items-center gap-1">
                                                                                     {/* Quick Subtask Button (Only for Roots/Parents) */}
                                                                                     {!isChild && (
                                                                                         <button
-                                                                                            className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${creationParentId === t.idTarea ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-100'}`}
+                                                                                            className={`w - 6 h - 6 flex items - center justify - center rounded - md transition - colors ${creationParentId === t.idTarea ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-100'} `}
                                                                                             title="Agregar Subtarea"
                                                                                             onClick={(e) => {
                                                                                                 e.stopPropagation();
@@ -1401,8 +1776,8 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                         {hasKids && (
                                                                             <button
                                                                                 onClick={(e) => { e.stopPropagation(); toggleExpand(rootTask.idTarea); }}
-                                                                                className={`absolute left-0 md:left-2 top-6 z-20 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-full transition-colors 
-                                                                                    ${isExpanded ? 'bg-slate-50 text-indigo-500' : '-rotate-90'}`}
+                                                                                className={`absolute left - 0 md: left - 2 top - 6 z - 20 w - 6 h - 6 flex items - center justify - center text - slate - 400 hover: text - indigo - 600 hover: bg - slate - 100 rounded - full transition - colors 
+                                                                                    ${isExpanded ? 'bg-slate-50 text-indigo-500' : '-rotate-90'} `}
                                                                             >
                                                                                 <ChevronDown size={14} />
                                                                             </button>
@@ -1524,10 +1899,10 @@ export const PlanTrabajoPage: React.FC = () => {
                                             setSelectedTask({ ...selectedTask, isLockedByManager: newStatus } as any);
                                             showToast(newStatus ? "Tarea bloqueada (Aprobada)" : "Tarea desbloqueada (Editable)", "success");
                                         }}
-                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-colors flex items-center gap-1 ${(selectedTask as any).isLockedByManager
+                                        className={`px - 3 py - 1.5 rounded - lg text - [10px] font - bold border transition - colors flex items - center gap - 1 ${(selectedTask as any).isLockedByManager
                                             ? 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'
                                             : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
-                                            }`}
+                                            } `}
                                     >
                                         {(selectedTask as any).isLockedByManager ? <Unlock size={12} /> : <Lock size={12} />}
                                         {(selectedTask as any).isLockedByManager ? 'Desbloquear' : 'Aprobar & Bloquear'}
@@ -1564,7 +1939,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                     }}
                                 >
                                     <input
-                                        className={`text-xl font-bold text-slate-900 leading-snug mb-2 w-full bg-transparent border border-transparent rounded p-1 outline-none transition-colors ${isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado) ? 'hover:border-slate-200 focus:border-slate-300' : 'pointer-events-none opacity-80'}`}
+                                        className={`text - xl font - bold text - slate - 900 leading - snug mb - 2 w - full bg - transparent border border - transparent rounded p - 1 outline - none transition - colors ${isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado) ? 'hover:border-slate-200 focus:border-slate-300' : 'pointer-events-none opacity-80'} `}
                                         value={selectedTask.titulo}
                                         onChange={(e) => (isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado)) && setSelectedTask({ ...selectedTask, titulo: e.target.value })}
                                         readOnly={!isManagerMode && ((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado)}
@@ -1590,7 +1965,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                     }}
                                 >
                                     <textarea
-                                        className={`text-sm text-slate-600 leading-relaxed w-full min-h-[80px] bg-slate-50 border border-slate-100 rounded-lg p-3 outline-none resize-none transition-all focus:shadow-sm ${isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado) ? 'focus:bg-white focus:border-slate-300' : 'cursor-not-allowed bg-slate-50/50'}`}
+                                        className={`text - sm text - slate - 600 leading - relaxed w - full min - h - [80px] bg - slate - 50 border border - slate - 100 rounded - lg p - 3 outline - none resize - none transition - all focus: shadow - sm ${isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado) ? 'focus:bg-white focus:border-slate-300' : 'cursor-not-allowed bg-slate-50/50'} `}
                                         value={selectedTask.descripcion || ''}
                                         onChange={(e) => (isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado)) && setSelectedTask({ ...selectedTask, descripcion: e.target.value })}
                                         placeholder="Añadir a descripción..."
@@ -1623,7 +1998,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase block mb-2">Prioridad</label>
                                     <div className="relative">
                                         <select
-                                            className={`w-full bg-white border border-slate-200 rounded-lg py-2 pl-3 pr-8 text-xs font-bold text-slate-700 outline-none appearance-none ${isManagerMode ? 'focus:border-slate-500 cursor-pointer' : 'opacity-75 cursor-not-allowed bg-slate-100'}`}
+                                            className={`w - full bg - white border border - slate - 200 rounded - lg py - 2 pl - 3 pr - 8 text - xs font - bold text - slate - 700 outline - none appearance - none ${isManagerMode ? 'focus:border-slate-500 cursor-pointer' : 'opacity-75 cursor-not-allowed bg-slate-100'} `}
                                             value={selectedTask.prioridad}
                                             onChange={(e) => isManagerMode && setSelectedTask({ ...selectedTask, prioridad: e.target.value as any })}
                                             disabled={!isManagerMode}
@@ -1666,8 +2041,8 @@ export const PlanTrabajoPage: React.FC = () => {
                                         >
                                             <input
                                                 type="date"
-                                                className={`w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none ${isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado) ? 'focus:border-slate-400' : 'cursor-not-allowed opacity-70'}`}
-                                                value={selectedTask.fechaInicioPlanificada ? format(new Date(selectedTask.fechaInicioPlanificada), 'yyyy-MM-dd') : ''}
+                                                className={`w - full bg - white border border - slate - 200 rounded - lg px - 2 py - 1.5 text - xs text - slate - 700 outline - none ${isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado) ? 'focus:border-slate-400' : 'cursor-not-allowed opacity-70'} `}
+                                                value={selectedTask.fechaInicioPlanificada ? String(selectedTask.fechaInicioPlanificada).split('T')[0] : ''}
                                                 onChange={(e) => (isManagerMode || !((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado)) && setSelectedTask({ ...selectedTask, fechaInicioPlanificada: e.target.value ? e.target.value : undefined })}
                                                 readOnly={!isManagerMode && ((selectedTask as any).isLockedByManager || (selectedProject as any)?.enllavado)}
                                             />
@@ -1678,7 +2053,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                         <input
                                             type="date"
                                             className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-slate-400"
-                                            value={selectedTask.fechaObjetivo ? format(new Date(selectedTask.fechaObjetivo), 'yyyy-MM-dd') : ''}
+                                            value={selectedTask.fechaObjetivo ? String(selectedTask.fechaObjetivo).split('T')[0] : ''}
                                             onChange={(e) => setSelectedTask({ ...selectedTask, fechaObjetivo: e.target.value ? e.target.value : undefined })}
                                         />
                                     </div>
@@ -1736,7 +2111,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                 <div>
                                     <div className="flex justify-between mb-2">
                                         <label className="text-xs font-bold text-slate-700">Progreso</label>
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${selectedTask.estado === 'Bloqueada' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
+                                        <span className={`text - xs font - bold px - 2 py - 0.5 rounded ${selectedTask.estado === 'Bloqueada' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'} `}>
                                             {selectedTask.progreso || 0}%
                                         </span>
                                     </div>
@@ -1744,7 +2119,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                         type="range"
                                         min="0"
                                         max="100"
-                                        className={`w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer ${selectedTask.estado === 'Bloqueada' ? 'accent-red-500' : 'accent-slate-700'}`}
+                                        className={`w - full h - 2 bg - slate - 100 rounded - lg appearance - none cursor - pointer ${selectedTask.estado === 'Bloqueada' ? 'accent-red-500' : 'accent-slate-700'} `}
                                         value={selectedTask.progreso || 0}
                                         onChange={(e) => setSelectedTask({ ...selectedTask, progreso: parseInt(e.target.value) })}
                                     />
@@ -1845,14 +2220,24 @@ export const PlanTrabajoPage: React.FC = () => {
                                             </div>
                                         )}
                                         {(comments[selectedTask.idTarea] || []).map(c => (
-                                            <div key={c.id} className="flex gap-3">
+                                            <div key={c.id} className="flex gap-3 group/comment">
                                                 <UserAvatar name={c.user} />
-                                                <div className="flex-1 bg-white p-2.5 rounded-2xl rounded-tl-none border border-slate-100 shadow-sm">
+                                                <div className="flex-1 bg-white p-2.5 rounded-2xl rounded-tl-none border border-slate-100 shadow-sm relative">
                                                     <div className="flex justify-between items-baseline mb-1">
                                                         <span className="text-[11px] font-bold text-slate-800">{c.user}</span>
                                                         <span className="text-[9px] text-slate-400">{c.timestamp}</span>
                                                     </div>
                                                     <p className="text-xs text-slate-600">{c.text}</p>
+                                                    {/* Delete Button (Only for owner & same day) */}
+                                                    {c.isMine && c.dateObj && new Date().toDateString() === c.dateObj.toDateString() && (
+                                                        <button
+                                                            onClick={() => handleDeleteComment(c.id)}
+                                                            className="absolute top-2 right-2 p-1 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded opacity-0 group-hover/comment:opacity-100 transition-all"
+                                                            title="Eliminar comentario"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}

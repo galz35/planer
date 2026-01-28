@@ -13,6 +13,7 @@ const getTipoConfig = (tipo: TipoTarea) => {
         'Estrategica': { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Estratégica' },
         'AMX': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'AMX' },
         'Operativo': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Operativo' },
+        'CENAM': { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'CENAM' },
         'Otros': { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Otros' }
     };
     return configs[tipo] || configs['Otros'];

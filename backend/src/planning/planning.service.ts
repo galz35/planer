@@ -374,7 +374,24 @@ export class PlanningService {
     async getMyTeam(idUsuario: number) {
         const user = await authRepo.obtenerUsuarioPorId(idUsuario);
         if (!user || !user.carnet) return [];
-        return await this.visibilidadService.obtenerMiEquipo(user.carnet);
+        const team = await this.visibilidadService.obtenerMiEquipo(user.carnet);
+
+        // ✅ Garantizar que el usuario mismo esté en la lista para auto-asignarse
+        const isSelfInTeam = (team || []).some((m: any) =>
+            String(m.carnet).trim() === String(user.carnet || '').trim() ||
+            Number(m.idUsuario) === Number(idUsuario)
+        );
+
+        if (!isSelfInTeam) {
+            team.unshift({
+                ...user,
+                nombre: user.nombreCompleto || user.nombre,
+                nivel: 0,
+                fuente: 'MISMO'
+            });
+        }
+
+        return team;
     }
 
     async getMyProjects(idUsuario: number) {

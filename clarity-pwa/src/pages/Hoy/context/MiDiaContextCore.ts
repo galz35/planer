@@ -11,12 +11,14 @@ export interface MiDiaContextType {
     backlog: Tarea[];
     allDisponibles: Tarea[];
     userId: number;
+    userCarnet?: string;
     today: string;
     setToday: (date: string) => void;
     revalidarTarea: (variables: { idTarea: number; accion: 'Sigue' | 'HechaPorOtro' | 'NoAplica' }) => void;
     toggleTarea: (variables: { idTarea: number; estadoActual: string }) => void;
-    isMutating?: boolean;
+    isMutating: boolean;
     mutatingTaskId?: number | null;
+    isSupervisorMode?: boolean;
 }
 
 export const MiDiaContext = createContext<MiDiaContextType | undefined>(undefined);

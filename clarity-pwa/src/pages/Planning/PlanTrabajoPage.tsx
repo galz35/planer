@@ -773,7 +773,7 @@ export const PlanTrabajoPage: React.FC = () => {
     };
 
     const handleDeleteTask = async (taskId: number) => {
-        if (!window.confirm('Â¿Eliminar esta tarea definitivamente?')) return;
+        if (!window.confirm('¿Eliminar esta tarea definitivamente?')) return;
 
         try {
             await clarityService.descartarTarea(taskId);
@@ -1378,7 +1378,7 @@ export const PlanTrabajoPage: React.FC = () => {
                                                                                         className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
                                                                                         onClick={(e) => {
                                                                                             e.stopPropagation();
-                                                                                            if (window.confirm('Â¿Seguro?')) handleDeleteTask(t.idTarea);
+                                                                                            if (window.confirm('Esta seguro?')) handleDeleteTask(t.idTarea);
                                                                                         }}
                                                                                     >
                                                                                         <Trash2 size={14} />

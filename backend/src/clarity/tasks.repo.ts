@@ -77,7 +77,6 @@ export async function crearTarea(params: CreateTaskParams): Promise<number> {
         idResponsable: { valor: params.idResponsable || null, tipo: Int },
         requiereEvidencia: { valor: params.requiereEvidencia || false, tipo: Bit },
         idEntregable: { valor: params.idEntregable || null, tipo: Int },
-        creadorCarnet: { valor: params.creadorCarnet || null, tipo: NVarChar },
         semana: { valor: null, tipo: Int } // Default null, can be extended later if CreateTaskParams supports it
     });
 

@@ -1079,7 +1079,7 @@ export const ProyectosPage: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Gerencia Dueña</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Gerencia Dueño</label>
                                         <select
                                             className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-500"
                                             value={formData.gerencia}

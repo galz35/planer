@@ -34,8 +34,8 @@ export const TaskPlanningPanel: React.FC<Props> = ({
                             type="date"
                             value={fechaInicioPlanificada}
                             onChange={(e) => setFechaInicioPlanificada(e.target.value)}
-                            disabled={isLocked}
-                            className={'w-full text-sm font-bold text-slate-700 outline-none py-1 bg-transparent ' + (isLocked ? 'cursor-not-allowed opacity-60' : 'border-b-2 border-slate-200 focus:border-blue-500')}
+                            disabled={false}
+                            className="w-full text-sm font-bold text-slate-700 outline-none py-1 bg-transparent border-b-2 border-slate-200 focus:border-blue-500"
                         />
 
                         {isLocked && (
@@ -62,8 +62,8 @@ export const TaskPlanningPanel: React.FC<Props> = ({
                             type="date"
                             value={fechaObjetivo}
                             onChange={(e) => setFechaObjetivo(e.target.value)}
-                            disabled={isLocked}
-                            className={'w-full text-sm font-bold text-slate-700 outline-none py-1 bg-transparent ' + (isLocked ? 'cursor-not-allowed opacity-60' : 'border-b-2 border-slate-200 focus:border-blue-500')}
+                            disabled={false}
+                            className="w-full text-sm font-bold text-slate-700 outline-none py-1 bg-transparent border-b-2 border-slate-200 focus:border-blue-500"
                         />
 
                         {isLocked && (

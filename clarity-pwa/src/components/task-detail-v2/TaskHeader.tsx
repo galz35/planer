@@ -66,13 +66,13 @@ export const TaskHeader: React.FC<Props> = ({
                 <textarea
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
-                    readOnly={mode === 'execution'}
+                    readOnly={false}
                     onInput={(e) => {
                         e.currentTarget.style.height = 'auto';
                         e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                     }}
                     rows={titulo.length > 60 ? 2 : 1}
-                    className={`font-bold text-xl text-slate-800 leading-snug bg-transparent border-b border-transparent ${mode !== 'execution' ? 'hover:border-slate-300 focus:border-blue-500' : ''} outline-none w-full transition-all py-1 -ml-1 pl-1 rounded resize-none overflow-hidden`}
+                    className="font-bold text-xl text-slate-800 leading-snug bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full transition-all py-1 -ml-1 pl-1 rounded resize-none overflow-hidden"
                     placeholder="Nombre de la tarea"
                     style={{ height: 'auto' }}
                 />

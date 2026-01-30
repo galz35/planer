@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
-import { useOnboarding } from '../components/ui/OnboardingWizard';
+
 import { RoleRoute } from '../components/auth/RoleRoute';
 
 // Core Pages
@@ -60,7 +60,7 @@ const SecurityManagementPage = React.lazy(() => import('../pages/Admin/SecurityM
 import { Sidebar } from '../components/layout/Sidebar';
 import { BottomNav } from '../components/layout/BottomNav';
 import { CommandPalette } from '../components/ui/CommandPalette';
-import { OnboardingWizard } from '../components/ui/OnboardingWizard';
+
 
 const ProtectedRoute = () => {
     const { isAuthenticated, loading } = useAuth();
@@ -70,19 +70,10 @@ const ProtectedRoute = () => {
 
 const AppLayout = () => {
     const { isSidebarCollapsed } = useUI();
-    const { user } = useAuth();
-    const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
     return (
         <div className="min-h-screen bg-clarity-bg flex relative">
             <CommandPalette />
-            {showOnboarding && user && (
-                <OnboardingWizard
-                    userName={user.nombre || 'Usuario'}
-                    onComplete={completeOnboarding}
-                    onSkip={skipOnboarding}
-                />
-            )}
             <Sidebar />
             <main className={`flex-1 transition-all duration-300 pb-20 md:pb-0 ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
                 <Suspense fallback={<div className="p-8">Cargando módulo...</div>}>

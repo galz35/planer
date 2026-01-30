@@ -16,3 +16,13 @@ export class RefreshTokenDto {
     @IsString()
     refreshToken: string;
 }
+
+export class ChangePasswordDto {
+    @ApiProperty()
+    @IsString()
+    oldPassword: string;
+
+    @ApiProperty()
+    @IsString()
+    newPassword: string;
+}

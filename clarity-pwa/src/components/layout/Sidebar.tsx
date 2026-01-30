@@ -18,6 +18,8 @@ import { CountrySelector } from './CountrySelector';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
 import { APP_MENU, ICON_MAP } from '../../constants/appMenu';
+import { ChangePasswordModal } from '../auth/ChangePasswordModal';
+import { ShieldAlert } from 'lucide-react';
 
 // Helper for the collapse icon
 const WrapperIcon = () => <ArrowRightFromLine size={16} />;
@@ -35,6 +37,7 @@ export const Sidebar: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
     const currentPath = location.pathname;
 
     // Groups State for Collapsible Menus
@@ -224,11 +227,12 @@ export const Sidebar: React.FC = () => {
             <div className={`p-6 border-b border-slate-50 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
                 {isSidebarCollapsed ? (
                     <div onClick={toggleSidebar} className="cursor-pointer hover:scale-105 transition-transform">
-                        <img src="/momentus-logo2.png" alt="M" className="h-10 w-auto" />
+                        <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg">
+                            <span className="text-white font-black text-lg">P</span>
+                        </div>
                     </div>
                 ) : (
-                    <div onClick={toggleSidebar} className="cursor-pointer flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <img src="/momentus-logo2.png" alt="Momentus" className="h-12 w-auto" />
+                    <div onClick={toggleSidebar} className="cursor-pointer flex items-center gap-2 hover:opacity-80 transition-opacity">
                         <div className="animate-fade-in overflow-hidden">
                             <h1 className="font-black text-xl text-slate-900 tracking-tight leading-tight uppercase">PLANNER-EF</h1>
                         </div>
@@ -276,6 +280,15 @@ export const Sidebar: React.FC = () => {
 
                             <button
                                 type="button"
+                                onClick={() => setIsChangePasswordOpen(true)}
+                                className="flex items-center justify-center gap-2 w-full px-3 py-1.5 mt-2 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all"
+                            >
+                                <ShieldAlert size={14} />
+                                Seguridad
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={handleLogout}
                                 className="flex items-center justify-center gap-2 w-full px-3 py-1.5 mt-2 text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-lg hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-colors"
                             >
@@ -292,10 +305,21 @@ export const Sidebar: React.FC = () => {
                             <button onClick={handleLogout} title="Cerrar Sesión" className="text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-lg transition-colors">
                                 <LogOut size={18} />
                             </button>
+                            <button
+                                onClick={() => setIsChangePasswordOpen(true)}
+                                title="Cambiar Contraseña"
+                                className="text-slate-400 hover:text-indigo-600 p-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                            >
+                                <ShieldAlert size={18} />
+                            </button>
                         </div>
                     )}
                 </div>
             </div>
+
+            {isChangePasswordOpen && (
+                <ChangePasswordModal onClose={() => setIsChangePasswordOpen(false)} />
+            )}
         </aside >
     );
 };

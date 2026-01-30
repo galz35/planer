@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { LoginDto, RefreshTokenDto } from './dto/auth.dto';
+import { LoginDto, RefreshTokenDto, ChangePasswordDto } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { InvalidCredentialsException } from '../common/exceptions';
 
@@ -35,5 +36,17 @@ export class AuthController {
         } catch (e) {
             throw new InvalidCredentialsException('Invalid Refresh Token');
         }
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('change-password')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Cambiar contraseña propia' })
+    async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
+        const userId = req.user.userId || req.user.sub;
+        if (!userId) throw new UnauthorizedException('Token inválido');
+
+        await this.authService.changePassword(userId, dto.oldPassword, dto.newPassword);
+        return { success: true, message: 'Contraseña actualizada correctamente' };
     }
 }

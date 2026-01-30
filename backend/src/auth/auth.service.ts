@@ -155,4 +155,47 @@ export class AuthService {
         // 4. Fallback: Empleado Base
         return { profileType: 'EMPLOYEE' };
     }
+
+    /**
+     * Permite a un usuario cambiar su propia contraseña validando la anterior
+     */
+    async changePassword(userId: number, oldPass: string, newPass: string): Promise<void> {
+        const creds = await authRepo.obtenerCredenciales(userId);
+        if (!creds) throw new UnauthorizedException('Usuario no tiene credenciales configuradas');
+
+        const isMatch = await bcrypt.compare(oldPass, creds.passwordHash);
+        if (!isMatch) throw new UnauthorizedException('La contraseña actual es incorrecta');
+
+        const hashedPass = await bcrypt.hash(newPass, 10);
+        await authRepo.actualizarPassword(userId, hashedPass);
+
+        // Registrar Auditoría
+        await this.auditService.log({
+            idUsuario: userId,
+            accion: AccionAudit.USUARIO_ACTUALIZADO,
+            recurso: RecursoAudit.USUARIO,
+            recursoId: userId.toString(),
+            detalles: { motivo: 'Cambio de contraseña por usuario' }
+        });
+    }
+
+    /**
+     * Permite a un administrador resetear la contraseña de un usuario
+     */
+    async resetPassword(correo: string, newPass: string, adminId: number): Promise<void> {
+        const user = await authRepo.obtenerUsuarioPorCorreo(correo);
+        if (!user) throw new UnauthorizedException('Usuario no encontrado');
+
+        const hashedPass = await bcrypt.hash(newPass, 10);
+        await authRepo.actualizarPassword(user.idUsuario, hashedPass);
+
+        // Registrar Auditoría
+        await this.auditService.log({
+            idUsuario: adminId,
+            accion: AccionAudit.USUARIO_ACTUALIZADO,
+            recurso: RecursoAudit.USUARIO,
+            recursoId: user.idUsuario.toString(),
+            detalles: { motivo: 'Reset de contraseña por administrador', correo }
+        });
+    }
 }

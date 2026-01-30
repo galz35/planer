@@ -572,6 +572,11 @@ export const clarityService = {
     getCatalogoOrganizacion: async () => {
         const { data: response } = await api.get<ApiResponse<{ id: number, ogerencia: string, subgerencia: string, area: string }[]>>('/organizacion/catalogo');
         return response.data;
+    },
+    // --- SEGURIDAD ---
+    changePassword: async (oldPassword: string, newPassword: string) => {
+        const { data: response } = await api.post<ApiResponse>('/auth/change-password', { oldPassword, newPassword });
+        return response.data;
     }
 };
 

@@ -20,6 +20,7 @@ export const PendientesPage: React.FC = () => {
     const [selectedTask, setSelectedTask] = useState<Tarea | null>(null);
     const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
     const [menuPos, setMenuPos] = useState<{ top: number, right: number } | null>(null);
+    const [isCreating, setIsCreating] = useState(false);
 
     // Filters & Pagination
     const [searchTerm, setSearchTerm] = useState('');
@@ -27,9 +28,23 @@ export const PendientesPage: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
 
+    // Sorting State
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Tarea | 'proyecto'; direction: 'asc' | 'desc' }>({
+        key: 'idTarea',
+        direction: 'desc'
+    });
+
+    const handleSort = (key: keyof Tarea | 'proyecto') => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     // Filter tasks based on selected project, search, and priority
     const filteredTasks = useMemo(() => {
-        let result = tasks;
+        let result = [...tasks];
 
         // Project Filter
         if (selectedProjectId !== 'all') {
@@ -51,8 +66,23 @@ export const PendientesPage: React.FC = () => {
             );
         }
 
+        // Sort Logic
+        result.sort((a, b) => {
+            let valA: any = a[sortConfig.key as keyof Tarea];
+            let valB: any = b[sortConfig.key as keyof Tarea];
+
+            if (sortConfig.key === 'proyecto') {
+                valA = a.proyectoNombre || a.proyecto?.nombre || '';
+                valB = b.proyectoNombre || b.proyecto?.nombre || '';
+            }
+
+            if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
         return result;
-    }, [tasks, selectedProjectId, priorityFilter, searchTerm]);
+    }, [tasks, selectedProjectId, priorityFilter, searchTerm, sortConfig]);
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
@@ -86,13 +116,12 @@ export const PendientesPage: React.FC = () => {
 
             const tasksArray = Array.isArray(tasksData) ? tasksData : (tasksData as any)?.data || [];
 
-            setTasks(tasksArray.filter((t: Tarea) => t.estado !== 'Hecha' && t.estado !== 'Descartada')
-                .sort((a: Tarea, b: Tarea) => (a.orden || 0) - (b.orden || 0)));
+            setTasks(tasksArray.filter((t: Tarea) => t.estado !== 'Hecha' && t.estado !== 'Descartada'));
 
             const projectItems = (projectsRes as any)?.items || projectsRes || [];
             setProjects(projectItems);
             if (projectItems.length > 0 && !selectedProjectId) {
-                setSelectedProjectId(projectItems[0].idProyecto);
+                // setSelectedProjectId(projectItems[0].idProyecto);
             }
         } catch (err) {
             showToast("Error cargando datos.", "error");
@@ -106,25 +135,34 @@ export const PendientesPage: React.FC = () => {
     }, [user]);
 
     const handleCreateTask = async () => {
-        if (!newTaskTitle.trim() || !user) return;
+        if (!newTaskTitle.trim() || !user || isCreating) return;
         try {
-            await clarityService.postTareaRapida({
+            setIsCreating(true);
+            await clarityService.postTarea({
                 titulo: newTaskTitle,
                 idUsuario: user.idUsuario,
+                idResponsable: user.idUsuario, // Auto-assign to self
                 idProyecto: creationProjectId !== '' ? creationProjectId : undefined,
                 prioridad: 'Media',
                 esfuerzo: 'M'
-            });
+            } as any);
             setNewTaskTitle('');
             showToast("Tarea guardada", "success");
             fetchInitialData(); // Refresh list
         } catch (error) {
             showToast("Error al crear la tarea.", "error");
+        } finally {
+            setIsCreating(false);
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') handleCreateTask();
+    };
+
+    const SortIcon = ({ column }: { column: keyof Tarea | 'proyecto' }) => {
+        if (sortConfig.key !== column) return <span className="opacity-20 ml-1">↕</span>;
+        return <span className="ml-1 text-indigo-600">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
     };
 
     return (
@@ -160,13 +198,18 @@ export const PendientesPage: React.FC = () => {
                             </select>
                             <input
                                 className="bg-transparent outline-none w-full font-medium"
-                                placeholder="+ Nueva Tarea Rápida..."
+                                placeholder={isCreating ? "Creando..." : "+ Nueva Tarea Rápida..."}
                                 value={newTaskTitle}
                                 onChange={e => setNewTaskTitle(e.target.value)}
                                 onKeyDown={handleKeyDown}
+                                disabled={isCreating}
                             />
-                            <button onClick={handleCreateTask} disabled={!newTaskTitle.trim()} className="text-indigo-600 font-bold hover:text-indigo-800 disabled:opacity-30">
-                                <Plus size={18} />
+                            <button onClick={handleCreateTask} disabled={!newTaskTitle.trim() || isCreating} className="text-indigo-600 font-bold hover:text-indigo-800 disabled:opacity-30">
+                                {isCreating ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600" />
+                                ) : (
+                                    <Plus size={18} />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -230,12 +273,22 @@ export const PendientesPage: React.FC = () => {
                     <div className="overflow-x-auto overflow-y-visible">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-gray-100 text-gray-500 text-xs uppercase tracking-wider font-semibold border-b border-gray-200">
-                                    <th className="px-6 py-4 w-16">ID</th>
-                                    <th className="px-6 py-4">Título / Descripción</th>
-                                    <th className="px-6 py-4 w-40">Proyecto</th>
-                                    <th className="px-6 py-4 w-32">Prioridad</th>
-                                    <th className="px-6 py-4 w-32">Estado</th>
+                                <tr className="bg-gray-100 text-gray-500 text-[10px] uppercase tracking-wider font-black border-b border-gray-200">
+                                    <th className="px-6 py-4 w-16 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('idTarea')}>
+                                        ID <SortIcon column="idTarea" />
+                                    </th>
+                                    <th className="px-6 py-4 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('titulo')}>
+                                        Título / Descripción <SortIcon column="titulo" />
+                                    </th>
+                                    <th className="px-6 py-4 w-48 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('proyecto')}>
+                                        Proyecto <SortIcon column="proyecto" />
+                                    </th>
+                                    <th className="px-6 py-4 w-32 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('prioridad')}>
+                                        Prioridad <SortIcon column="prioridad" />
+                                    </th>
+                                    <th className="px-6 py-4 w-32 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('estado')}>
+                                        Estado <SortIcon column="estado" />
+                                    </th>
                                     <th className="px-6 py-4 w-20 text-right">Opciones</th>
                                 </tr>
                             </thead>
@@ -262,15 +315,21 @@ export const PendientesPage: React.FC = () => {
                                 )}
                                 {paginatedTasks.map((task) => (
                                     <tr key={task.idTarea} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-6 py-4 font-mono text-gray-400 text-xs">#{task.idTarea}</td>
+                                        <td className="px-6 py-4 font-mono text-gray-400 text-[10px]">#{task.idTarea}</td>
                                         <td className="px-6 py-4">
-                                            <p className="font-bold text-gray-800">{task.titulo}</p>
-                                            {task.descripcion && <p className="text-xs text-gray-500 truncate max-w-xs">{task.descripcion}</p>}
+                                            <p className="font-bold text-gray-800 leading-tight">{task.titulo}</p>
+                                            {task.descripcion && <p className="text-[10px] text-gray-500 truncate max-w-xs mt-0.5">{task.descripcion}</p>}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
-                                                {task.proyecto?.nombre || 'General'}
-                                            </span>
+                                            {task.idProyecto ? (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-100 uppercase truncate max-w-full">
+                                                    {task.proyectoNombre || task.proyecto?.nombre || `Proyecto #${task.idProyecto}`}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200 uppercase">
+                                                    General
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-bold border ${task.prioridad === 'Alta' ? 'bg-rose-50 text-rose-700 border-rose-100' :

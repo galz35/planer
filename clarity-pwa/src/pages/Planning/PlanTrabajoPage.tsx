@@ -618,6 +618,7 @@ export const PlanTrabajoPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isCreatingSubtask, setIsCreatingSubtask] = useState(false);
 
     // Filters
     const [filterText, setFilterText] = useState(''); // Global
@@ -1085,9 +1086,10 @@ export const PlanTrabajoPage: React.FC = () => {
     };
 
     const handleQuickSubtask = async (parentId: number) => {
-        if (!newSubtaskTitle.trim() || !selectedProject) return;
+        if (!newSubtaskTitle.trim() || !selectedProject || isCreatingSubtask) return;
 
         try {
+            setIsCreatingSubtask(true);
             const parentTask = tasks.find(t => t.idTarea === parentId);
             await clarityService.postTarea({
                 titulo: newSubtaskTitle,
@@ -1108,6 +1110,8 @@ export const PlanTrabajoPage: React.FC = () => {
             loadTasks();
         } catch (error) {
             showToast('Error al crear subtarea', 'error');
+        } finally {
+            setIsCreatingSubtask(false);
         }
     };
 

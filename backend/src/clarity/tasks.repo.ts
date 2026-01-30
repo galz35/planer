@@ -53,6 +53,7 @@ export interface UpdateTaskParams {
 
 export async function crearTarea(params: CreateTaskParams): Promise<number> {
     // 1. Defaults y validaciones básicas
+    const fechaInicioPlanificada = params.fechaInicioPlanificada || new Date();
     const fechaObjetivo = params.fechaObjetivo || new Date();
     const estado = params.estado || TaskStatus.Pendiente;
     const prioridad = params.prioridad || TaskPriority.Media;
@@ -68,7 +69,7 @@ export async function crearTarea(params: CreateTaskParams): Promise<number> {
         prioridad: { valor: prioridad, tipo: NVarChar },
         esfuerzo: { valor: params.esfuerzo || null, tipo: NVarChar },
         tipo: { valor: tipo, tipo: NVarChar },
-        fechaInicioPlanificada: { valor: params.fechaInicioPlanificada || null, tipo: DateTime },
+        fechaInicioPlanificada: { valor: fechaInicioPlanificada, tipo: DateTime },
         fechaObjetivo: { valor: fechaObjetivo, tipo: DateTime },
         porcentaje: { valor: params.progreso || 0, tipo: Int },
         orden: { valor: params.orden || 0, tipo: Int },

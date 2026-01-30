@@ -220,3 +220,33 @@ export async function obtenerUsuariosPorIds(ids: number[]): Promise<(UsuarioDb &
         return usuario;
     });
 }
+
+/**
+ * Actualiza el password hash de un usuario
+ */
+export async function actualizarPassword(idUsuario: number, passwordHash: string): Promise<void> {
+    const request = await crearRequest();
+    request.input('idUsuario', Int, idUsuario);
+    request.input('passwordHash', NVarChar, passwordHash);
+
+    await request.query(`
+        UPDATE p_UsuariosCredenciales 
+        SET passwordHash = @passwordHash,
+            fechaActualizacion = GETDATE()
+        WHERE idUsuario = @idUsuario
+    `);
+}
+
+/**
+ * Obtiene un usuario por correo exacto
+ */
+export async function obtenerUsuarioPorCorreo(correo: string): Promise<UsuarioDb | null> {
+    const request = await crearRequest();
+    request.input('correo', NVarChar, correo);
+
+    const result = await request.query<UsuarioDb>(`
+        SELECT * FROM p_Usuarios WHERE correo = @correo AND activo = 1
+    `);
+
+    return result.recordset[0] || null;
+}

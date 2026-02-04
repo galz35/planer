@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, Calendar, CheckCircle2, Circle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { clarityService } from '../../services/clarity.service';
 
 interface Task {
     id: string;
@@ -17,23 +17,42 @@ interface Task {
 export const TeamPlanningPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const navigate = useNavigate();
-    // const { user } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [memberName, setMemberName] = useState('Miembro del Equipo');
 
-    // Mock data loading - Replace with real API call
     useEffect(() => {
-        // Simulating API fetch
-        setTimeout(() => {
-            setTasks([
-                { id: '1', titulo: 'Analizar requerimientos de integración', estado: 'Pendiente', fechaObjetivo: '2026-01-20', prioridad: 'Alta', proyecto: 'Migración API' },
-                { id: '2', titulo: 'Actualizar documentación de usuario', estado: 'En Progreso', fechaObjetivo: '2026-01-22', prioridad: 'Media', proyecto: 'Portal Clientes' },
-                { id: '3', titulo: 'Revisión de logs de errores', estado: 'Completada', fechaObjetivo: '2026-01-18', prioridad: 'Alta', proyecto: 'Mantenimiento' },
-            ]);
-            setMemberName(`Usuario ${userId?.substring(0, 4)}`); // Placeholder name
-            setLoading(false);
-        }, 800);
+        if (!userId) return;
+
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                const id = Number(userId);
+                // Cargar info del miembro
+                const user = await clarityService.getEquipoMiembro(id);
+                if (user) setMemberName(user.nombre || user.nombreCompleto || 'Usuario');
+
+                // Cargar tareas
+                const data = await clarityService.getEquipoMiembroTareas(id);
+                if (data) {
+                    const mapped: Task[] = (data as any[]).map(t => ({
+                        id: String(t.idTarea),
+                        titulo: t.nombre || t.titulo,
+                        estado: t.estado,
+                        fechaObjetivo: t.fechaObjetivo,
+                        prioridad: t.prioridad,
+                        proyecto: t.proyectoNombre || t.nombreProyecto
+                    }));
+                    setTasks(mapped);
+                }
+            } catch (error) {
+                console.error('Error loading team member planning:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadData();
     }, [userId]);
 
     return (

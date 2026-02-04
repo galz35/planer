@@ -418,21 +418,25 @@ export async function obtenerNodosLiderados(idUsuario: number) {
 export async function obtenerHijosDeNodos(idsPadres: number[]) {
     if (idsPadres.length === 0) return [];
 
-    // Construir lista IN para la query (sanitizada via parameter no soportado en lista, usaremos string builder seguro con ints)
-    const idsStr = idsPadres.map(id => Math.floor(id)).join(',');
+    const tvp = new sql.Table('dbo.TVP_IntList');
+    tvp.columns.add('Id', sql.Int);
+    idsPadres.forEach(id => tvp.rows.add(Math.floor(id)));
 
     return await ejecutarQuery<{ idNodo: number }>(`
-        SELECT idNodo FROM p_OrganizacionNodos WHERE idPadre IN (${idsStr})
-    `);
+        SELECT idNodo FROM p_OrganizacionNodos WHERE idPadre IN (SELECT Id FROM @tvp)
+    `, { tvp });
 }
 
 export async function obtenerUsuariosEnNodos(idsNodos: number[]) {
     if (idsNodos.length === 0) return [];
-    const idsStr = idsNodos.map(id => Math.floor(id)).join(',');
+
+    const tvp = new sql.Table('dbo.TVP_IntList');
+    tvp.columns.add('Id', sql.Int);
+    idsNodos.forEach(id => tvp.rows.add(Math.floor(id)));
 
     return await ejecutarQuery<{ idUsuario: number }>(`
-        SELECT idUsuario FROM p_UsuariosOrganizacion WHERE idNodo IN (${idsStr})
-    `);
+        SELECT idUsuario FROM p_UsuariosOrganizacion WHERE idNodo IN (SELECT Id FROM @tvp)
+    `, { tvp });
 }
 
 // ==========================================

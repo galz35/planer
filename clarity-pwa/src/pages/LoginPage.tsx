@@ -182,12 +182,13 @@ export const LoginPage = () => {
                             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                                 {/* Email */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700">Correo Electrónico</label>
+                                    <label htmlFor="login-email" className="block text-sm font-semibold text-slate-700">Correo Electrónico</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
                                         </div>
                                         <input
+                                            id="login-email"
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
@@ -204,12 +205,13 @@ export const LoginPage = () => {
 
                                 {/* Password */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700">Contraseña</label>
+                                    <label htmlFor="login-password" className="block text-sm font-semibold text-slate-700">Contraseña</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
                                         </div>
                                         <input
+                                            id="login-password"
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}

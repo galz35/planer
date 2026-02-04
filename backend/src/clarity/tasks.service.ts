@@ -67,6 +67,19 @@ export class TasksService {
 
         let tareas = await clarityRepo.getTareasUsuario(carnet, undefined, undefined, start, end);
 
+        // 2026-02-04: Filtro para evitar que tareas viejas completadas aparezcan en la bandeja de selección
+        // Solo mostramos pendientes, en curso, bloqueadas o las terminadas HOY.
+        tareas = (tareas || []).filter(t => {
+            const estado = t.estado?.trim();
+            if (estado === 'Hecha' || estado === 'Completada') {
+                const fComp = t.fechaCompletado || (t as any).fechaHecha;
+                if (!fComp) return false;
+                const dComp = new Date(fComp);
+                return dComp.toDateString() === fecha.toDateString();
+            }
+            return !['Descartada', 'Eliminada', 'Archivada'].includes(estado);
+        });
+
         // Obtener agenda recurrente
         const agendaRecurrente = await this.recurrenciaService.obtenerAgendaRecurrente(fecha, carnet);
 

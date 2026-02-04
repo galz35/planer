@@ -15,10 +15,8 @@ type AccesoQuienMeVe = {
 
 export const VisibilidadView: React.FC = () => {
     const { user } = useAuth();
-
-    // ⚠️ OJO: aquí estás asumiendo que idUsuario = carnet.
-    // Si tu backend realmente usa carnet (string) distinto, cámbialo a user.carnet
-    const carnet = user?.idUsuario?.toString() || '';
+    // 2026-01-25: Usar carnet real (Carnet-First) en lugar de idUsuario
+    const carnet = user?.carnet || '';
 
     const enabled = !!carnet;
 

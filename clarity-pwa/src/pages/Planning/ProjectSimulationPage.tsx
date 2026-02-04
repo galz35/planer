@@ -108,7 +108,30 @@ export const ProjectSimulationPage = () => {
     };
 
     const handleExport = () => {
-        showToast("Generando reporte Excel...", "info");
+        if (!tasks.length) return showToast("No hay datos para exportar", "warning");
+
+        const headers = ["ID", "Titulo", "Estado", "Prioridad", "Progreso", "Fecha Objetivo"];
+        const rows = tasks.map(t => [
+            t.idTarea,
+            `"${t.titulo?.replace(/"/g, '""')}"`,
+            t.estado,
+            t.prioridad,
+            `${t.progreso}%`,
+            t.fechaObjetivo ? new Date(t.fechaObjetivo).toLocaleDateString() : 'N/A'
+        ]);
+
+        const csvContent = "\uFEFF" + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Simulacion_Proyecto_${selectedProjectId || 'General'}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast("Reporte CSV generado con éxito", "success");
     };
 
     return (

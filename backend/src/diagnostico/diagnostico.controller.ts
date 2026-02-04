@@ -1,9 +1,14 @@
 /**
  * Controlador de diagnóstico para verificar conexión a SQL Server
  */
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ejecutarQuery, ejecutarSP, Int, NVarChar, DateTime } from '../db/base.repo';
 
+@ApiTags('Sistema/Diagnóstico')
+@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 @Controller('diagnostico')
 export class DiagnosticoController {
 

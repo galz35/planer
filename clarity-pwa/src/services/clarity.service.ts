@@ -235,6 +235,26 @@ export const clarityService = {
         return response.data;
     },
 
+    getEquipoActividad: async (page: number = 1, limit: number = 50, query?: string) => {
+        try {
+            const { data: response } = await api.get<any>('/equipo/actividad', { params: { page, limit, query } });
+            return response;
+        } catch (e) {
+            console.error('Error getEquipoActividad', e);
+            throw e;
+        }
+    },
+
+    getAuditLogDetalle: async (id: number) => {
+        try {
+            const { data } = await api.get<any>(`/equipo/actividad/${id}`);
+            return data;
+        } catch (e) {
+            console.error('Error fetching log detail', e);
+            throw e;
+        }
+    },
+
     getEquipoMiembroTareas: async (idUsuario: number) => {
         const { data: response } = await api.get<ApiResponse<Tarea[]>>(`/equipo/miembro/${idUsuario}/tareas`);
         return response.data || [];

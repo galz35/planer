@@ -6,7 +6,7 @@
 // ✅ Paginación real: selector 5/10/12/20/50 + números + primera/última
 // ✅ Expanded row se queda (detalle) y ahí muestro campos completos también
 // NOTA: Mantengo tu lógica de API + fallback intacta
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -105,30 +105,34 @@ export const ProyectosPage: React.FC = () => {
     const toggleRow = (id: number) => setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
 
     // =========================
-    // MENÚ ACCIONES (DROPDOWN) - sin <details> para evitar glitches
+    // MENÚ ACCIONES (DROPDOWN GLOBAL)
     // =========================
-    const [menuOpen, setMenuOpen] = useState<Record<number, boolean>>({});
-    const menuRefs = useRef<Record<number, HTMLDivElement | null>>({});
+    const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+    const [menuPos, setMenuPos] = useState<{ top: number, right: number } | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-    const toggleMenu = (id: number) => setMenuOpen(prev => ({ ...prev, [id]: !prev[id] }));
-    const closeMenu = (id: number) => setMenuOpen(prev => ({ ...prev, [id]: false }));
+    const toggleMenu = (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        // Usaremos fixed positioning, por lo que usaremos rect.bottom
+        setMenuPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+        setActiveMenuId(activeMenuId === id ? null : id);
+    };
+
+    const closeMenu = () => setActiveMenuId(null);
 
     useEffect(() => {
         const onDocClick = (e: MouseEvent) => {
-            const target = e.target as Node;
-
-            const algunAbierto = Object.entries(menuOpen).some(([id, open]) => {
-                if (!open) return false;
-                const ref = menuRefs.current[Number(id)];
-                return ref && ref.contains(target);
-            });
-
-            if (!algunAbierto) setMenuOpen({});
+            if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+                return;
+            }
+            setActiveMenuId(null);
         };
-
-        document.addEventListener('mousedown', onDocClick);
+        if (activeMenuId) {
+            document.addEventListener('mousedown', onDocClick);
+        }
         return () => document.removeEventListener('mousedown', onDocClick);
-    }, [menuOpen]);
+    }, [activeMenuId]);
 
     // =========================
     // MODAL
@@ -260,10 +264,7 @@ export const ProyectosPage: React.FC = () => {
             </span>
         );
     };
-    /* ✅ Alternativa limpia (si quieres tipado fuerte) */
-    const setMenuRef = (id: number) => (el: HTMLDivElement | null) => {
-        menuRefs.current[id] = el;
-    };
+
     // =========================
     // CARGA DE PROYECTOS (SOLUCIÓN A “PAGINACIÓN NO FUNCIONA”)
     // - Si la API NO pagina (devuelve array completo), activamos modoLocalPaging
@@ -904,19 +905,11 @@ export const ProyectosPage: React.FC = () => {
 
                                             <div className="relative" onClick={e => e.stopPropagation()}>
                                                 <button
-                                                    onClick={() => toggleMenu(p.idProyecto)}
-                                                    className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                                                    onClick={(e) => toggleMenu(e, p.idProyecto)}
+                                                    className={`p-2 -mr-2 rounded-xl transition-all ${activeMenuId === p.idProyecto ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
                                                 >
                                                     <MoreHorizontal size={20} />
                                                 </button>
-
-                                                {menuOpen[p.idProyecto] && (
-                                                    <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-20">
-                                                        <button onClick={() => { closeMenu(p.idProyecto); navigate(`/app/planning/plan-trabajo?projectId=${p.idProyecto}`); }} className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 border-b border-slate-50">Abrir</button>
-                                                        <button onClick={() => { closeMenu(p.idProyecto); openModal(p); }} className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 border-b border-slate-50">Editar</button>
-                                                        <button onClick={() => { closeMenu(p.idProyecto); handleDelete(p); }} className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50">Eliminar</button>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
@@ -1220,65 +1213,16 @@ export const ProyectosPage: React.FC = () => {
                                                         {renderAtraso(p)}
                                                     </td>
 
-                                                    {/* ACCIÓN (dropdown real) */}
+                                                    {/* ACCIÓN (dropdown global fixed) */}
                                                     <td className="px-6 py-5 text-right align-top">
-                                                        <div
-                                                            ref={setMenuRef(p.idProyecto)}
-                                                            className="relative inline-block"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
+                                                        <div className="relative inline-block">
                                                             <button
-                                                                onClick={() => toggleMenu(p.idProyecto)}
-                                                                className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
+                                                                onClick={(e) => toggleMenu(e, p.idProyecto)}
+                                                                className={`inline-flex items-center justify-center w-10 h-10 rounded-xl border transition-all shadow-sm ${activeMenuId === p.idProyecto ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                                                                 title="Acciones"
                                                             >
                                                                 <MoreHorizontal size={18} />
                                                             </button>
-
-                                                            {menuOpen[p.idProyecto] && (
-                                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-20">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            closeMenu(p.idProyecto);
-                                                                            navigate(`/app/planning/plan-trabajo?projectId=${p.idProyecto}`);
-                                                                        }}
-                                                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-indigo-50"
-                                                                    >
-                                                                        Abrir plan
-                                                                    </button>
-
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            closeMenu(p.idProyecto);
-                                                                            openModal(p);
-                                                                        }}
-                                                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
-                                                                    >
-                                                                        Editar
-                                                                    </button>
-
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            closeMenu(p.idProyecto);
-                                                                            handleCloneClick(p);
-                                                                        }}
-                                                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                                                                    >
-                                                                        <Copy size={14} className="text-slate-400" />
-                                                                        Clonar
-                                                                    </button>
-
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            closeMenu(p.idProyecto);
-                                                                            handleDelete(p);
-                                                                        }}
-                                                                        className="w-full text-left px-4 py-3 text-sm font-bold text-rose-700 hover:bg-rose-50"
-                                                                    >
-                                                                        Eliminar
-                                                                    </button>
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1529,6 +1473,70 @@ export const ProyectosPage: React.FC = () => {
                     </div>
                 )
             }
+
+            {/* MENU CONTEXTUAL GLOBAL (Fixed) para evitar clipping de tabla */}
+            {activeMenuId && menuPos && (
+                <div
+                    ref={menuRef}
+                    className="fixed z-[100] w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: menuPos.top, right: menuPos.right }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="py-1">
+                        <button
+                            onClick={() => {
+                                const p = projects.find(x => Number(x.idProyecto) === Number(activeMenuId));
+                                if (p) {
+                                    closeMenu();
+                                    navigate(`/app/planning/plan-trabajo?projectId=${p.idProyecto}`);
+                                }
+                            }}
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-indigo-50 flex items-center gap-2"
+                        >
+                            <span>📅</span> Abrir plan
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                const p = projects.find(x => Number(x.idProyecto) === Number(activeMenuId));
+                                if (p) {
+                                    closeMenu();
+                                    openModal(p);
+                                }
+                            }}
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                            <span>✏️</span> Editar
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                const p = projects.find(x => Number(x.idProyecto) === Number(activeMenuId));
+                                if (p) {
+                                    closeMenu();
+                                    handleCloneClick(p);
+                                }
+                            }}
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
+                        >
+                            <Copy size={14} className="text-slate-400" /> Clonar
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                const p = projects.find(x => Number(x.idProyecto) === Number(activeMenuId));
+                                if (p) {
+                                    closeMenu();
+                                    handleDelete(p);
+                                }
+                            }}
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-rose-700 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-50"
+                        >
+                            <span>🗑️</span> Eliminar
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <UserSelector
                 isOpen={isUserSelectorOpen}

@@ -71,13 +71,13 @@ export const AuditLogsPage = () => {
             if (data) {
                 // Map backend fields to frontend interface
                 const mappedLogs = (data.items || []).map((item: any) => ({
-                    idAuditLog: item.idAudit,
+                    idAuditLog: item.idAudit || item.idAuditLog,
                     idUsuario: item.idUsuario,
                     accion: item.accion,
                     entidad: item.recurso,
                     idEntidad: item.recursoId,
-                    datosAnteriores: null,
-                    datosNuevos: item.detalles, // Use detalles as raw source
+                    datosAnteriores: item.datosAnteriores,
+                    datosNuevos: item.datosNuevos,
                     fecha: item.fecha,
                     usuario: item.usuario,
                     ip: item.ip
@@ -141,7 +141,15 @@ export const AuditLogsPage = () => {
         const newObj = parseJSON(next) || {};
         const changes: { field: string; from: any; to: any }[] = [];
 
-        // format: { cambios: ["Estado: Pendiente -> EnCurso", ...] }
+        // format: { diff: { field: { from, to } } } - Optimized for new logs
+        if (newObj.diff) {
+            Object.entries(newObj.diff).forEach(([field, val]: [string, any]) => {
+                changes.push({ field, from: val.from, to: val.to });
+            });
+            return changes;
+        }
+
+        // format: { cambios: ["Estado: Pendiente -> EnCurso", ...] } - Support for legacy
         if (Array.isArray(newObj.cambios)) {
             newObj.cambios.forEach((c: string, idx: number) => {
                 changes.push({ field: `Cambio #${idx + 1}`, from: null, to: c });
@@ -151,7 +159,7 @@ export const AuditLogsPage = () => {
 
         const allKeys = Array.from(new Set([...Object.keys(oldObj), ...Object.keys(newObj)]));
         allKeys.forEach(key => {
-            if (['idAuditLog', 'idAudit', 'fecha', 'idUsuario', 'actualizadoEn', 'pais'].includes(key)) return;
+            if (['idAuditLog', 'idAudit', 'fecha', 'idUsuario', 'actualizadoEn', 'pais', 'detalles'].includes(key)) return;
             if (JSON.stringify(oldObj[key]) !== JSON.stringify(newObj[key])) {
                 changes.push({ field: key, from: oldObj[key], to: newObj[key] });
             }

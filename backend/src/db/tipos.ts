@@ -277,7 +277,8 @@ export interface LogSistemaDb {
 // Audit Log (mapeado desde p_Auditoria)
 export interface AuditLogDb {
     id: number;
-    idUsuario: number | null;
+    idUsuario: number | null; // Deprecated, use carnet
+    carnet?: string | null;  // New standard
     accion: string;
     entidad: string | null;
     entidadId: string | null;

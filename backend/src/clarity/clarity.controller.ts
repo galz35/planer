@@ -363,6 +363,19 @@ export class ClarityController {
         return this.tasksService.getEquipoBacklog(req.user.userId);
     }
 
+    @Get('equipo/actividad')
+    @ApiOperation({ summary: 'Obtener historial de actividad de los miembros que el usuario puede ver' })
+    async getEquipoActividad(@Request() req, @Query('page') page: number = 1, @Query('limit') limit: number = 50, @Query('query') searchTerm?: string) {
+        const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
+        return this.tasksService.getEquipoActividad(carnet, page, limit, searchTerm);
+    }
+
+    @Get('equipo/actividad/:id')
+    @ApiOperation({ summary: 'Obtener detalle completo de un log' })
+    async getLogDetalle(@Param('id') id: number) {
+        return this.tasksService.getAuditLogById(id);
+    }
+
 
 
     @Get('agenda-recurrente')

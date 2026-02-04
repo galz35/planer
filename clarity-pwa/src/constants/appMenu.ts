@@ -1,7 +1,8 @@
 
 import {
     Sun, CheckSquare, FileText, LayoutDashboard, Eye, Shield, BarChart, FileCheck,
-    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen, ClipboardList
+    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen, ClipboardList,
+    History
 } from 'lucide-react';
 
 export const APP_MENU = [
@@ -18,6 +19,7 @@ export const APP_MENU = [
         group: 'Mi Gestión Equipo',
         items: [
             { path: '/app/equipo/mi-equipo', label: 'Mi Equipo', icon: 'Users' },
+            { path: '/app/equipo/actividad', label: 'Historial de Cambios', icon: 'History' },
             { path: '/app/equipo/bloqueos', label: 'Bloqueos y Riesgos', icon: 'Shield' },
         ]
     },
@@ -65,5 +67,6 @@ export const APP_MENU = [
 
 export const ICON_MAP: any = {
     Sun, CheckSquare, FileText, LayoutDashboard, Eye, Shield, BarChart, FileCheck,
-    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen, ClipboardList
+    PieChart, Users, KeyRound, ShieldCheck, Database, Terminal, Archive, BookOpen, ClipboardList,
+    History
 };

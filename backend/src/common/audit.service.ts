@@ -59,10 +59,13 @@ export enum RecursoAudit {
 }
 
 export interface AuditLogDto {
-    idUsuario: number;
+    idUsuario?: number; // Opcional (legacy)
+    carnet?: string;    // Principal
     accion: AccionAudit | string;
     recurso: RecursoAudit | string;
     recursoId?: string;
+    datosAnteriores?: any;
+    datosNuevos?: any;
     detalles?: Record<string, any>;
     ip?: string;
 }
@@ -80,17 +83,18 @@ export class AuditService {
         try {
             await auditRepo.crearAuditLog({
                 idUsuario: dto.idUsuario,
+                carnet: dto.carnet,
                 accion: dto.accion,
                 entidad: dto.recurso,
                 entidadId: dto.recursoId,
-                datosNuevos: dto.detalles ? JSON.stringify(dto.detalles) : undefined,
-                // ip no lo guardamos en DB actual
+                datosAnteriores: dto.datosAnteriores ? (typeof dto.datosAnteriores === 'string' ? dto.datosAnteriores : JSON.stringify(dto.datosAnteriores)) : undefined,
+                datosNuevos: dto.datosNuevos ? (typeof dto.datosNuevos === 'string' ? dto.datosNuevos : JSON.stringify(dto.datosNuevos)) : (dto.detalles ? JSON.stringify(dto.detalles) : undefined),
             });
-            this.logger.debug(`Audit: ${dto.accion} - ${dto.recurso}:${dto.recursoId} by user ${dto.idUsuario}`);
+            this.logger.debug(`Audit: ${dto.accion} - ${dto.recurso}:${dto.recursoId} by ${dto.carnet || dto.idUsuario}`);
         } catch (error) {
             this.logger.error('Error guardando audit log', error);
         }
-        return null; // Mock return
+        return null;
     }
 
     /**
@@ -135,14 +139,43 @@ export class AuditService {
         const items = await auditRepo.listarAuditLogs(limit, offset, filtros);
         const total = await auditRepo.contarAuditLogs(filtros);
 
-        // Mapear items a estructura esperada (Usuario object null)
+        // Mapear items a estructura esperada
         const mappedItems = items.map((i: any) => ({
             ...i,
-            idAudit: i.id, // Frontend expects idAudit
-            usuario: i.nombreUsuario ? { nombre: i.nombreUsuario, correo: i.correoUsuario } : null,
+            idAudit: i.id || i.idAudit,
+            usuario: i.nombreUsuario || i.usuario || 'Sistema',
+            correo: i.correoUsuario,
             recurso: i.entidad,
             recursoId: i.entidadId,
-            detalles: i.datosNuevos
+            datosAnteriores: i.datosAnteriores,
+            datosNuevos: i.datosNuevos,
+            detalles: i.datosNuevos // Compatibilidad con frontend antiguo
+        }));
+
+        return {
+            items: mappedItems,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+
+    async listarAuditPorCarnet(carnetSolicitante: string, page: number = 1, limit: number = 50, query?: string) {
+        // Uso directo de SP Carnet-First
+        const items = await auditRepo.listarAuditLogsPorCarnet(carnetSolicitante, page, limit, query);
+        const total = await auditRepo.contarAuditLogsPorCarnet(carnetSolicitante, query);
+
+        const mappedItems = items.map((i: any) => ({
+            ...i,
+            idAudit: i.idAuditLog,
+            usuario: i.usuario || 'Desconocido',
+            correo: i.correoUsuario,
+            recurso: i.recurso,
+            recursoId: i.recursoId,
+            detalles: i.datosNuevos, // Compatibilidad
+            // Sanitización preventiva anti-bloqueo
+            datosNuevos: (i.datosNuevos && i.datosNuevos.length > 5000) ? i.datosNuevos.substring(0, 5000) + '... (Truncated)' : i.datosNuevos,
+            datosAnteriores: (i.datosAnteriores && i.datosAnteriores.length > 5000) ? i.datosAnteriores.substring(0, 5000) + '... (Truncated)' : i.datosAnteriores
         }));
 
         return {
@@ -189,5 +222,9 @@ export class AuditService {
             ...i,
             detalles: i.datosNuevos ? (i.datosNuevos.startsWith('{') ? JSON.parse(i.datosNuevos) : i.datosNuevos) : null
         }));
+    }
+
+    async getAuditLogDetalle(id: number) {
+        return await auditRepo.obtenerAuditLogPorId(id);
     }
 }

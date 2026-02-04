@@ -287,7 +287,9 @@ export class TasksService {
                 recurso: 'Tarea',
                 recursoId: String(idTarea),
                 idUsuario,
-                detalles: { diff, updates: updateParams, source: 'Bitácora/Modal' }
+                datosAnteriores: tareaActual,
+                datosNuevos: { ...tareaActual, ...updateParams },
+                detalles: { diff, source: 'Bitácora/Modal' }
             });
         }
 
@@ -458,6 +460,14 @@ export class TasksService {
         return await this.auditService.getHistorialEntidad('Tarea', String(idTarea));
     }
 
+    async getEquipoActividad(carnet: string, page: number = 1, limit: number = 50, query?: string) {
+        return await this.auditService.listarAuditPorCarnet(carnet, page, limit, query);
+    }
+
+    async getAuditLogById(id: number) {
+        return await this.auditService.getAuditLogDetalle(id);
+    }
+
     async tareaRevalidar(idTarea: number, body: TareaRevalidarDto, idUsuario: number) {
         const { accion, idUsuarioOtro, razon } = body;
 
@@ -618,12 +628,25 @@ export class TasksService {
 
     async proyectoActualizar(id: number, dto: Partial<ProyectoCrearDto>, idUsuario: number) {
         await this.assertCanManageProject(id, idUsuario);
+        const proyectoActual = await planningRepo.obtenerProyectoPorId(id);
+        if (!proyectoActual) throw new NotFoundException('Proyecto no encontrado');
+
         const updates: any = { ...dto };
         if (dto.fechaInicio) updates.fechaInicio = new Date(dto.fechaInicio);
         if (dto.fechaFin) updates.fechaFin = new Date(dto.fechaFin);
-        // responsableCarnet comes in dto, ensure it's handled by repo
 
         await planningRepo.actualizarDatosProyecto(id, updates);
+
+        // Auditoría
+        await this.auditService.log({
+            accion: 'PROYECTO_ACTUALIZADO',
+            recurso: 'Proyecto',
+            recursoId: String(id),
+            idUsuario,
+            datosAnteriores: proyectoActual,
+            datosNuevos: { ...proyectoActual, ...updates }
+        });
+
         return await planningRepo.obtenerProyectoPorId(id);
     }
 

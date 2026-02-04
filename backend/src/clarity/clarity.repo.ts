@@ -172,6 +172,11 @@ export async function obtenerEquipoHoy(idsMiembros: number[], fechaStr: string):
     if (idsMiembros.length === 0) return { miembros: [], resumenAnimo: { feliz: 0, neutral: 0, triste: 0, promedio: 0 } };
 
     const idsStr = idsMiembros.map(id => Math.floor(id)).join(',');
+    const fechaBase = new Date(fechaStr);
+    const fechaStart = new Date(fechaBase);
+    fechaStart.setHours(0, 0, 0, 0);
+    const fechaEnd = new Date(fechaStart);
+    fechaEnd.setDate(fechaEnd.getDate() + 1);
 
     // Miembros del equipo con su rol
     const miembros = await ejecutarQuery<UsuarioDb & { rolNombre?: string }>(`
@@ -186,27 +191,35 @@ export async function obtenerEquipoHoy(idsMiembros: number[], fechaStr: string):
     // Checkins para el día
     const checkins = await ejecutarQuery<CheckinDb>(`
         SELECT * FROM p_Checkins 
-        WHERE idUsuario IN (${idsStr}) AND CAST(fecha AS DATE) = CAST(@fecha AS DATE)
-    `, { fecha: { valor: new Date(fechaStr), tipo: SqlDate } });
+        WHERE idUsuario IN (${idsStr})
+          AND fecha >= @fechaStart
+          AND fecha < @fechaEnd
+    `, {
+        fechaStart: { valor: fechaStart, tipo: DateTime },
+        fechaEnd: { valor: fechaEnd, tipo: DateTime }
+    });
 
     // Estadísticas de tareas (Hoy/Retrasadas/HechasHoy)
     const stats = await ejecutarQuery<{ idUsuario: number, retrasadas: number, hoy: number, hechas: number }>(`
         SELECT 
             ta.idUsuario, 
-            SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) < CAST(@fecha AS DATE) THEN 1 ELSE 0 END) as retrasadas,
-            SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) = CAST(@fecha AS DATE) THEN 1 ELSE 0 END) as hoy,
-            SUM(CASE WHEN t.estado = 'Hecha' AND CAST(t.fechaCompletado AS DATE) = CAST(@fecha AS DATE) THEN 1 ELSE 0 END) as hechas
+            SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND t.fechaObjetivo < @fechaStart THEN 1 ELSE 0 END) as retrasadas,
+            SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND t.fechaObjetivo >= @fechaStart AND t.fechaObjetivo < @fechaEnd THEN 1 ELSE 0 END) as hoy,
+            SUM(CASE WHEN t.estado = 'Hecha' AND t.fechaCompletado >= @fechaStart AND t.fechaCompletado < @fechaEnd THEN 1 ELSE 0 END) as hechas
         FROM p_Tareas t
         JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
         WHERE ta.idUsuario IN (${idsStr})
           -- Consideramos tareas activas vencidas, tareas para hoy, o tareas hechas hoy
           AND (
-              (t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) <= CAST(@fecha AS DATE))
+              (t.estado IN ('Pendiente', 'EnCurso') AND t.fechaObjetivo < @fechaEnd)
               OR 
-              (t.estado = 'Hecha' AND CAST(t.fechaCompletado AS DATE) = CAST(@fecha AS DATE))
+              (t.estado = 'Hecha' AND t.fechaCompletado >= @fechaStart AND t.fechaCompletado < @fechaEnd)
           )
         GROUP BY ta.idUsuario
-    `, { fecha: { valor: new Date(fechaStr), tipo: SqlDate } });
+    `, {
+        fechaStart: { valor: fechaStart, tipo: DateTime },
+        fechaEnd: { valor: fechaEnd, tipo: DateTime }
+    });
 
     const resultMiembros = miembros.map(m => {
         const checkin = checkins.find(c => c.idUsuario === m.idUsuario);
@@ -298,13 +311,20 @@ export async function checkinUpsert(checkin: any): Promise<number> {
 
 // Obtener check-in del día con sus tareas
 export async function obtenerCheckinPorFecha(idUsuario: number, fecha: Date): Promise<any | null> {
+    const fechaStart = new Date(fecha);
+    fechaStart.setHours(0, 0, 0, 0);
+    const fechaEnd = new Date(fechaStart);
+    fechaEnd.setDate(fechaEnd.getDate() + 1);
+
     const result = await ejecutarQuery(`
         SELECT * FROM p_Checkins 
         WHERE idUsuario = @idUsuario 
-          AND CAST(fecha AS DATE) = CAST(@fecha AS DATE)
+          AND fecha >= @fechaStart
+          AND fecha < @fechaEnd
     `, {
         idUsuario: { valor: idUsuario, tipo: Int },
-        fecha: { valor: fecha, tipo: SqlDate }
+        fechaStart: { valor: fechaStart, tipo: DateTime },
+        fechaEnd: { valor: fechaEnd, tipo: DateTime }
     });
 
     if (result.length === 0) return null;
@@ -446,5 +466,4 @@ export async function obtenerTareasPorProyecto(idProyecto: number) {
         ORDER BY t.orden ASC, t.fechaObjetivo ASC
     `, { pid: { valor: idProyecto, tipo: Int } });
 }
-
 

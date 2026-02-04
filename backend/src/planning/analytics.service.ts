@@ -52,7 +52,7 @@ export class AnalyticsService {
                     ISNULL(SUM(CASE WHEN t.estado = 'EnCurso' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as enCurso,
                     ISNULL(SUM(CASE WHEN t.estado = 'Pendiente' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as pendientes,
                     ISNULL(SUM(CASE WHEN t.estado = 'Bloqueada' AND ta.idUsuario IS NOT NULL THEN 1 ELSE 0 END), 0) as bloqueadas,
-                    ISNULL(SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND ta.idUsuario IS NOT NULL AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END), 0) as atrasadas
+                    ISNULL(SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND ta.idUsuario IS NOT NULL AND t.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0) THEN 1 ELSE 0 END), 0) as atrasadas
                 FROM p_Proyectos p
                 LEFT JOIN p_Tareas t ON p.idProyecto = t.idProyecto
                 LEFT JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea AND ta.idUsuario IN (${idsStr})
@@ -74,7 +74,7 @@ export class AnalyticsService {
                     ISNULL(SUM(CASE WHEN t.estado = 'EnCurso' THEN 1 ELSE 0 END), 0) as enCurso,
                     ISNULL(SUM(CASE WHEN t.estado = 'Pendiente' THEN 1 ELSE 0 END), 0) as pendientes,
                     ISNULL(SUM(CASE WHEN t.estado = 'Bloqueada' THEN 1 ELSE 0 END), 0) as bloqueadas,
-                    ISNULL(SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END), 0) as atrasadas
+                    ISNULL(SUM(CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND t.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0) THEN 1 ELSE 0 END), 0) as atrasadas
                 FROM p_Tareas t
                 INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
                 WHERE (t.idProyecto IS NULL OR t.idProyecto = 0)
@@ -111,7 +111,7 @@ export class AnalyticsService {
                     t.fechaInicioPlanificada as fechaInicio,
                     t.fechaObjetivo,
                     u.nombre as asignado,
-                    CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END as atrasada
+                    CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND t.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0) THEN 1 ELSE 0 END as atrasada
                 FROM p_Tareas t
                 INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
                 INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
@@ -204,7 +204,7 @@ export class AnalyticsService {
                 INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
                 WHERE ta.idUsuario IN (${idsStr})
                   AND t.estado IN ('Pendiente', 'EnCurso')
-                  AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE)
+                  AND t.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0)
                 ORDER BY diasRetraso DESC
             `);
 

@@ -49,7 +49,7 @@ export class SoftwareService {
                     (SELECT COUNT(DISTINCT ta2.idTarea) 
                      FROM p_TareaAsignados ta2 
                      JOIN p_Tareas t3 ON ta2.idTarea = t3.idTarea
-                     WHERE t3.idProyecto = p.idProyecto AND ta2.idUsuario IN (${idsStr}) AND t3.estado IN ('Pendiente', 'EnCurso') AND CAST(t3.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE)) as teamTasksDelayed
+                     WHERE t3.idProyecto = p.idProyecto AND ta2.idUsuario IN (${idsStr}) AND t3.estado IN ('Pendiente', 'EnCurso') AND t3.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0)) as teamTasksDelayed
                 FROM p_Proyectos p
                 WHERE p.estado <> 'Eliminado'
                 ORDER BY p.idProyecto DESC
@@ -70,7 +70,7 @@ export class SoftwareService {
                     t.fechaObjetivo,
                     u.nombre as asignado,
                     p.nombre as proyectoNombre,
-                    CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END as isDelayed
+                    CASE WHEN t.estado IN ('Pendiente', 'EnCurso') AND t.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0) THEN 1 ELSE 0 END as isDelayed
                 FROM p_Tareas t
                 INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
                 INNER JOIN p_Usuarios u ON ta.idUsuario = u.idUsuario
@@ -96,7 +96,7 @@ export class SoftwareService {
                 LEFT JOIN p_Proyectos p ON t.idProyecto = p.idProyecto
                 WHERE ta.idUsuario IN (${idsStr})
                   AND t.estado IN ('Pendiente', 'EnCurso')
-                  AND CAST(t.fechaObjetivo AS DATE) < CAST(GETDATE() AS DATE)
+                  AND t.fechaObjetivo < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0)
                 ORDER BY diasRetraso DESC
             `);
 

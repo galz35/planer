@@ -72,20 +72,25 @@ export const ProjectHistoryPage: React.FC = () => {
                 <div className="space-y-3">
                     {keys.map(key => {
                         const val = diff[key];
+                        const formatValue = (v: any) => {
+                            if (v === null || v === undefined || String(v).toLowerCase() === 'null') return '';
+                            return String(v);
+                        };
+
                         const isDiffObj = val && typeof val === 'object' && 'from' in val && 'to' in val;
-                        const oldValue = isDiffObj ? val.from : '---';
-                        const newValue = isDiffObj ? val.to : val;
+                        const oldValue = formatValue(isDiffObj ? val.from : '');
+                        const newValue = formatValue(isDiffObj ? val.to : val);
 
                         return (
                             <div key={key} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{key.replace(/_/g, ' ')}</div>
                                 <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center">
                                     <div className="text-sm text-slate-500 break-words bg-white p-2 rounded border border-slate-100 min-h-[2rem]">
-                                        {String(oldValue)}
+                                        {oldValue}
                                     </div>
                                     <ArrowRight size={16} className="text-slate-300" />
                                     <div className="text-sm font-bold text-slate-800 break-words bg-emerald-50 p-2 rounded border border-emerald-100 min-h-[2rem]">
-                                        {String(newValue)}
+                                        {newValue}
                                     </div>
                                 </div>
                             </div>

@@ -41,11 +41,8 @@ const MiAsignacionPage: React.FC = () => {
             setProyectos(data.proyectos || []);
             setResumen(data.resumen || null);
 
-            // Expandir por defecto proyectos con tareas atrasadas
-            const atascados = (data.proyectos || [])
-                .filter((p: Proyecto) => p.misTareas.some(t => t.esAtrasada))
-                .map((p: Proyecto) => p.idProyecto);
-            setExpandedProjects(new Set(atascados));
+            // Por defecto todo retraído
+            setExpandedProjects(new Set());
         } catch (error) {
             console.error(error);
             showToast('Error al cargar asignaciones', 'error');

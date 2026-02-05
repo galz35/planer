@@ -278,8 +278,8 @@ export async function listarAuditLogs(filtro: { page?: number, limit?: number, i
 
 export async function getDeletedItems() {
     const proyectos = await ejecutarQuery<any>(`
-        SELECT idProyecto as id, 'Proyecto' as tipo, nombre, 
-               fechaActualizacion as fechaEliminacion, NULL as proyecto,
+        SELECT p.idProyecto as id, 'Proyecto' as tipo, p.nombre, 
+               p.fechaActualizacion as fechaEliminacion, NULL as proyecto,
                u.nombre as eliminadoPor
         FROM p_Proyectos p
         LEFT JOIN p_Usuarios u ON p.idCreador = u.idUsuario

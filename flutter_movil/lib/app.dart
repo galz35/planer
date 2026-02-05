@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -35,14 +39,20 @@ class _AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  Timer? _syncDebounce;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _listenConnectivityChanges();
   }
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
+    _syncDebounce?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -50,10 +60,27 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Auto sync al volver foreground.
-      final tasks = context.read<TaskController>();
-      tasks.syncNow();
+      _scheduleSync();
     }
+  }
+
+  void _listenConnectivityChanges() {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+      final hasNetwork = results.any((result) => result != ConnectivityResult.none);
+      if (hasNetwork) {
+        _scheduleSync();
+      }
+    });
+  }
+
+  void _scheduleSync() {
+    _syncDebounce?.cancel();
+    _syncDebounce = Timer(AppConfig.syncWindow, () {
+      if (!mounted) return;
+      final auth = context.read<AuthController>();
+      if (!auth.isAuthenticated) return;
+      context.read<TaskController>().syncNow();
+    });
   }
 
   @override

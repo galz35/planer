@@ -13,8 +13,8 @@ Se revisó estructura, módulos principales y puntos críticos offline/online pa
 ### Riesgos/huecos detectados
 1. **Push todavía no conectado**
    - Ya existen preferencias, pero no hay canal real FCM/APNs conectado a backend.
-2. **Conectividad no está cerrada de punta a punta**
-   - Falta disparador automático por cambios de red (además del resume).
+2. **Conectividad parcialmente cerrada**
+   - Ya existe disparador automático por cambios de red + resume con debounce; falta endurecer escenarios edge (flapping/red cautiva).
 3. **Sin telemetría operativa de sync**
    - No hay métricas de tasa de éxito/fallo para soporte en producción.
 4. **Cobertura de pruebas limitada**
@@ -35,9 +35,9 @@ Se revisó estructura, módulos principales y puntos críticos offline/online pa
 **Criterio de salida:** usuario recibe o no recibe notificaciones según switches de Ajustes.
 
 ## Fase 2 — Sync automática por conectividad
-1. Usar detector de conectividad para disparar `syncNow()` en reconexión.
-2. Debounce para evitar ráfagas de sync.
-3. Trazabilidad mínima en UI de sincronización (última ejecución, resultado).
+1. Endurecer detector de conectividad para escenarios edge (flapping, red cautiva).
+2. Ajustar debounce según telemetría real de dispositivos.
+3. Extender trazabilidad de sincronización (última ejecución, resultado y errores frecuentes).
 
 **Criterio de salida:** al volver internet, la cola se procesa sin acción manual.
 

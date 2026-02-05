@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../tasks/data/local/local_database.dart';
@@ -13,6 +14,11 @@ class SyncScreen extends StatefulWidget {
 
 class _SyncScreenState extends State<SyncScreen> {
   String lastCacheUpdate = '-';
+
+  String _formatDate(DateTime? value) {
+    if (value == null) return '-';
+    return DateFormat('yyyy-MM-dd HH:mm:ss').format(value);
+  }
 
   @override
   void initState() {
@@ -54,6 +60,15 @@ class _SyncScreenState extends State<SyncScreen> {
                     Text('Pendientes por sincronizar: ${controller.unsyncedCount}'),
                     const SizedBox(height: 6),
                     Text('Última actualización de caché: $lastCacheUpdate'),
+                    const SizedBox(height: 6),
+                    Text('Última sincronización: ${_formatDate(controller.lastSyncAt)}'),
+                    if (controller.lastSyncError != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        controller.lastSyncError!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ],
                   ],
                 ),
               ),

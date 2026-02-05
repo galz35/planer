@@ -49,6 +49,20 @@ Construir una app móvil **real** (iOS/Android) con enfoque:
   `flutter_movil/docs/PROJECT_STATS.md`.
 - Revisión general + plan de trabajo siguiente:
   `flutter_movil/docs/REVISION_GENERAL_Y_PLAN_SIGUIENTE.md`.
+- Checklist final para cierre en pruebas locales:
+  `flutter_movil/docs/CHECKLIST_FINAL_LOCAL.md`.
+
+## Configuración rápida para pruebas locales
+Puedes levantar la app contra tu backend local/remoto sin tocar código usando `--dart-define`:
+
+```bash
+flutter run \
+  --dart-define=API_BASE_URL=http://10.0.2.2:3000 \
+  --dart-define=SYNC_WINDOW_SECONDS=8
+```
+
+> En Android Emulator usa `10.0.2.2` para apuntar al host local.
+> En dispositivo físico usa la IP LAN de tu máquina (ej: `http://192.168.1.20:3000`).
 
 ## Siguientes pasos recomendados
 - Agregar autenticación JWT + refresh token + secure storage (Keychain/Keystore).

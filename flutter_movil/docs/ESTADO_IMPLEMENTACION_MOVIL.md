@@ -1,7 +1,7 @@
 # Estado de implementación móvil (avance real actualizado)
 
 ## Resumen global
-- **Avance estimado general:** **92%**
+- **Avance estimado general:** **96%**
 - Base crítica completada: login/sesión, navegación principal, offline-first de tareas.
 - Integraciones reales activas: Agenda (`/mi-dia`), Pendientes/Mi Asignación (`/tareas/mias`), Proyectos (`/planning/my-projects`), Equipo (`/planning/team`), Dashboard (`/planning/stats`).
 - Estrategia offline-online consolidada: **write-local-first + sync_queue + retry + lectura API-first con fallback cache local (`kv_cache`)**.
@@ -42,8 +42,8 @@
    - Implementado: `/tareas/mias` + cache local offline.
    - Pendiente: filtros y acciones de avance/estado desde detalle.
 
-9. **Sincronización**: 88%
-   - Implementado: cola + retry exponencial + sync manual + metadatos de cache + auto-sync al volver a foreground.
+9. **Sincronización**: 95%
+   - Implementado: cola + retry exponencial + sync manual + metadatos de cache + auto-sync al volver a foreground + sync al reconectar internet con debounce + trazabilidad de última sync/error en UI.
    - Pendiente: background sync por conectividad real del dispositivo.
 
 10. **Ajustes**: 72%
@@ -68,6 +68,7 @@
 - Backoff exponencial en eventos de sync fallidos.
 - Reintento manual desde pantalla de sincronización.
 - Auto-sync al regresar la app a foreground.
+- Sync automática al recuperar conectividad, con ventana debounce para evitar ráfagas.
 
 ## 4) Renovación de sesión
 - Interceptor intenta `/auth/refresh` en 401 y repite request original.
@@ -95,13 +96,13 @@
 
 ## Sugerencias
 1. Conectar FCM/APNs a las preferencias de notificaciones ya implementadas en Ajustes.
-2. Implementar detector de conectividad + sync automática silenciosa.
+2. Cerrar robustez de detector de conectividad (escenarios edge y reconexiones inestables).
 3. Agregar detalle y acciones por tarea en Mi Asignación/Pendientes.
 4. Añadir trazabilidad de sync (éxito/error) para soporte.
 5. Preparar suite QA offline/online antes de release.
 
 ## Próximo paso recomendado (para acercar 100%)
-1. Background sync por conectividad + app resume.
+1. Endurecer background sync por conectividad + app resume para escenarios de red inestable.
 2. Filtros y acciones rápidas avanzadas en Mi Asignación y Pendientes.
 3. Detalle de proyecto/equipo con acciones reales.
 4. QA móvil end-to-end con casos offline/online.

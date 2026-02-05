@@ -14,6 +14,8 @@ class TaskController extends ChangeNotifier {
   bool loading = false;
   String? error;
   int lastSyncCount = 0;
+  DateTime? lastSyncAt;
+  String? lastSyncError;
   String query = '';
   TaskFilter filter = TaskFilter.all;
 
@@ -88,9 +90,13 @@ class TaskController extends ChangeNotifier {
 
     try {
       lastSyncCount = await _repository.syncPendingEvents();
+      lastSyncAt = DateTime.now();
+      lastSyncError = null;
       await loadTasks();
     } catch (e) {
-      error = 'Error de sincronización: $e';
+      final message = 'Error de sincronización: $e';
+      error = message;
+      lastSyncError = message;
       loading = false;
       notifyListeners();
     }

@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Calendar, User, ArrowRight, Activity, Clock, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
-import { format, isToday, isYesterday } from 'date-fns';
+import { ChevronLeft, Calendar, User, ArrowRight, Activity, X } from 'lucide-react';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { clarityService } from '../../services/clarity.service';
 
@@ -24,12 +24,13 @@ export const ProjectHistoryPage: React.FC = () => {
     const [logs, setLogs] = useState<TimelineItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+    const [totalPages, setTotalPages] = useState(1);
     const [projectTitle, setProjectTitle] = useState('Cargando...');
+    const [selectedLog, setSelectedLog] = useState<TimelineItem | null>(null);
 
     useEffect(() => {
         if (!id) return;
-        fetchLogs(1, true);
+        fetchLogs(1);
         fetchProjectInfo();
     }, [id]);
 
@@ -43,20 +44,13 @@ export const ProjectHistoryPage: React.FC = () => {
         }
     };
 
-    const fetchLogs = async (p: number, reset = false) => {
+    const fetchLogs = async (p: number) => {
         if (!id) return;
         setLoading(true);
         try {
             const res: any = await clarityService.getProyectoHistorial(Number(id), p, 50);
-            const items = res.items || [];
-
-            if (reset) {
-                setLogs(items);
-            } else {
-                setLogs(prev => [...prev, ...items]);
-            }
-
-            setHasMore(items.length === 50);
+            setLogs(res.items || []);
+            setTotalPages(res.totalPages || 1);
             setPage(p);
         } catch (error) {
             console.error('Error fetching timeline:', error);
@@ -65,66 +59,34 @@ export const ProjectHistoryPage: React.FC = () => {
         }
     };
 
-    const loadMore = () => {
-        if (!loading && hasMore) fetchLogs(page + 1);
-    };
-
-    // Helper para agrupar por fechas
-    const groupLogsByDate = (items: TimelineItem[]) => {
-        const groups: Record<string, TimelineItem[]> = {};
-        items.forEach(item => {
-            const date = new Date(item.fecha);
-            const key = format(date, 'yyyy-MM-dd');
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(item);
-        });
-        return groups;
-    };
-
-    const renderDateHeader = (dateStr: string) => {
-        const date = new Date(dateStr + 'T12:00:00'); // Fix TZ issues
-        let label = format(date, "EEEE d 'de' MMMM, yyyy", { locale: es });
-
-        if (isToday(date)) label = "Hoy";
-        if (isYesterday(date)) label = "Ayer";
-
-        return (
-            <div className="sticky top-0 z-10 py-2 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200 mb-6 mt-4 flex items-center gap-3">
-                <div className="bg-indigo-100 text-indigo-700 p-1.5 rounded-lg">
-                    <Calendar size={16} />
-                </div>
-                <h3 className="font-bold text-slate-700 capitalize text-sm">{label}</h3>
-            </div>
-        );
-    };
-
     const parseDiff = (item: TimelineItem) => {
         try {
             if (!item.datosNuevos) return null;
             const nuevo = JSON.parse(item.datosNuevos);
-            const diff = nuevo.diff || nuevo; // Support standardized diff format
-
-            // Filter out metadata keys
+            const diff = nuevo.diff || nuevo;
             const keys = Object.keys(diff).filter(k => !['id', 'fecha', 'source', 'updates'].includes(k));
-            if (keys.length === 0) return null;
+
+            if (keys.length === 0) return <div className="text-slate-400 italic text-sm">Sin detalles adicionales</div>;
 
             return (
-                <div className="mt-3 bg-slate-50 rounded border border-slate-100 overflow-hidden text-xs">
+                <div className="space-y-3">
                     {keys.map(key => {
                         const val = diff[key];
                         const isDiffObj = val && typeof val === 'object' && 'from' in val && 'to' in val;
-                        const oldValue = isDiffObj ? val.from : '???';
+                        const oldValue = isDiffObj ? val.from : '---';
                         const newValue = isDiffObj ? val.to : val;
 
                         return (
-                            <div key={key} className="grid grid-cols-[1fr,auto,1fr] gap-2 p-2 border-b border-slate-100 last:border-0 hover:bg-white transition-colors items-center">
-                                <div className="text-slate-500 font-medium truncate text-right pr-2">
-                                    <span className="bg-slate-200 px-1 py-0.5 rounded text-[10px] text-slate-600 mr-2 uppercase tracking-wider">{key}</span>
-                                    <span className="line-through decoration-rose-400 text-slate-400">{String(oldValue).substring(0, 50)}</span>
-                                </div>
-                                <ArrowRight size={12} className="text-slate-300" />
-                                <div className="text-emerald-700 font-bold truncate">
-                                    {String(newValue).substring(0, 50)}
+                            <div key={key} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{key.replace(/_/g, ' ')}</div>
+                                <div className="grid grid-cols-[1fr,auto,1fr] gap-4 items-center">
+                                    <div className="text-sm text-slate-500 break-words bg-white p-2 rounded border border-slate-100 min-h-[2rem]">
+                                        {String(oldValue)}
+                                    </div>
+                                    <ArrowRight size={16} className="text-slate-300" />
+                                    <div className="text-sm font-bold text-slate-800 break-words bg-emerald-50 p-2 rounded border border-emerald-100 min-h-[2rem]">
+                                        {String(newValue)}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -132,118 +94,187 @@ export const ProjectHistoryPage: React.FC = () => {
                 </div>
             );
         } catch {
-            return null;
+            return <div className="text-rose-500 text-sm">Error al procesar datos del cambio.</div>;
         }
     };
 
-    const getIcon = (accion: string) => {
+    const getActionBadge = (accion: string) => {
         const a = accion.toLowerCase();
-        if (a.includes('cread')) return <div className="bg-emerald-100 text-emerald-600 p-2 rounded-full"><Activity size={16} /></div>;
-        if (a.includes('elimin')) return <div className="bg-rose-100 text-rose-600 p-2 rounded-full"><AlertTriangle size={16} /></div>;
-        if (a.includes('completad') || a.includes('hecha')) return <div className="bg-indigo-100 text-indigo-600 p-2 rounded-full"><CheckCircle size={16} /></div>;
-        return <div className="bg-slate-100 text-slate-500 p-2 rounded-full"><FileText size={16} /></div>;
+        let color = 'bg-slate-100 text-slate-600';
+        if (a.includes('cread')) color = 'bg-emerald-100 text-emerald-700';
+        if (a.includes('elimin')) color = 'bg-rose-100 text-rose-700';
+        if (a.includes('edit')) color = 'bg-indigo-100 text-indigo-700';
+        if (a.includes('completad') || a.includes('hecha')) color = 'bg-sky-100 text-sky-700';
+
+        return (
+            <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wide ${color}`}>
+                {accion.replace(/_/g, ' ')}
+            </span>
+        );
     };
 
-    const grouped = groupLogsByDate(logs);
-    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-4 shadow-sm sticky top-0 z-20">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500"
-                >
-                    <ChevronLeft size={20} />
-                </button>
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800">Línea de Tiempo del Proyecto</h1>
-                    <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                        <Activity size={12} /> {projectTitle}
-                    </p>
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div>
+                        <h1 className="text-lg font-bold text-slate-800">Historial de Cambios</h1>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+                            <Activity size={12} /> {projectTitle}
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 max-w-3xl w-full mx-auto p-6">
-                {loading && page === 1 ? (
-                    <div className="text-center py-20 text-slate-400">Cargando historial...</div>
+            {/* Table Content */}
+            <div className="flex-1 p-6 overflow-auto">
+                {loading ? (
+                    <div className="text-center py-20 text-slate-400">Cargando datos...</div>
+                ) : logs.length === 0 ? (
+                    <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <p className="text-slate-500 italic">No hay registros de actividad para este proyecto.</p>
+                    </div>
                 ) : (
-                    <div className="relative border-l-2 border-slate-200 ml-4 md:ml-6 space-y-8 pb-20">
-                        {sortedDates.map(date => (
-                            <div key={date} className="pl-6 md:pl-8 relative">
-                                {/* Dot for date group */}
-                                <div className="absolute -left-[9px] top-6 w-4 h-4 bg-white border-2 border-indigo-400 rounded-full z-10 shadow-sm" />
-
-                                {renderDateHeader(date)}
-
-                                <div className="space-y-6">
-                                    {grouped[date].map((item, idx) => (
-                                        <div key={item.idAudit} className="relative group">
-                                            {/* Connector line for items */}
-                                            {idx !== grouped[date].length - 1 && (
-                                                <div className="absolute left-[calc(-1.5rem-1px)] top-10 bottom-0 w-px bg-slate-200" />
-                                            )}
-
-                                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                                                <div className="flex items-start gap-4">
-                                                    {getIcon(item.accion)}
-
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex justify-between items-start">
-                                                            <div>
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1 mb-0.5">
-                                                                    <Clock size={10} /> {format(new Date(item.fecha), 'HH:mm')}
-                                                                </span>
-                                                                <h4 className="font-bold text-slate-700 text-sm">
-                                                                    {item.accion.replace(/_/g, ' ')}
-                                                                </h4>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
-                                                                <User size={12} className="text-slate-400" />
-                                                                <span className="text-xs font-medium text-slate-600">{item.usuario}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="mt-2 text-sm text-slate-600">
-                                                            <span className="font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-xs mr-2">
-                                                                {item.recurso}
-                                                            </span>
-                                                            {item.tareaTitulo || `ID #${item.recursoId}`}
-                                                        </div>
-
-                                                        {/* Diff Section */}
-                                                        {parseDiff(item)}
-                                                    </div>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-6 py-3 font-bold text-slate-600 w-40">Fecha</th>
+                                    <th className="px-6 py-3 font-bold text-slate-600 w-48">Usuario</th>
+                                    <th className="px-6 py-3 font-bold text-slate-600 w-32">Acción</th>
+                                    <th className="px-6 py-3 font-bold text-slate-600">Elemento Afectado</th>
+                                    <th className="px-6 py-3 font-bold text-slate-600 w-24 text-right">Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {logs.map((log) => (
+                                    <tr key={log.idAudit} className="hover:bg-slate-50/80 transition-colors group">
+                                        <td className="px-6 py-3 text-slate-600 font-medium">
+                                            {format(new Date(log.fecha), 'dd/MM/yyyy HH:mm')}
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold">
+                                                    {log.usuario.charAt(0).toUpperCase()}
                                                 </div>
+                                                <span className="text-slate-700 font-medium truncate max-w-[150px]" title={log.usuario}>{log.usuario}</span>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {getActionBadge(log.accion)}
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-slate-800 font-medium truncate max-w-[300px]" title={log.tareaTitulo || log.recursoId}>
+                                                    {log.tareaTitulo || `ID #${log.recursoId}`}
+                                                </span>
+                                                <span className="text-xs text-slate-400 capitalize">{log.recurso.toLowerCase()}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3 text-right">
+                                            <button
+                                                onClick={() => setSelectedLog(log)}
+                                                className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white rounded-lg transition-all text-xs font-bold whitespace-nowrap"
+                                            >
+                                                Ver detalle
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
 
-                        {logs.length === 0 && (
-                            <div className="p-10 text-center text-slate-400 italic bg-white rounded-xl border border-dashed border-slate-300 mt-10">
-                                No hay actividad registrada para este proyecto.
-                            </div>
-                        )}
-
-                        {hasMore && (
-                            <div className="text-center pt-8 pl-8">
-                                <button
-                                    onClick={loadMore}
-                                    disabled={loading}
-                                    className="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-full shadow-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
-                                >
-                                    {loading ? 'Cargando más...' : 'Cargar historial antiguo'}
-                                </button>
-                            </div>
-                        )}
+                {/* Pagination */}
+                {!loading && totalPages > 1 && (
+                    <div className="flex justify-center mt-6 gap-2">
+                        <button
+                            disabled={page === 1}
+                            onClick={() => fetchLogs(page - 1)}
+                            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-slate-50"
+                        >
+                            Anterior
+                        </button>
+                        <span className="px-4 py-2 text-sm text-slate-500">
+                            Página {page} de {totalPages}
+                        </span>
+                        <button
+                            disabled={page === totalPages}
+                            onClick={() => fetchLogs(page + 1)}
+                            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-slate-50"
+                        >
+                            Siguiente
+                        </button>
                     </div>
                 )}
             </div>
+
+            {/* Detail Modal */}
+            {selectedLog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <h3 className="font-bold text-slate-800 text-lg">Detalle del Cambio</h3>
+                            <button
+                                onClick={() => setSelectedLog(null)}
+                                className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto flex-1">
+                            {/* Meta Info Header */}
+                            <div className="flex items-center gap-4 mb-6 text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={14} />
+                                    <span>{format(new Date(selectedLog.fecha), 'PPP - HH:mm', { locale: es })}</span>
+                                </div>
+                                <div className="h-4 w-px bg-slate-300" />
+                                <div className="flex items-center gap-2">
+                                    <User size={14} />
+                                    <span>{selectedLog.usuario}</span>
+                                </div>
+                                <div className="h-4 w-px bg-slate-300" />
+                                <div>{getActionBadge(selectedLog.accion)}</div>
+                            </div>
+
+                            <div className="mb-4">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Contexto</h4>
+                                <div className="text-slate-800 font-medium text-lg">
+                                    {selectedLog.tareaTitulo || `Elemento ${selectedLog.recursoId}`}
+                                </div>
+                                <div className="text-slate-400 text-sm">{selectedLog.recurso}</div>
+                            </div>
+
+                            <div className="border-t border-slate-100 pt-4">
+                                <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <Activity size={16} className="text-indigo-500" />
+                                    Cambios Realizados
+                                </h4>
+                                {parseDiff(selectedLog)}
+                            </div>
+                        </div>
+
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                            <button
+                                onClick={() => setSelectedLog(null)}
+                                className="px-6 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-50 hover:text-indigo-600 transition-all text-sm"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

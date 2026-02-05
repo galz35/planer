@@ -156,16 +156,21 @@ export async function obtenerAuditLogPorId(id: number) {
 // Historial Completo de Proyecto (Timeline)
 export async function listarAuditLogsProyecto(idProyecto: number, limit: number, offset: number) {
     return await ejecutarQuery<any>(`
+        WITH Scope AS (
+            SELECT CAST(@pid AS NVARCHAR(50)) as Id, 'Proyecto' as Tipo
+            UNION ALL
+            SELECT CAST(idTarea AS NVARCHAR(50)), 'Tarea'
+            FROM p_Tareas WHERE idProyecto = TRY_CAST(@pid AS INT)
+        )
         SELECT a.*, 
                u.nombre as nombreUsuario, 
                u.correo as correoUsuario,
                CASE WHEN a.entidad = 'Proyecto' THEN 'Proyecto' ELSE 'Tarea' END as tipoEntidad,
                t.nombre as tareaNombre
-        FROM p_Auditoria a
+        FROM Scope s
+        INNER JOIN p_Auditoria a ON a.entidadId = s.Id AND a.entidad = s.Tipo
         LEFT JOIN p_Usuarios u ON a.idUsuario = u.idUsuario
         LEFT JOIN p_Tareas t ON (a.entidad = 'Tarea' AND TRY_CAST(a.entidadId AS INT) = t.idTarea)
-        WHERE (a.entidad = 'Proyecto' AND a.entidadId = @pid)
-           OR (a.entidad = 'Tarea' AND a.entidadId IN (SELECT CAST(idTarea AS NVARCHAR) FROM p_Tareas WHERE idProyecto = @pid))
         ORDER BY a.fecha DESC
         OFFSET ${Math.floor(offset)} ROWS FETCH NEXT ${Math.floor(limit)} ROWS ONLY
     `, { pid: { valor: String(idProyecto), tipo: NVarChar } });
@@ -173,10 +178,15 @@ export async function listarAuditLogsProyecto(idProyecto: number, limit: number,
 
 export async function contarAuditLogsProyecto(idProyecto: number) {
     const res = await ejecutarQuery<{ total: number }>(`
+        WITH Scope AS (
+            SELECT CAST(@pid AS NVARCHAR(50)) as Id, 'Proyecto' as Tipo
+            UNION ALL
+            SELECT CAST(idTarea AS NVARCHAR(50)), 'Tarea'
+            FROM p_Tareas WHERE idProyecto = TRY_CAST(@pid AS INT)
+        )
         SELECT COUNT(*) as total
-        FROM p_Auditoria a
-        WHERE (a.entidad = 'Proyecto' AND a.entidadId = @pid)
-           OR (a.entidad = 'Tarea' AND a.entidadId IN (SELECT CAST(idTarea AS NVARCHAR) FROM p_Tareas WHERE idProyecto = @pid))
+        FROM Scope s
+        INNER JOIN p_Auditoria a ON a.entidadId = s.Id AND a.entidad = s.Tipo
     `, { pid: { valor: String(idProyecto), tipo: NVarChar } });
     return res[0].total;
 }

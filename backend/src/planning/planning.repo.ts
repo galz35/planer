@@ -694,7 +694,7 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
         INNER JOIN p_TareaAsignados ta ON t.idTarea = ta.idTarea
         WHERE ta.carnet = @carnet
           AND t.activo = 1
-          AND p.activo = 1
+          AND p.estado = 'Activo'
         ORDER BY p.fechaFin ASC
     `, { carnet: { valor: carnet, tipo: NVarChar } });
 
@@ -729,6 +729,7 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
         LEFT JOIN p_Proyectos p ON t.idProyecto = p.idProyecto
         WHERE ta.carnet = @carnet
           AND t.activo = 1
+          AND (p.idProyecto IS NULL OR p.estado = 'Activo')
         ORDER BY 
             CASE WHEN t.estado NOT IN ('Hecha', 'Completada') THEN 0 ELSE 1 END,
             CASE WHEN t.fechaObjetivo < CAST(GETDATE() AS DATE) THEN 0 ELSE 1 END,

@@ -207,6 +207,12 @@ export class PlanningService {
                 }
             }
 
+            // 4. [FIX] Si soy el ASIGNADO de la tarea, puedo trabajarla (Operational freedom)
+            const esAsignado = await planningRepo.esAsignado(idTarea, idUsuario);
+            if (esAsignado) {
+                return { puedeEditar: true, requiereAprobacion: false, tipoProyecto: tarea.proyectoTipo || 'Estrategico' };
+            }
+
             // Permitimos editar pero con flujo de aprobación para otros
             return { puedeEditar: true, requiereAprobacion: true, tipoProyecto: tarea.proyectoTipo || 'Estrategico' };
         }

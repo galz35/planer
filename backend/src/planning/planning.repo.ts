@@ -607,6 +607,23 @@ export async function cerrarPlan(idPlan: number) {
     });
 }
 
+export async function esAsignado(idTarea: number, idUsuario: number) {
+    const res = await ejecutarQuery(`
+        -- Check legacy single assignment
+        SELECT 1 FROM p_Tareas WHERE idTarea = @idTarea AND idAsignado = @idUsuario
+        UNION
+        -- Check multiple assignment via carnet
+        SELECT 1 
+        FROM p_TareaAsignados ta
+        INNER JOIN p_Usuarios u ON ta.carnet = u.carnet
+        WHERE ta.idTarea = @idTarea AND u.idUsuario = @idUsuario
+    `, {
+        idTarea: { valor: idTarea, tipo: Int },
+        idUsuario: { valor: idUsuario, tipo: Int }
+    });
+    return res.length > 0;
+}
+
 // === DASHBOARD ALERTS (REAL DATA) ===
 export async function obtenerTareasCriticas(carnets: string[]) {
     if (!carnets || carnets.length === 0) return [];

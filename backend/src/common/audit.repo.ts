@@ -112,6 +112,16 @@ export async function listarAuditLogs(limit: number, offset: number, filtros: an
         params.query = { valor: `%${filtros.query}%`, tipo: NVarChar };
     }
 
+    if (filtros.entidad) {
+        whereClause += ' AND a.entidad = @entidad';
+        params.entidad = { valor: filtros.entidad, tipo: NVarChar };
+    }
+
+    if (filtros.entidadId) {
+        whereClause += ' AND a.entidadId = @entidadId';
+        params.entidadId = { valor: String(filtros.entidadId), tipo: NVarChar };
+    }
+
     return await ejecutarQuery<any>(`
         SELECT a.*, u.nombre as nombreUsuario, u.correo as correoUsuario
         FROM p_Auditoria a

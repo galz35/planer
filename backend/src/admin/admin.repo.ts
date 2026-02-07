@@ -1,7 +1,7 @@
 /**
  * Admin Repository - Queries para el módulo Administrativo
  */
-import { crearRequest, ejecutarQuery, Int, NVarChar, Bit, DateTime, SqlDate } from '../db/base.repo';
+import { crearRequest, ejecutarQuery, ejecutarSP, Int, NVarChar, Bit, DateTime, SqlDate } from '../db/base.repo';
 import {
     UsuarioDb, RolDb, UsuarioConfigDb, SeguridadPerfilDb,
     OrganizacionNodoDb, LogSistemaDb, AuditLogDb, ResultadoPaginado
@@ -315,4 +315,67 @@ export async function restoreItem(tipo: 'Proyecto' | 'Tarea', id: number) {
             WHERE idTarea = @id
         `, { id: { valor: id, tipo: Int } });
     }
+}
+
+export async function crearUsuario(dto: any) {
+    const result = await ejecutarSP('sp_Admin_Usuario_Crear', {
+        nombre: { valor: dto.nombre, tipo: NVarChar },
+        correo: { valor: dto.correo, tipo: NVarChar },
+        carnet: { valor: dto.carnet || null, tipo: NVarChar },
+        cargo: { valor: dto.cargo || null, tipo: NVarChar },
+        telefono: { valor: dto.telefono || null, tipo: NVarChar },
+        rol: { valor: dto.rol || 'Colaborador', tipo: NVarChar }
+    });
+    return result[0];
+}
+
+export async function actualizarUsuario(idUsuario: number, dto: any) {
+    const fields: string[] = [];
+    const params: any = { id: { valor: idUsuario, tipo: Int } };
+
+    if (dto.nombre !== undefined) {
+        fields.push('nombre = @nombre');
+        params.nombre = { valor: dto.nombre, tipo: NVarChar };
+    }
+    if (dto.correo !== undefined) {
+        fields.push('correo = @correo');
+        params.correo = { valor: dto.correo, tipo: NVarChar };
+    }
+    if (dto.carnet !== undefined) {
+        fields.push('carnet = @carnet');
+        params.carnet = { valor: dto.carnet, tipo: NVarChar };
+    }
+    if (dto.cargo !== undefined) {
+        fields.push('cargo = @cargo');
+        params.cargo = { valor: dto.cargo, tipo: NVarChar };
+    }
+    if (dto.telefono !== undefined) {
+        fields.push('telefono = @telefono');
+        params.telefono = { valor: dto.telefono, tipo: NVarChar };
+    }
+    if (dto.activo !== undefined) {
+        fields.push('activo = @activo');
+        params.activo = { valor: dto.activo ? 1 : 0, tipo: Bit };
+    }
+
+    if (fields.length === 0) return;
+
+    await ejecutarQuery(`
+        UPDATE p_Usuarios 
+        SET ${fields.join(', ')}, fechaActualizacion = GETDATE()
+        WHERE idUsuario = @id
+    `, params);
+}
+
+export async function eliminarUsuario(idUsuario: number) {
+    await ejecutarSP('sp_Admin_Usuario_Eliminar', {
+        idUsuario: { valor: idUsuario, tipo: Int }
+    });
+}
+
+export async function removerUsuarioNodo(idUsuario: number, idNodo: number) {
+    await ejecutarSP('sp_Admin_Usuario_RemoverNodo', {
+        idUsuario: { valor: idUsuario, tipo: Int },
+        idNodo: { valor: idNodo, tipo: Int }
+    });
 }

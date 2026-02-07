@@ -41,6 +41,7 @@ import { MemberAgendaPage } from '../pages/Equipo/MemberAgendaPage';
 import { EquipoBloqueosPage } from '../pages/Equipo/EquipoBloqueosPage';
 import { MiEquipoPage } from '../pages/Equipo/MiEquipoPage';
 import { ActividadEquipoPage } from '../pages/Equipo/ActividadEquipoPage';
+import { AgendaCompliancePage } from '../pages/Equipo/AgendaCompliancePage';
 
 // Other Pages
 import { MeetingNotesPage } from '../pages/Notes/MeetingNotesPage';
@@ -136,6 +137,7 @@ export const AppRoutes = () => {
                     <Route path="equipo/bloqueos" element={<EquipoBloqueosPage />} />
                     <Route path="equipo/mi-equipo" element={<MiEquipoPage />} />
                     <Route path="equipo/actividad" element={<ActividadEquipoPage />} />
+                    <Route path="equipo/seguimiento-agenda" element={<AgendaCompliancePage />} />
 
                     {/* OTROS MODULOS */}
                     <Route path="notas" element={<MeetingNotesPage />} />

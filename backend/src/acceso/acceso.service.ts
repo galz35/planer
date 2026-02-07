@@ -29,6 +29,7 @@ export class AccesoService {
             idorg_raiz: Number(dto.idOrgRaiz),
             alcance: dto.alcance || 'SUBARBOL',
             motivo: dto.motivo?.trim() || null,
+            tipo_acceso: dto.tipoAcceso || 'ALLOW',
         });
         return { success: true, message: 'Permiso creado' };
     }

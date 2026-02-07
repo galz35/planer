@@ -84,14 +84,11 @@ export const VisibilityModal: React.FC<Props> = ({ user, onClose }) => {
 
         try {
             if (activeTab === 'areas') {
-                if (actionType === 'DENY') {
-                    alerts.error('No soportado', 'La restricción por Área no está soportada aún. Solo por Persona.');
-                    return;
-                }
                 await clarityService.crearPermisoArea({
                     carnetRecibe: user.carnet,
                     idOrgRaiz: item.idOrg,
-                    alcance: 'SUBARBOL'
+                    alcance: 'SUBARBOL',
+                    tipoAcceso: actionType
                 });
             } else {
                 await clarityService.crearPermisoEmpleado({

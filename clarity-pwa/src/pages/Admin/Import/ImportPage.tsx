@@ -89,7 +89,7 @@ export const ImportPage: React.FC = () => {
     };
 
     const tabs = [
-        { id: 'empleados' as TabType, label: 'Importar JSON', icon: Users },
+        { id: 'empleados' as TabType, label: 'Carga Manual', icon: Users },
         { id: 'excel' as TabType, label: 'Excel (Próximamente)', icon: FileSpreadsheet },
     ];
 
@@ -103,7 +103,7 @@ export const ImportPage: React.FC = () => {
                             <Database className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Consola de Importación</h1>
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Consola de Carga de Datos</h1>
                             <p className="text-slate-500 font-medium">Sincroniza la nómina y estructura organizacional</p>
                         </div>
                     </div>
@@ -164,8 +164,8 @@ export const ImportPage: React.FC = () => {
                     <div className="p-8">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-800">Editor JSON Directo</h2>
-                                <p className="text-sm text-slate-400">Pega aquí el array de objetos para procesar.</p>
+                                <h2 className="text-xl font-bold text-slate-800">Editor de Datos Directo</h2>
+                                <p className="text-sm text-slate-400">Pega aquí el listado para procesar.</p>
                             </div>
                             <button
                                 onClick={handleLoadTemplate}
@@ -209,7 +209,7 @@ export const ImportPage: React.FC = () => {
                                 <FileSpreadsheet className="w-10 h-10 text-slate-400" />
                             </div>
                             <h2 className="text-2xl font-black text-slate-800 mb-2">Importación desde Excel</h2>
-                            <p className="text-slate-500 mb-8 font-medium">Esta función estará disponible próximamente. Por ahora use el editor JSON.</p>
+                            <p className="text-slate-500 mb-8 font-medium">Esta función estará disponible próximamente. Por ahora use el editor de datos.</p>
 
                             <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50/50 grayscale opacity-50 cursor-not-allowed">
                                 <Upload className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -246,19 +246,19 @@ export const ImportPage: React.FC = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div className="bg-white/50 p-6 rounded-2xl border border-white/50 shadow-sm">
-                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Procesados</div>
+                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Leídos</div>
                             <div className="text-3xl font-black text-slate-800">{result.procesados}</div>
                         </div>
                         <div className="bg-white/50 p-6 rounded-2xl border border-white/50 shadow-sm">
-                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Insertados</div>
+                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Nuevos Registros</div>
                             <div className="text-3xl font-black text-emerald-600">{result.insertados}</div>
                         </div>
                         <div className="bg-white/50 p-6 rounded-2xl border border-white/50 shadow-sm">
-                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Actualizados</div>
+                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Corregidos</div>
                             <div className="text-3xl font-black text-indigo-600">{result.actualizados}</div>
                         </div>
                         <div className="bg-white/50 p-6 rounded-2xl border border-white/50 shadow-sm">
-                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Fallidos</div>
+                            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Con Errores</div>
                             <div className="text-3xl font-black text-rose-600">{result.errores.length}</div>
                         </div>
                     </div>

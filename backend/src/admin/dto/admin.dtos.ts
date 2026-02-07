@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsString, IsOptional, IsNotEmpty, IsArray, IsIn } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsNotEmpty, IsArray, IsIn, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Trim } from 'class-sanitizer';
 
@@ -38,6 +38,16 @@ export class AuditFilterDto extends PaginationDto {
     @IsOptional()
     @IsString()
     query?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    entidad?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    entidadId?: string;
 }
 
 export class LogCrearDto {
@@ -154,3 +164,74 @@ export class UsuarioOrganizacionAsignarDto {
     @Trim()
     rol!: string; // Lider, Miembro, Gerente
 }
+
+export class UsuarioCrearDto {
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    @Trim()
+    nombre!: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    @Trim()
+    correo!: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    @Trim()
+    carnet?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    @Trim()
+    cargo?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    @Trim()
+    telefono?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    @Trim()
+    rol?: string; // Nombre del rol o profileType
+}
+
+export class UsuarioActualizarDto {
+    @IsOptional()
+    @IsString()
+    @Trim()
+    nombre?: string;
+
+    @IsOptional()
+    @IsString()
+    @Trim()
+    correo?: string;
+
+    @IsOptional()
+    @IsString()
+    @Trim()
+    carnet?: string;
+
+    @IsOptional()
+    @IsString()
+    @Trim()
+    cargo?: string;
+
+    @IsOptional()
+    @IsString()
+    @Trim()
+    telefono?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    activo?: boolean;
+}
+
+

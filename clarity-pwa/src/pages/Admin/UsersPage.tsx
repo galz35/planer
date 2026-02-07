@@ -51,7 +51,35 @@ export const UsersPage = () => {
         telefono: '',
         organizacion: '',
         rol: 'Colaborador'
+
     });
+
+    const [auditLogs, setAuditLogs] = useState<any[]>([]);
+    const [auditLoading, setAuditLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'info' | 'history'>('info');
+
+    useEffect(() => {
+        if (activeTab === 'history' && editingUser) {
+            fetchAuditLogs(editingUser.idUsuario);
+        }
+    }, [activeTab, editingUser]);
+
+    const fetchAuditLogs = async (userId: number) => {
+        try {
+            setAuditLoading(true);
+            const logs = await clarityService.getAuditLogs({
+                entidad: 'Usuario',
+                entidadId: String(userId),
+                limit: 50
+            });
+            setAuditLogs(logs?.items || []);
+        } catch (error) {
+            console.error(error);
+            showToast("Error al cargar historial", "error");
+        } finally {
+            setAuditLoading(false);
+        }
+    };
 
     const loadData = async () => {
         try {
@@ -292,6 +320,23 @@ export const UsersPage = () => {
                                 >
                                     <Edit3 size={14} />
                                 </button>
+                                <button
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (!window.confirm(`¿Remover a ${u.nombre} de ${node.nombre}?`)) return;
+                                        try {
+                                            await clarityService.removerUsuarioNodo(u.idUsuario, node.idNodo);
+                                            showToast("Usuario removido del nodo", "success");
+                                            loadData();
+                                        } catch (err) {
+                                            showToast("Error al remover usuario", "error");
+                                        }
+                                    }}
+                                    className="p-1.5 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Remover de este equipo"
+                                >
+                                    <X size={14} />
+                                </button>
                             </div>
                         ))}
 
@@ -304,8 +349,9 @@ export const UsersPage = () => {
                             <p className="text-xs text-slate-300 italic py-1">Nodo vacío</p>
                         )}
                     </div>
-                )}
-            </div>
+                )
+                }
+            </div >
         );
     };
 
@@ -326,7 +372,7 @@ export const UsersPage = () => {
                                 Gestión de Talento
                             </h1>
                             <p className="text-slate-500 mt-2 font-medium">
-                                Administra la jerarquía, roles y visualización del equipo.
+                                Administra el organigrama, roles y visualización del equipo.
                             </p>
                         </div>
                         <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
@@ -336,7 +382,7 @@ export const UsersPage = () => {
                                     ${viewMode === 'hierarchy' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}
                                 `}
                             >
-                                <Network size={16} /> Jerarquía
+                                <Network size={16} /> Organigrama
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
@@ -400,7 +446,7 @@ export const UsersPage = () => {
                                         <div className="space-y-3">
                                             <button className="w-full bg-white/10 hover:bg-white/20 border border-white/20 p-4 rounded-2xl text-left transition-all group">
                                                 <div className="font-bold text-sm">Nueva Dependencia</div>
-                                                <div className="text-[10px] text-white/60 font-bold uppercase mt-1">Crear Gerencia o Nodo</div>
+                                                <div className="text-[10px] text-white/60 font-bold uppercase mt-1">Crear Gerencia o Equipo</div>
                                             </button>
                                             <button className="w-full bg-indigo-500/50 hover:bg-indigo-500/80 border border-indigo-400/30 p-4 rounded-2xl text-left transition-all">
                                                 <div className="font-bold text-sm">Transferir Masivo</div>
@@ -417,7 +463,7 @@ export const UsersPage = () => {
                                         <thead className="bg-slate-50 border-b border-slate-200 text-slate-400">
                                             <tr>
                                                 <th className="p-4 text-[10px] font-black uppercase tracking-widest">Colaborador</th>
-                                                <th className="p-4 text-[10px] font-black uppercase tracking-widest">Carnet / ID</th>
+                                                <th className="p-4 text-[10px] font-black uppercase tracking-widest">Carnet / Código</th>
                                                 <th className="p-4 text-[10px] font-black uppercase tracking-widest">Correo</th>
                                                 <th className="p-4 text-[10px] font-black uppercase tracking-widest">Rol Sistema</th>
                                                 <th className="p-4 text-[10px] font-black uppercase tracking-widest text-right">Acciones</th>
@@ -445,12 +491,27 @@ export const UsersPage = () => {
                                                     </td>
                                                     <td className="p-4 text-right">
                                                         <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await clarityService.updateUsuario(u.idUsuario, { activo: !u.activo });
+                                                                    showToast(`Usuario ${u.activo ? 'desactivado' : 'activado'}`, "success");
+                                                                    loadData();
+                                                                } catch (e) {
+                                                                    showToast("Error al cambiar estado", "error");
+                                                                }
+                                                            }}
+                                                            className={`p-2 rounded-xl transition-all shadow-sm hover:shadow ml-1 ${u.activo ? 'text-emerald-500 hover:bg-emerald-50' : 'text-slate-300 hover:bg-slate-50'}`}
+                                                            title={u.activo ? "Desactivar Usuario" : "Activar Usuario"}
+                                                        >
+                                                            {u.activo ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                                        </button>
+                                                        <button
                                                             onClick={() => {
                                                                 setEditingUser(u);
                                                                 setSelectedRoleId(u.idRol?.toString() || '');
                                                                 setCustomMenuJson((u as any).menuPersonalizado || '');
                                                             }}
-                                                            className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm hover:shadow group-hover:bg-white"
+                                                            className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm hover:shadow group-hover:bg-white ml-1"
                                                             title="Editar Usuario"
                                                         >
                                                             <Edit3 size={16} />
@@ -530,123 +591,255 @@ export const UsersPage = () => {
                                 </button>
                             </div>
 
+                            {/* Tabs */}
+                            <div className="flex border-b border-indigo-100 bg-indigo-50 px-6 pt-3 gap-6">
+                                <button
+                                    onClick={() => setActiveTab('info')}
+                                    className={`pb-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'info' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-indigo-600'}`}
+                                >
+                                    Información y Seguridad
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('history')}
+                                    className={`pb-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'history' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-indigo-600'}`}
+                                >
+                                    Historial de Actividad
+                                </button>
+                            </div>
+
                             {/* Scrollable Content */}
                             <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Columna Izquierda: Datos Básicos */}
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nombre del Usuario</label>
-                                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 font-bold">
-                                                {editingUser.nombre}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Rol de Seguridad</label>
-                                            <div className="flex gap-2">
-                                                <select
-                                                    className="flex-1 p-4 bg-white border border-slate-300 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-700"
-                                                    value={selectedRoleId}
-                                                    onChange={e => setSelectedRoleId(e.target.value)}
-                                                >
-                                                    <option value="">Seleccionar Rol...</option>
-                                                    {roles.map(r => (
-                                                        <option key={r.idRol} value={r.idRol}>
-                                                            {r.nombre}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    onClick={handleSaveRole}
-                                                    className="px-6 bg-indigo-600 text-white font-black text-xs uppercase rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all"
-                                                >
-                                                    Guardar
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-6 border-t border-slate-100">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Restablecer Contraseña</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nueva contraseña"
-                                                    className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-amber-500 font-bold text-slate-700 placeholder:font-normal placeholder:text-slate-400"
-                                                    value={newPassword}
-                                                    onChange={e => setNewPassword(e.target.value)}
-                                                />
-                                                <button
-                                                    onClick={handleResetPassword}
-                                                    className="px-6 bg-amber-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-amber-600 shadow-xl shadow-amber-100 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <Key size={16} /> Reset
-                                                </button>
-                                            </div>
-                                            <p className="text-[10px] text-slate-400 font-medium mt-2">
-                                                Predeterminada: <strong className="text-slate-600">123456</strong>
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Columna Derecha: Menú Avanzado */}
-                                    <div className="space-y-4">
-                                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 h-full flex flex-col">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Personalizar Menú</label>
-                                                    <p className="text-[10px] text-slate-500 font-medium">Define opciones específicas para este usuario.</p>
-                                                </div>
-
-                                                <button
-                                                    onClick={() => setCustomMenuJson(customMenuJson ? '' : JSON.stringify(APP_MENU))}
-                                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border
-                                                    ${customMenuJson
-                                                            ? 'bg-indigo-100 border-indigo-200 text-indigo-700'
-                                                            : 'bg-slate-200 border-slate-300 text-slate-500'
-                                                        }
-                                                `}
-                                                >
-                                                    <span className="text-[10px] font-bold uppercase">{customMenuJson ? 'Habilitado' : 'Deshabilitado'}</span>
-                                                    {customMenuJson ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                                                </button>
-                                            </div>
-
-                                            {customMenuJson ? (
-                                                <div className="flex-1 overflow-hidden flex flex-col min-h-[300px]">
-                                                    <MenuBuilder
-                                                        initialJson={customMenuJson !== '[]' ? customMenuJson : JSON.stringify(APP_MENU)}
-                                                        onChange={setCustomMenuJson}
+                                {activeTab === 'info' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Columna Izquierda: Datos Básicos */}
+                                        <div className="space-y-6">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Datos Básicos</label>
+                                                <div className="space-y-4">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Nombre Completo"
+                                                        className="w-full p-4 bg-white border border-slate-300 rounded-2xl focus:border-indigo-500 font-bold text-slate-700"
+                                                        value={editingUser.nombre || ''}
+                                                        onChange={e => setEditingUser({ ...editingUser, nombre: e.target.value })}
                                                     />
-                                                </div>
-                                            ) : (
-                                                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                                                    <Network size={40} className="mb-2 opacity-20" />
-                                                    <p className="text-xs font-medium text-center px-8">
-                                                        El usuario usará el menú predeterminado de su Rol.
-                                                    </p>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Correo Electrónico"
+                                                        className="w-full p-4 bg-white border border-slate-300 rounded-2xl focus:border-indigo-500 font-bold text-slate-700"
+                                                        value={editingUser.correo || ''}
+                                                        onChange={e => setEditingUser({ ...editingUser, correo: e.target.value })}
+                                                    />
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Carnet / Código"
+                                                            className="p-4 bg-white border border-slate-300 rounded-2xl focus:border-indigo-500 font-bold text-slate-700"
+                                                            value={editingUser.carnet || ''}
+                                                            onChange={e => setEditingUser({ ...editingUser, carnet: e.target.value })}
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Cargo"
+                                                            className="p-4 bg-white border border-slate-300 rounded-2xl focus:border-indigo-500 font-bold text-slate-700"
+                                                            value={editingUser.cargo || ''}
+                                                            onChange={e => setEditingUser({ ...editingUser, cargo: e.target.value })}
+                                                        />
+                                                    </div>
                                                     <button
-                                                        onClick={() => setCustomMenuJson(JSON.stringify(APP_MENU))}
-                                                        className="mt-4 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-xl shadow-sm hover:text-indigo-600 transition-all"
+                                                        onClick={async () => {
+                                                            try {
+                                                                await clarityService.updateUsuario(editingUser.idUsuario, {
+                                                                    nombre: editingUser.nombre,
+                                                                    correo: editingUser.correo,
+                                                                    carnet: editingUser.carnet,
+                                                                    cargo: editingUser.cargo
+                                                                });
+                                                                showToast("Datos actualizados", "success");
+                                                                loadData();
+                                                            } catch (e) {
+                                                                showToast("Error al actualizar datos", "error");
+                                                            }
+                                                        }}
+                                                        className="w-full p-4 bg-slate-800 text-white font-black text-xs uppercase rounded-2xl hover:bg-slate-900 transition-all"
                                                     >
-                                                        Habilitar Personalización
+                                                        Guardar Cambios Básicos
+                                                    </button>
+
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!window.confirm("¿Seguro que deseas eliminar este usuario? Esta acción lo enviará a la papelera.")) return;
+                                                            try {
+                                                                await clarityService.deleteUsuario(editingUser.idUsuario);
+                                                                showToast("Usuario eliminado", "success");
+                                                                setEditingUser(null);
+                                                                loadData();
+                                                            } catch (e) {
+                                                                showToast("Error al eliminar usuario", "error");
+                                                            }
+                                                        }}
+                                                        className="w-full p-4 bg-red-50 text-red-500 font-black text-xs uppercase rounded-2xl hover:bg-red-100 transition-all border border-red-100 mt-2"
+                                                    >
+                                                        Eliminar Usuario
                                                     </button>
                                                 </div>
-                                            )}
+                                            </div>
+                                        </div>
 
-                                            {customMenuJson && (
-                                                <button
-                                                    onClick={handleSaveMenu}
-                                                    className="mt-4 w-full py-3 bg-slate-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-900 shadow-lg shadow-slate-200 transition-all"
-                                                >
-                                                    Guardar Configuración
-                                                </button>
-                                            )}
+                                        {/* Columna Derecha: Menú y Rol (Ahora debajo o al lado, dependiendo del grid) */}
+                                        <div className="space-y-6">
+
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Rol de Seguridad</label>
+                                                <div className="flex gap-2">
+                                                    <select
+                                                        className="flex-1 p-4 bg-white border border-slate-300 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-700"
+                                                        value={selectedRoleId}
+                                                        onChange={e => setSelectedRoleId(e.target.value)}
+                                                    >
+                                                        <option value="">Seleccionar Rol...</option>
+                                                        {roles.map(r => (
+                                                            <option key={r.idRol} value={r.idRol}>
+                                                                {r.nombre}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <button
+                                                        onClick={handleSaveRole}
+                                                        className="px-6 bg-indigo-600 text-white font-black text-xs uppercase rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all"
+                                                    >
+                                                        Guardar
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-6 border-t border-slate-100">
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Restablecer Contraseña</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Nueva contraseña"
+                                                        className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-amber-500 font-bold text-slate-700 placeholder:font-normal placeholder:text-slate-400"
+                                                        value={newPassword}
+                                                        onChange={e => setNewPassword(e.target.value)}
+                                                    />
+                                                    <button
+                                                        onClick={handleResetPassword}
+                                                        className="px-6 bg-amber-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-amber-600 shadow-xl shadow-amber-100 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <Key size={16} /> Reset
+                                                    </button>
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 font-medium mt-2">
+                                                    Predeterminada: <strong className="text-slate-600">123456</strong>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Columna Derecha: Menú Avanzado */}
+                                        <div className="space-y-4">
+                                            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 h-full flex flex-col">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Opciones de Menú</label>
+                                                        <p className="text-[10px] text-slate-500 font-medium">Define opciones específicas para este usuario.</p>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => setCustomMenuJson(customMenuJson ? '' : JSON.stringify(APP_MENU))}
+                                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border
+                                                    ${customMenuJson
+                                                                ? 'bg-indigo-100 border-indigo-200 text-indigo-700'
+                                                                : 'bg-slate-200 border-slate-300 text-slate-500'
+                                                            }
+                                                `}
+                                                    >
+                                                        <span className="text-[10px] font-bold uppercase">{customMenuJson ? 'Habilitado' : 'Deshabilitado'}</span>
+                                                        {customMenuJson ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                                                    </button>
+                                                </div>
+
+                                                {customMenuJson ? (
+                                                    <div className="flex-1 overflow-hidden flex flex-col min-h-[300px]">
+                                                        <MenuBuilder
+                                                            initialJson={customMenuJson !== '[]' ? customMenuJson : JSON.stringify(APP_MENU)}
+                                                            onChange={setCustomMenuJson}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                                                        <Network size={40} className="mb-2 opacity-20" />
+                                                        <p className="text-xs font-medium text-center px-8">
+                                                            El usuario usará el menú predeterminado de su Rol.
+                                                        </p>
+                                                        <button
+                                                            onClick={() => setCustomMenuJson(JSON.stringify(APP_MENU))}
+                                                            className="mt-4 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-xl shadow-sm hover:text-indigo-600 transition-all"
+                                                        >
+                                                            Habilitar Personalización
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {customMenuJson && (
+                                                    <button
+                                                        onClick={handleSaveMenu}
+                                                        className="mt-4 w-full py-3 bg-slate-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-900 shadow-lg shadow-slate-200 transition-all"
+                                                    >
+                                                        Guardar Configuración
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
+                                {activeTab === 'history' && (
+                                    <div className="space-y-4">
+                                        {auditLoading ? (
+                                            <div className="p-8 text-center text-slate-400">Cargando historial...</div>
+                                        ) : (
+                                            <div className="overflow-hidden rounded-2xl border border-slate-200">
+                                                <table className="w-full text-xs">
+                                                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-widest font-black">
+                                                        <tr>
+                                                            <th className="p-3 text-left">Fecha</th>
+                                                            <th className="p-3 text-left">Acción</th>
+                                                            <th className="p-3 text-left">Detalle</th>
+                                                            <th className="p-3 text-left">Actor</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                                        {auditLogs?.map((log: any) => (
+                                                            <tr key={log.idAuditLog || log.id}>
+                                                                <td className="p-3 text-slate-500 font-medium">
+                                                                    {new Date(log.fecha).toLocaleString()}
+                                                                </td>
+                                                                <td className="p-3 font-bold text-slate-700">
+                                                                    {log.accion}
+                                                                </td>
+                                                                <td className="p-3 text-slate-600">
+                                                                    {log.recurso} {log.detalles || ''}
+                                                                </td>
+                                                                <td className="p-3 text-slate-500">
+                                                                    {log.nombreUsuario || 'Sistema'}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        {(!auditLogs || auditLogs.length === 0) && (
+                                                            <tr>
+                                                                <td colSpan={4} className="p-8 text-center text-slate-400 italic">
+                                                                    No hay actividad registrada
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Footer */}
@@ -659,7 +852,7 @@ export const UsersPage = () => {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div >
                 )
             }
 

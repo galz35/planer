@@ -282,6 +282,13 @@ export class ClarityController {
         return this.reportsService.gerenciaResumen(req.user.userId, query.fecha);
     }
 
+    @Get('reports/agenda-compliance')
+    @ApiOperation({ summary: 'Obtener cumplimiento de agenda del equipo' })
+    async getAgendaCompliance(@Request() req, @Query() query: FechaQueryDto) {
+        const roles = req.user.roles || (req.user.rol ? [req.user.rol] : []);
+        return this.tasksService.getAgendaCompliance(req.user.userId, roles, query.fecha);
+    }
+
     // ==========================================
     // RECURRENCIA (Agenda Diaria / Mi Día)
     // ==========================================

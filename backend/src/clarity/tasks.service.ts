@@ -3,6 +3,7 @@ import * as clarityRepo from './clarity.repo';
 import * as planningRepo from '../planning/planning.repo';
 import * as tasksRepo from './tasks.repo';
 import * as authRepo from '../auth/auth.repo';
+import * as accesoRepo from '../acceso/acceso.repo';
 import { ResourceNotFoundException } from '../common/exceptions';
 import { TareaCrearRapidaDto, CheckinUpsertDto, BloqueoCrearDto, TareaRevalidarDto, TareaMasivaDto } from './dto/clarity.dtos';
 import { AuditService } from '../common/audit.service';
@@ -147,19 +148,14 @@ export class TasksService {
         const createdIds: number[] = [];
 
         for (const idTarget of dto.idUsuarios) {
-            // Check permissions (optional but recommended)
             const canManage = await this.canManageUser(idCreador, idTarget);
-            if (!canManage) {
-                console.warn(`[Masiva] Skipping user ${idTarget} due to permission`);
-                continue;
-            }
+            if (!canManage) continue;
 
-            // Clone base task
             const idTarea = await tasksRepo.crearTarea({
                 titulo: dto.tareaBase.titulo,
                 descripcion: dto.tareaBase.descripcion,
                 idCreador: idCreador,
-                idProyecto: dto.tareaBase.idProyecto || undefined,
+                idProyecto: dto.tareaBase.idProyecto,
                 prioridad: dto.tareaBase.prioridad,
                 esfuerzo: dto.tareaBase.esfuerzo,
                 tipo: dto.tareaBase.tipo,
@@ -168,11 +164,31 @@ export class TasksService {
                 comportamiento: dto.tareaBase.comportamiento,
                 idResponsable: idTarget
             });
-
             createdIds.push(idTarea);
         }
-
         return { created: createdIds.length, ids: createdIds };
+    }
+
+    async getAgendaCompliance(userId: number, roles: string[], fechaStr?: string) {
+        const carnet = await this.resolveCarnet(userId);
+        const date = fechaStr ? fechaStr : new Date().toISOString();
+
+        // 1. Obtener a quién puede ver este usuario
+        let visibleCarnets: string[] = [];
+
+        // Si es Admin, ve a todos (menos a inactivos)
+        const isAdmin = roles.some(r => ['Admin', 'Administrador', 'SuperAdmin'].includes(r));
+
+        if (isAdmin) {
+            visibleCarnets = (await accesoRepo.listarEmpleadosActivos())
+                .map(u => u.carnet)
+                .filter(Boolean) as string[];
+        } else {
+            visibleCarnets = await this.visibilidadService.obtenerCarnetsVisibles(carnet);
+        }
+
+        // 2. Obtener reporte de hoy para esos usuarios
+        return await clarityRepo.obtenerEquipoHoy(visibleCarnets, date);
     }
 
     async tareasMisTareas(carnet: string, estado?: string, idProyecto?: number, startDate?: string, endDate?: string, query?: string) {

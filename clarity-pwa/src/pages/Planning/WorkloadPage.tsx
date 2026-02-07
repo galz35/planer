@@ -228,7 +228,7 @@ export const WorkloadPage: React.FC = () => {
                             {loading ? (
                                 <div className="p-32 text-center flex flex-col items-center gap-4">
                                     <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronizando equipo...</span>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargando equipo...</span>
                                 </div>
                             ) : Object.keys(groupedUsers).sort().map(groupName => {
                                 const isCollapsed = collapsedGroups[groupName];

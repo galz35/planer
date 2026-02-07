@@ -358,13 +358,13 @@ export const clarityService = {
         return response.data;
     },
 
-    getAuditLogs: async (page: number = 1, limit: number = 50, filters?: { accion?: string, recurso?: string, idUsuario?: number, query?: string }) => {
+    getAuditLogs: async (params: { page?: number, limit?: number, idUsuario?: number, accion?: string, recurso?: string, query?: string, entidad?: string, entidadId?: string }) => {
         const { data: response } = await api.get<ApiResponse<{
             items: { idAuditLog: number, accion: string, entidad: string, idEntidad: number, datosAnteriores: string | null, datosNuevos: string | null, idUsuario: number, fecha: string }[],
             total: number,
             page: number,
             totalPages: number
-        }>>('/admin/audit-logs', { params: { page, limit, ...filters } });
+        }>>('/admin/audit-logs', { params });
         return response.data;
     },
 
@@ -399,6 +399,18 @@ export const clarityService = {
     },
     crearUsuario: async (dto: any) => {
         const { data: response } = await api.post<ApiResponse>('/admin/usuarios', dto);
+        return response.data;
+    },
+    updateUsuario: async (id: number, dto: any) => {
+        const { data: response } = await api.patch<ApiResponse>(`/admin/usuarios/${id}`, dto);
+        return response.data;
+    },
+    deleteUsuario: async (id: number) => {
+        const { data: response } = await api.delete<ApiResponse>(`/admin/usuarios/${id}`);
+        return response.data;
+    },
+    removerUsuarioNodo: async (idUsuario: number, idNodo: number) => {
+        const { data: response } = await api.delete<ApiResponse>(`/admin/usuarios-organizacion/${idUsuario}/${idNodo}`);
         return response.data;
     },
     async getVisibilidadEfectiva(idUsuario: number) {
@@ -454,10 +466,16 @@ export const clarityService = {
         return response.data;
     },
 
+
+
     // === MÓDULO: REPORTES ===
     // Obtención de métricas, productividad y descarga de archivos Excel.
     getGerenciaResumen: async (fecha: string) => {
         const { data: response } = await api.get<ApiResponse>('/gerencia/resumen', { params: { fecha } });
+        return response.data;
+    },
+    getAgendaCompliance: async (fecha: string) => {
+        const { data: response } = await api.get<ApiResponse>('/reports/agenda-compliance', { params: { fecha } });
         return response.data;
     },
     getReporteProductividad: async (month?: number, year?: number, idProyecto?: number) => {
@@ -563,7 +581,7 @@ export const clarityService = {
         const { data: response } = await api.get<ApiResponse>(`/acceso/permiso-area/${carnetRecibe}`);
         return response.data;
     },
-    crearPermisoArea: async (dto: { carnetRecibe: string, idOrgRaiz: string | number, alcance?: 'SUBARBOL' | 'SOLO_NODO' }) => {
+    crearPermisoArea: async (dto: { carnetRecibe: string, idOrgRaiz: string | number, alcance?: 'SUBARBOL' | 'SOLO_NODO', tipoAcceso?: 'ALLOW' | 'DENY' }) => {
         const { data: response } = await api.post<ApiResponse>('/acceso/permiso-area', dto);
         return response.data;
     },
@@ -614,7 +632,8 @@ export const clarityService = {
         const params = estado ? { estado } : {};
         const { data: response } = await api.get<ApiResponse<any>>('/planning/mi-asignacion', { params });
         return response.data;
-    }
+    },
+
 };
 
 // Types for Foco

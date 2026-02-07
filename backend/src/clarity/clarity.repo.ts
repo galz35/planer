@@ -97,9 +97,9 @@ export async function obtenerEquipoHoy(carnetsMiembros: string[], fechaStr: stri
     const carnetsList = carnetsMiembros.join(',');
 
     // Miembros del equipo con su rol (Usando carnet)
-    // Miembros del equipo con su rol (Optimized SP)
-    const miembros = await ejecutarSP<any>('sp_Usuarios_ObtenerPorLista', {
-        carnetsList: { valor: carnetsList, tipo: NVarChar }
+    // Miembros del equipo con su rol (Optimized SP via Acceso Repo standard)
+    const miembros = await ejecutarSP<any>('sp_Usuarios_ObtenerDetallesPorCarnets', {
+        CarnetsCsv: { valor: carnetsList, tipo: NVarChar }
     });
 
     if (miembros.length === 0) return { miembros: [], resumenAnimo: { feliz: 0, neutral: 0, triste: 0, promedio: 0 } };
@@ -130,6 +130,7 @@ export async function obtenerEquipoHoy(carnetsMiembros: string[], fechaStr: stri
                 nombre: m.nombre || m.nombreCompleto,
                 correo: m.correo,
                 carnet: m.carnet,
+                area: m.subgerencia || m.departamento || m.orgDepartamento || 'General',
                 rol: { nombre: m.rolNombre || m.cargo || 'General' }
             },
             checkin: checkin ? {
@@ -170,9 +171,9 @@ export async function obtenerEquipoInforme(carnetsMiembros: string[], fechaStr: 
     const carnetsList = carnetsMiembros.join(',');
 
     // 1. Obtener Info de Miembros (Nombre, Rol, etc)
-    // 1. Obtener Info de Miembros (Optimized SP)
-    const miembros = await ejecutarSP<any>('sp_Usuarios_ObtenerPorLista', {
-        carnetsList: { valor: carnetsList, tipo: NVarChar }
+    // 1. Obtener Info de Miembros (Optimized SP via Acceso Repo standard)
+    const miembros = await ejecutarSP<any>('sp_Usuarios_ObtenerDetallesPorCarnets', {
+        CarnetsCsv: { valor: carnetsList, tipo: NVarChar }
     });
 
     console.log(`[DEBUG] obtenerEquipoInforme: carnetsList length=${carnetsMiembros.length}, miembros found=${miembros.length}`);

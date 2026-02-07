@@ -4,6 +4,7 @@ import * as authRepo from '../auth/auth.repo';
 import { RolDb, OrganizacionNodoDb, LogSistemaDb } from '../db/tipos';
 import { VisibilidadService } from '../acceso/visibilidad.service';
 import { AuditService } from '../common/audit.service';
+import { UsuarioCrearDto, UsuarioActualizarDto } from './dto/admin.dtos';
 
 @Injectable()
 export class AdminService {
@@ -19,6 +20,27 @@ export class AdminService {
 
     async getStats() {
         return adminRepo.obtenerEstadisticasAdmin();
+    }
+
+    async usuarioCrear(dto: UsuarioCrearDto, idAdmin: number) {
+        const result = await adminRepo.crearUsuario(dto);
+        await this.crearLog({
+            idUsuario: idAdmin,
+            accion: 'CREAR_USUARIO',
+            entidad: 'Usuario',
+            datos: `Correo: ${dto.correo}, Nombre: ${dto.nombre}`
+        });
+        return result;
+    }
+
+    async usuarioActualizar(idUsuario: number, dto: UsuarioActualizarDto, idAdmin: number) {
+        await adminRepo.actualizarUsuario(idUsuario, dto);
+        await this.crearLog({
+            idUsuario: idAdmin,
+            accion: 'ACTUALIZAR_USUARIO',
+            entidad: 'Usuario',
+            datos: `Usuario ID: ${idUsuario}, Cambios: ${JSON.stringify(dto)}`
+        });
     }
 
     async usuarioCambiarRol(idUsuario: number, rol: string, idAdmin: number, idRol?: number) {
@@ -119,5 +141,25 @@ export class AdminService {
             datos: `Restaurado ${tipo} #${id}`
         });
         return { success: true };
+    }
+
+    async usuarioEliminar(idUsuario: number, idAdmin: number) {
+        await adminRepo.eliminarUsuario(idUsuario);
+        await this.crearLog({
+            idUsuario: idAdmin,
+            accion: 'ELIMINAR_USUARIO',
+            entidad: 'Usuario',
+            datos: `ID Eliminado: ${idUsuario}`
+        });
+    }
+
+    async usuarioRemoverDeNodo(idUsuario: number, idNodo: number, idAdmin: number) {
+        await adminRepo.removerUsuarioNodo(idUsuario, idNodo);
+        await this.crearLog({
+            idUsuario: idAdmin,
+            accion: 'REMOVER_NODO',
+            entidad: 'UsuarioOrganizacion',
+            datos: `Usuario ${idUsuario} removido de Nodo ${idNodo}`
+        });
     }
 }

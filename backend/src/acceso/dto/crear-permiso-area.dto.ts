@@ -32,4 +32,8 @@ export class CrearPermisoAreaDto {
     @IsString()
     @MaxLength(300)
     motivo?: string;
+
+    @IsOptional()
+    @IsIn(['ALLOW', 'DENY'])
+    tipoAcceso?: 'ALLOW' | 'DENY';
 }

@@ -22,6 +22,8 @@ import {
     RolActualizarDto,
     OrganizacionNodoCrearDto,
     UsuarioOrganizacionAsignarDto,
+    UsuarioCrearDto,
+    UsuarioActualizarDto,
 } from './dto/admin.dtos';
 
 import { Roles } from '../auth/roles.decorator';
@@ -84,6 +86,22 @@ export class AdminController {
     ) {
         const menuJson = menu ? JSON.stringify(menu) : null;
         return this.securityService.assignCustomMenu(id, menuJson);
+    }
+
+    @Post('usuarios')
+    async crearUsuario(@Body() dto: UsuarioCrearDto, @Req() req: any) {
+        const actorId = this.getUserId(req);
+        return this.adminService.usuarioCrear(dto, actorId);
+    }
+
+    @Patch('usuarios/:id')
+    async actualizarUsuario(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UsuarioActualizarDto,
+        @Req() req: any
+    ) {
+        const actorId = this.getUserId(req);
+        return this.adminService.usuarioActualizar(id, dto, actorId);
     }
 
     @Get('usuarios/:id/visibilidad-efectiva')
@@ -168,5 +186,21 @@ export class AdminController {
     async restoreItem(@Body() body: { tipo: 'Proyecto' | 'Tarea'; id: number }, @Req() req: any) {
         const actorId = this.getUserId(req);
         return this.adminService.restoreItem(body.tipo, body.id, actorId);
+    }
+
+    @Delete('usuarios/:id')
+    async eliminarUsuario(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+        const actorId = this.getUserId(req);
+        return this.adminService.usuarioEliminar(id, actorId);
+    }
+
+    @Delete('usuarios-organizacion/:idUsuario/:idNodo')
+    async removerUsuarioNodo(
+        @Param('idUsuario', ParseIntPipe) idUsuario: number,
+        @Param('idNodo', ParseIntPipe) idNodo: number,
+        @Req() req: any
+    ) {
+        const actorId = this.getUserId(req);
+        return this.adminService.usuarioRemoverDeNodo(idUsuario, idNodo, actorId);
     }
 }

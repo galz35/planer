@@ -48,6 +48,7 @@ export interface PermisoAreaDb {
     motivo: string | null;
     creado_en: Date;
     fecha_fin: Date;
+    tipo_acceso: string;
 }
 
 export interface PermisoEmpleadoDb {
@@ -189,7 +190,8 @@ export async function crearPermisoArea(permiso: Partial<PermisoAreaDb>) {
         idorg: { valor: permiso.idorg_raiz, tipo: BigInt },
         alcance: { valor: cleanStr(permiso.alcance || 'SUBARBOL'), tipo: NVarChar },
         motivo: { valor: permiso.motivo ? cleanStr(permiso.motivo) : null, tipo: NVarChar },
-        fecha_fin: { valor: (permiso as any).fecha_fin || null, tipo: NVarChar }
+        fecha_fin: { valor: (permiso as any).fecha_fin || null, tipo: NVarChar },
+        tipo_acceso: { valor: cleanStr(permiso.tipo_acceso || 'ALLOW'), tipo: NVarChar }
     });
 }
 

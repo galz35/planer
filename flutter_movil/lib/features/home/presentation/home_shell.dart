@@ -16,6 +16,7 @@ import '../../settings/presentation/settings_screen.dart';
 import '../../sync/presentation/sync_screen.dart';
 import '../../team/presentation/team_screen.dart';
 import '../../team/presentation/team_blockers_screen.dart';
+import '../../tasks/presentation/quick_create_task_sheet.dart';
 
 /// ============================================
 /// HOME SHELL - Navegación Principal Premium
@@ -58,6 +59,24 @@ class _HomeShellState extends State<HomeShell> {
         children: _screens,
       ),
       bottomNavigationBar: _buildBottomNav(context),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showQuickCreateTask(context),
+        backgroundColor: const Color(0xFF0F172A), // Slate 900
+        elevation: 4,
+        child: const Icon(CupertinoIcons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  void _showQuickCreateTask(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Para que suba con el teclado
+      backgroundColor: Colors.transparent,
+      builder: (context) => const Padding(
+        padding: EdgeInsets.only(top: 100), // Espacio superior
+        child: QuickCreateTaskSheet(),
+      ),
     );
   }
 

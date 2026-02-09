@@ -151,11 +151,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                         Center(
+                         const Center( // Added const
                           child: Text(
                             'Accede a tu espacio de trabajo',
                             style: TextStyle(
-                              color: const Color(0xFF64748B), // Slate 500
+                              color: Color(0xFF64748B), // Slate 500
                               fontSize: 16,
                             ),
                           ),
@@ -296,11 +296,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       
                       const SizedBox(height: 32),
-                      Center(
+                      const Center( // Added const
                         child: Text(
                           '¿Olvidaste tu contraseña?',
                           style: TextStyle(
-                            color: const Color(0xFF10B981), // Emerald 500
+                            color: Color(0xFF10B981), // Emerald 500
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),

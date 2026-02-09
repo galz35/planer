@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.gustavo"
+    namespace = "com.momentus.flutter_movil"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.gustavo"
+        applicationId = "com.momentus.flutter_movil"
         // Mínimo SDK 21 para Firebase
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion

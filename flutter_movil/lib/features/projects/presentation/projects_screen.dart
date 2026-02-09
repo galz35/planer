@@ -178,10 +178,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: p)),
-        ),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: p)),
+          );
+          _refresh();
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),

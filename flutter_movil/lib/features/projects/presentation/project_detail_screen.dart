@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_utils.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/data/offline_resource_service.dart';
+import 'create_project_sheet.dart';
 
 /// Pantalla de detalle completo de un proyecto
 /// Muestra información del proyecto y lista de tareas asociadas
@@ -67,6 +68,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 side: BorderSide.none,
                 padding: EdgeInsets.zero,
               ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFF64748B)),
+              onPressed: () {
+                CreateProjectSheet.show(
+                  context,
+                  project: widget.project,
+                  onCreated: () => Navigator.pop(context), 
+                );
+              },
             ),
         ],
       ),

@@ -4,10 +4,11 @@ import '../../projects/data/projects_repository.dart';
 
 class CreateProjectSheet extends StatefulWidget {
   final VoidCallback? onCreated;
+  final Map<String, dynamic>? project;
 
-  const CreateProjectSheet({super.key, this.onCreated});
+  const CreateProjectSheet({super.key, this.onCreated, this.project});
 
-  static Future<void> show(BuildContext context, {VoidCallback? onCreated}) {
+  static Future<void> show(BuildContext context, {VoidCallback? onCreated, Map<String, dynamic>? project}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -16,7 +17,10 @@ class CreateProjectSheet extends StatefulWidget {
         initialChildSize: 0.9,
         minChildSize: 0.5,
         maxChildSize: 0.95,
-        builder: (context, scrollController) => CreateProjectSheet(onCreated: onCreated),
+        builder: (context, scrollController) => CreateProjectSheet(
+          onCreated: onCreated,
+          project: project,
+        ),
       ),
     );
   }
@@ -30,8 +34,22 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
   final _descCtrl = TextEditingController();
   final _repo = ProjectsRepository();
   
+  final _tipos = ['Administrativo', 'Logistica', 'Estrategico', 'AMX', 'Otros'];
   String _tipo = 'Administrativo';
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.project != null) {
+      _nameCtrl.text = widget.project!['nombre']?.toString() ?? '';
+      _descCtrl.text = widget.project!['descripcion']?.toString() ?? '';
+      var t = widget.project!['tipo']?.toString();
+      if (t != null && _tipos.contains(t)) {
+        _tipo = t;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -40,7 +58,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
     super.dispose();
   }
 
-  Future<void> _create() async {
+  Future<void> _save() async {
     if (_nameCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('El nombre es obligatorio'), backgroundColor: Colors.red),
@@ -51,24 +69,42 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
     setState(() => _saving = true);
 
     try {
-      await _repo.createProject(
-        nombre: _nameCtrl.text.trim(),
-        descripcion: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
-        tipo: _tipo,
-      );
+      if (widget.project != null) {
+        // Update
+        final id = widget.project!['idProyecto'] ?? widget.project!['id'];
+        await _repo.updateProject(id, {
+          'nombre': _nameCtrl.text.trim(),
+          'descripcion': _descCtrl.text.trim(),
+          'tipo': _tipo,
+        });
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Proyecto actualizado'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        // Create
+        await _repo.createProject(
+          nombre: _nameCtrl.text.trim(),
+          descripcion: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
+          tipo: _tipo,
+        );
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Proyecto creado con éxito!'), backgroundColor: Colors.green),
+          );
+        }
+      }
 
       if (mounted) {
         widget.onCreated?.call();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Proyecto creado con éxito!'), backgroundColor: Colors.green),
-        );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al crear proyecto: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -76,6 +112,8 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.project != null;
+
     return Container(
       padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: const BoxDecoration(
@@ -97,9 +135,9 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
             ),
             const SizedBox(height: 20),
 
-            const Text(
-              'Nuevo Proyecto',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+            Text(
+              isEditing ? 'Editar Proyecto' : 'Nuevo Proyecto',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
             ),
             const SizedBox(height: 24),
 
@@ -130,7 +168,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
                 child: DropdownButton<String>(
                   value: _tipo,
                   isExpanded: true,
-                  items: ['Administrativo', 'Logistica', 'Estrategico', 'AMX', 'Otros']
+                  items: _tipos
                       .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                       .toList(),
                   onChanged: (val) => setState(() => _tipo = val!),
@@ -154,9 +192,9 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
             ),
             const SizedBox(height: 32),
 
-            // Botón Crear
+            // Botón Guardar
             ElevatedButton(
-              onPressed: _saving ? null : _create,
+              onPressed: _saving ? null : _save,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0F172A),
                 foregroundColor: Colors.white,
@@ -165,7 +203,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
               ),
               child: _saving 
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('CREAR PROYECTO', style: TextStyle(fontWeight: FontWeight.bold)),
+                : Text(isEditing ? 'GUARDAR CAMBIOS' : 'CREAR PROYECTO', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

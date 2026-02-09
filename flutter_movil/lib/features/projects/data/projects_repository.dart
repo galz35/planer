@@ -26,4 +26,8 @@ class ProjectsRepository {
       return [];
     }
   }
+
+  Future<void> updateProject(int id, Map<String, dynamic> data) async {
+    await ApiClient.dio.patch('/proyectos/$id', data: data);
+  }
 }

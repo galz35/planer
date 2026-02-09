@@ -24,9 +24,14 @@ class AuthRepository {
       'password': password,
     });
 
-    final data = response.data as Map<String, dynamic>;
-    final accessToken = (data['accessToken'] ?? data['token'] ?? '') as String;
-    final refreshToken = (data['refreshToken'] ?? '') as String;
+    final rawData = response.data as Map<String, dynamic>;
+    
+    // La API envuelve la respuesta en { success: true, data: {...} }
+    final data = (rawData['data'] ?? rawData) as Map<String, dynamic>;
+    
+    // La API usa snake_case: access_token, refresh_token
+    final accessToken = (data['access_token'] ?? data['accessToken'] ?? data['token'] ?? '') as String;
+    final refreshToken = (data['refresh_token'] ?? data['refreshToken'] ?? '') as String;
     final usuario = (data['user'] ?? data['usuario'] ?? <String, dynamic>{}) as Map<String, dynamic>;
 
     final user = SessionUser(

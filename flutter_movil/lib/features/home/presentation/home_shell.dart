@@ -25,6 +25,8 @@ import '../../tasks/presentation/quick_create_task_sheet.dart';
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
+  static final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
@@ -52,6 +54,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: HomeShell.scaffoldKey, // Asignar la key estática
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50
       drawer: _buildDrawer(context),
       body: IndexedStack(

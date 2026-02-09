@@ -5,6 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_utils.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/data/offline_resource_service.dart';
+import '../../home/presentation/home_shell.dart';
 
 /// Dashboard ejecutivo móvil.
 ///
@@ -68,7 +69,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard / Reportes')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF64748B)),
+          onPressed: () => HomeShell.scaffoldKey.currentState?.openDrawer(),
+          tooltip: 'Menú',
+        ),
+        title: const Text('Dashboard / Reportes'),
+      ),
       body: FutureBuilder<OfflineMapResult>(
         future: _future,
         builder: (context, snapshot) {

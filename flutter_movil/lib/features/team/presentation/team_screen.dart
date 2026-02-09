@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_utils.dart';
 import '../../common/data/offline_resource_service.dart';
+import '../../home/presentation/home_shell.dart';
 
 /// Módulo Equipos:
 /// - Online: /planning/team
@@ -94,7 +95,14 @@ class _TeamScreenState extends State<TeamScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Equipos')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF64748B)),
+          onPressed: () => HomeShell.scaffoldKey.currentState?.openDrawer(),
+          tooltip: 'Menú',
+        ),
+        title: const Text('Equipos'),
+      ),
       body: FutureBuilder<OfflineListResult>(
         future: _future,
         builder: (context, snapshot) {

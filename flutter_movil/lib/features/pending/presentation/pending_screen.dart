@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_utils.dart';
 import '../../common/data/offline_resource_service.dart';
+import '../../home/presentation/home_shell.dart';
 
 class PendingScreen extends StatefulWidget {
   const PendingScreen({super.key});
@@ -122,11 +123,18 @@ class _PendingScreenState extends State<PendingScreen> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF64748B)),
+          onPressed: () => HomeShell.scaffoldKey.currentState?.openDrawer(),
+          tooltip: 'Menú',
+        ),
         title: const Text(
           'Mis Pendientes',
           style: TextStyle(

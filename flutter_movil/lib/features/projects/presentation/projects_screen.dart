@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_utils.dart';
 import '../../common/data/offline_resource_service.dart';
+import '../../home/presentation/home_shell.dart';
 import 'project_detail_screen.dart';
 
 class ProjectsScreen extends StatefulWidget {
@@ -47,6 +48,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF64748B)),
+          onPressed: () => HomeShell.scaffoldKey.currentState?.openDrawer(),
+          tooltip: 'Menú',
+        ),
         title: const Text(
           'Mis Proyectos',
           style: TextStyle(

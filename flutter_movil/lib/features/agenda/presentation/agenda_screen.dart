@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../../agenda/domain/agenda_models.dart';
 import 'agenda_controller.dart';
 
+import '../../home/presentation/home_shell.dart';
+
 class AgendaScreen extends StatelessWidget {
   const AgendaScreen({super.key});
 
@@ -35,6 +37,11 @@ class _AgendaView extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF64748B)),
+          onPressed: () => HomeShell.scaffoldKey.currentState?.openDrawer(),
+          tooltip: 'Menú',
+        ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

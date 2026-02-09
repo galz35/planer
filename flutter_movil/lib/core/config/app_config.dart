@@ -5,7 +5,7 @@ class AppConfig {
   /// flutter run --dart-define=API_BASE_URL=https://api.mi-dominio.com
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.tu-dominio.com',
+    defaultValue: 'http://100.26.176.32/api',
   );
 
   /// Ventana de debounce para auto-sync (segundos).
@@ -16,5 +16,5 @@ class AppConfig {
   );
 
   /// Intervalo sugerido para sincronizar en segundo plano al abrir la app.
-  static Duration get syncWindow => Duration(seconds: _syncWindowSeconds);
+  static Duration get syncWindow => const Duration(seconds: _syncWindowSeconds);
 }

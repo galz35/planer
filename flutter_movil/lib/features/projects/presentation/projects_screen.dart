@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_utils.dart';
 import '../../common/data/offline_resource_service.dart';
+import 'project_detail_screen.dart';
 
 /// Módulo Proyectos:
 /// - Online: /planning/my-projects
@@ -37,58 +38,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  Future<void> _openProjectDetail(Map<String, dynamic> project) async {
-    final id = project['idProyecto'] ?? project['id'];
-    if (id == null) return;
-
-    List<dynamic> tasks = [];
-    String error = '';
-
-    try {
-      final response = await ApiClient.dio.get('/proyectos/$id/tareas');
-      tasks = unwrapApiList(response.data);
-    } catch (_) {
-      error = 'No se pudieron cargar tareas del proyecto.';
-    }
-
-    if (!mounted) return;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text((project['nombre'] ?? 'Proyecto').toString(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
-                const SizedBox(height: 10),
-                if (error.isNotEmpty)
-                  Text(error)
-                else if (tasks.isEmpty)
-                  const Text('No hay tareas registradas para este proyecto.')
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: tasks.length,
-                      itemBuilder: (_, i) {
-                        final t = (tasks[i] as Map).cast<String, dynamic>();
-                        return ListTile(
-                          title: Text((t['titulo'] ?? 'Tarea').toString()),
-                          subtitle: Text((t['estado'] ?? '').toString()),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _refresh() async {
+    setState(() => _future = _fetchProjects());
   }
 
   @override
@@ -125,20 +76,28 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   child: Text('Mostrando caché local (sin conexión).'),
                 ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) {
-                    final p = (items[i] as Map).cast<String, dynamic>();
-                    return Card(
-                      child: ListTile(
-                        onTap: () => _openProjectDetail(p),
-                        title: Text((p['nombre'] ?? p['titulo'] ?? 'Proyecto').toString()),
-                        subtitle: Text((p['descripcion'] ?? 'Sin descripción').toString()),
-                        trailing: Text('#${(p['idProyecto'] ?? p['id'] ?? '-')}'),
-                      ),
-                    );
-                  },
+                child: RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: items.length,
+                    itemBuilder: (_, i) {
+                      final p = (items[i] as Map).cast<String, dynamic>();
+                      return Card(
+                        child: ListTile(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProjectDetailScreen(project: p),
+                            ),
+                          ),
+                          title: Text((p['nombre'] ?? p['titulo'] ?? 'Proyecto').toString()),
+                          subtitle: Text((p['descripcion'] ?? 'Sin descripción').toString()),
+                          trailing: Text('#${(p['idProyecto'] ?? p['id'] ?? '-')}'),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],

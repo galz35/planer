@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/services/push_notification_service.dart';
 import '../data/auth_repository.dart';
 import '../domain/session_user.dart';
 
@@ -21,6 +22,10 @@ class AuthController extends ChangeNotifier {
 
     try {
       user = await _repository.restoreSession();
+      // Si restauramos sesión, registrar token FCM
+      if (user != null) {
+        _registerFcmToken();
+      }
     } catch (_) {
       user = null;
     } finally {
@@ -37,6 +42,8 @@ class AuthController extends ChangeNotifier {
 
     try {
       user = await _repository.login(correo: correo, password: password);
+      // Registrar token FCM con el backend después del login exitoso
+      _registerFcmToken();
       return true;
     } catch (e) {
       error = 'No se pudo iniciar sesión. Verifica tus credenciales.';
@@ -51,5 +58,12 @@ class AuthController extends ChangeNotifier {
     await _repository.logout();
     user = null;
     notifyListeners();
+  }
+
+  /// Registra el token FCM con el backend de forma asíncrona (fire-and-forget)
+  void _registerFcmToken() {
+    PushNotificationService.instance.registerTokenWithBackend().catchError((_) {
+      // Silenciar errores de FCM para no afectar flujo de login
+    });
   }
 }

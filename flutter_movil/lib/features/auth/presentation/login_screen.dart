@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import 'auth_controller.dart';
+import 'forgot_password_screen.dart';
 
 /// ============================================
 /// PANTALLA DE LOGIN - Diseño Verde Premium
@@ -182,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.error_outline_rounded,
                     color: MomentusTheme.error,
                     size: 20,
@@ -202,16 +203,16 @@ class _LoginScreenState extends State<LoginScreen>
             const SizedBox(height: 20),
           ],
           
-          // Email Input
+          // Email or Carnet Input
           TextField(
             controller: _correoCtrl,
-            keyboardType: TextInputType.emailAddress,
+            keyboardType: TextInputType.text, // Puede ser texto o número
             textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: 'Correo electrónico',
-              hintText: 'tu@email.com',
+            decoration: const InputDecoration(
+              labelText: 'Correo o Carnet',
+              hintText: 'Ej. tu@email.com o Carnet',
               prefixIcon: Icon(
-                Icons.email_outlined,
+                Icons.account_circle_outlined,
                 color: MomentusTheme.slate400,
               ),
             ),
@@ -227,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen>
             onSubmitted: (_) => _handleLogin(auth),
             decoration: InputDecoration(
               labelText: 'Contraseña',
-              prefixIcon: Icon(
+              prefixIcon: const Icon(
                 Icons.lock_outline_rounded,
                 color: MomentusTheme.slate400,
               ),
@@ -256,7 +257,10 @@ class _LoginScreenState extends State<LoginScreen>
           Center(
             child: TextButton(
               onPressed: () {
-                // TODO: Navegar a recuperar contraseña
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                );
               },
               child: Text(
                 '¿Olvidaste tu contraseña?',
@@ -289,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen>
           borderRadius: BorderRadius.circular(MomentusTheme.radiusMd),
           child: Center(
             child: auth.loading
-                ? SizedBox(
+                ? const SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
@@ -297,10 +301,10 @@ class _LoginScreenState extends State<LoginScreen>
                       valueColor: AlwaysStoppedAnimation(MomentusTheme.slate500),
                     ),
                   )
-                : Row(
+                : const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         'Iniciar Sesión',
                         style: TextStyle(
                           color: Colors.white,
@@ -309,8 +313,8 @@ class _LoginScreenState extends State<LoginScreen>
                           letterSpacing: 0.2,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
+                      SizedBox(width: 8),
+                      Icon(
                         Icons.arrow_forward_rounded,
                         color: Colors.white,
                         size: 20,
@@ -329,7 +333,7 @@ class _LoginScreenState extends State<LoginScreen>
         // Divider con texto
         Row(
           children: [
-            Expanded(child: Divider(color: MomentusTheme.slate200)),
+            const Expanded(child: Divider(color: MomentusTheme.slate200)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
@@ -337,7 +341,7 @@ class _LoginScreenState extends State<LoginScreen>
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-            Expanded(child: Divider(color: MomentusTheme.slate200)),
+            const Expanded(child: Divider(color: MomentusTheme.slate200)),
           ],
         ),
         const SizedBox(height: 16),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../domain/task_item.dart';
+import '../domain/task_item.dart';
 import 'task_controller.dart';
 
 class TasksScreen extends StatelessWidget {
@@ -245,11 +245,11 @@ class _TaskCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               children: [
-                Chip(label: Text(task.estado), side: BorderSide.none, backgroundColor: statusColor.withOpacity(0.12)),
+                Chip(label: Text(task.estado), side: BorderSide.none, backgroundColor: statusColor.withValues(alpha: 0.12)),
                 Chip(
                   label: Text(task.synced ? 'Sincronizada' : 'Pendiente de sync'),
                   side: BorderSide.none,
-                  backgroundColor: task.synced ? Colors.teal.withOpacity(0.12) : Colors.amber.withOpacity(0.18),
+                  backgroundColor: task.synced ? Colors.teal.withValues(alpha: 0.12) : Colors.amber.withValues(alpha: 0.18),
                 ),
               ],
             ),

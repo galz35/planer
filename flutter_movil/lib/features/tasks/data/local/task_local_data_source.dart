@@ -31,12 +31,14 @@ class TaskLocalDataSource {
       where: 'id = ?',
       whereArgs: [task.id],
     );
-    await _enqueueSync(
-      entidad: 'task',
-      entidadId: task.id,
-      operacion: 'update',
-      payload: jsonEncode(task.copyWith(synced: false).toMap()),
-    );
+    if (task.id != null) {
+      await _enqueueSync(
+        entidad: 'task',
+        entidadId: task.id!,
+        operacion: 'update',
+        payload: jsonEncode(task.copyWith(synced: false).toMap()),
+      );
+    }
   }
 
   Future<void> markAsSynced(int id) async {

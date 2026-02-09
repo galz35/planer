@@ -310,7 +310,7 @@ class MomentusTaskCard extends StatelessWidget {
                           ),
                           if (projectName != null) ...[
                             const SizedBox(width: 10),
-                            Icon(
+                            const Icon(
                               Icons.folder_outlined,
                               size: 14,
                               color: MomentusTheme.slate400,
@@ -331,7 +331,7 @@ class MomentusTaskCard extends StatelessWidget {
                 ),
                 
                 // Flecha
-                Icon(
+                const Icon(
                   Icons.chevron_right_rounded,
                   color: MomentusTheme.slate300,
                   size: 22,
@@ -457,7 +457,7 @@ class MomentusEmptyState extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: MomentusTheme.green50,
                 shape: BoxShape.circle,
               ),
@@ -510,7 +510,7 @@ class MomentusLoading extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 44,
             height: 44,
             child: CircularProgressIndicator(

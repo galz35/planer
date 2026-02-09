@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "117191663113",
+    "project_id": "plannerfcm",
+    "storage_bucket": "plannerfcm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:117191663113:android:689925963fb1191a3ca2d8",
+        "android_client_info": {
+          "package_name": "com.gustavo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1eMZiJCGKdCn729tYoJ7UCX_iKx_yjUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

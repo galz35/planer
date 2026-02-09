@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 /// MOMENTUS THEME - Verde Suave (Solo Claro)
 /// ============================================
 /// Diseño premium con tonos verdes frescos y suaves.
+/// Inspirado en el diseño React pero con tema verde.
 
 class MomentusTheme {
   MomentusTheme._(); // No instanciable
@@ -123,7 +124,7 @@ class MomentusTheme {
       fontFamily: 'Inter',
       
       // Esquema de colores
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: primary,
         onPrimary: Colors.white,
         primaryContainer: green100,
@@ -162,7 +163,7 @@ class MomentusTheme {
       ),
       
       // Cards elegantes
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),

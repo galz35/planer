@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../../data/repositories/task_repository.dart';
-import '../../domain/task_item.dart';
+import '../data/repositories/task_repository.dart';
+import '../domain/task_item.dart';
 
 enum TaskFilter { all, pending, completed, unsynced }
 

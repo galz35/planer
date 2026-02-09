@@ -13,6 +13,7 @@ import '../../settings/presentation/settings_screen.dart';
 import '../../sync/presentation/sync_screen.dart';
 import '../../tasks/presentation/tasks_screen.dart';
 import '../../team/presentation/team_screen.dart';
+import '../../team/presentation/team_blockers_screen.dart';
 
 /// ============================================
 /// HOME SHELL - Navegación Principal Premium
@@ -217,6 +218,11 @@ class _HomeShellState extends State<HomeShell> {
                   label: 'Mi Asignación',
                   page: const MyAssignmentScreen(),
                 ),
+                _buildDrawerItem(
+                  icon: Icons.warning_amber_outlined,
+                  label: 'Bloqueos del Equipo',
+                  page: const TeamBlockersScreen(),
+                ),
                 
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -276,7 +282,7 @@ class _HomeShellState extends State<HomeShell> {
           color: MomentusTheme.slate700,
         ),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right_rounded,
         color: MomentusTheme.slate400,
         size: 20,

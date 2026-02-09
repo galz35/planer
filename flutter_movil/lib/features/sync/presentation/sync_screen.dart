@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../tasks/data/local/local_database.dart';
-import '../../../tasks/presentation/task_controller.dart';
+import '../../tasks/data/local/local_database.dart';
+import '../../tasks/presentation/task_controller.dart';
 
 class SyncScreen extends StatefulWidget {
   const SyncScreen({super.key});

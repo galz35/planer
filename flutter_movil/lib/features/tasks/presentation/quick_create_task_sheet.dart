@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
+import '../data/tasks_repository.dart';
+
 class QuickCreateTaskSheet extends StatefulWidget {
   const QuickCreateTaskSheet({super.key});
 
@@ -227,28 +229,49 @@ class _QuickCreateTaskSheetState extends State<QuickCreateTaskSheet> {
 
     setState(() => _isSaving = true);
 
-    // TODO: Llamar al Repositorio Real
-    await Future.delayed(const Duration(seconds: 1)); // Simulación
-
-    if (mounted) {
-      setState(() => _isSaving = false);
-      Navigator.pop(context, true); // Retorna true si se creó
+    try {
+      final repo = TasksRepository(); // Inyección manual simple
       
-      // Feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: const [
-              Icon(Icons.check_circle, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text('Tarea creada exitosamente'),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981), // Emerald 500
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      // Asignación de ID de usuario (por ahora null, se asigna al usuario actual por defecto en backend)
+      // Si _assignedTo fuera real, buscaríamos el ID aquí.
+      final int? assignedToId = null; 
+
+      await repo.createTask(
+        title: title,
+        date: _selectedDate,
+        assignedToUserId: assignedToId,
       );
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        Navigator.pop(context, true); // Retorna true si se creó
+        
+        // Feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Tarea creada exitosamente'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981), // Emerald 500
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al crear tarea: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

@@ -1,9 +1,9 @@
 
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../agenda/domain/agenda_models.dart';
 import 'agenda_controller.dart';
 
@@ -25,9 +25,7 @@ class _AgendaView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<AgendaController>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+    
     // Formato fecha: "Lun 24 Ene"
     final fechaFormat = DateFormat('EEE d MMM', 'es_ES').format(controller.currentDate);
 
@@ -80,7 +78,7 @@ class _AgendaView extends StatelessWidget {
         ],
       ),
       body: controller.loading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildSkeleton(context)
           : controller.error != null
               ? Center(child: Text(controller.error!, style: const TextStyle(color: Colors.red)))
               : _buildContent(context, controller.data!),
@@ -119,7 +117,7 @@ class _AgendaView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...data.bloqueosActivos.map((b) => _buildBloqueoCard(b)).toList(),
+          ...data.bloqueosActivos.map((b) => _buildBloqueoCard(b)),
           const SizedBox(height: 24),
         ],
 
@@ -146,7 +144,7 @@ class _AgendaView extends StatelessWidget {
             ),
           )
         else
-          ...data.tareasSugeridas.map((t) => _buildTaskCard(t)).toList(),
+          ...data.tareasSugeridas.map((t) => _buildTaskCard(t)),
           
         const SizedBox(height: 24),
 
@@ -162,7 +160,7 @@ class _AgendaView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ...data.backlog.map((t) => _buildTaskCard(t, isBacklog: true)).toList(),
+          ...data.backlog.map((t) => _buildTaskCard(t, isBacklog: true)),
         ],
       ],
     );
@@ -177,7 +175,7 @@ class _AgendaView extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withOpacity(0.04),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -264,7 +262,7 @@ class _AgendaView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.04),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -347,4 +345,68 @@ class _AgendaView extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildSkeleton(BuildContext context) {
+    // Helper para placeholder boxes
+    Widget box(double height, double width) => Container(
+      height: height,
+      width: width,
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // KPIs Skeleton
+        Row(
+          children: [
+            Expanded(child: box(80, double.infinity)),
+            const SizedBox(width: 12),
+            Expanded(child: box(80, double.infinity)),
+            const SizedBox(width: 12),
+            Expanded(child: box(80, double.infinity)),
+          ],
+        ),
+        const SizedBox(height: 32),
+        
+        // Title Skeleton
+        box(20, 150),
+        const SizedBox(height: 16),
+        
+        // Task List Skeleton (3 items)
+        for(int i=0; i<3; i++)
+          Container(
+            height: 80,
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                box(24, 24), // Checkbox
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      box(16, double.infinity), // Title
+                      const SizedBox(height: 8),
+                      box(12, 100), // Subtitle
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }
+

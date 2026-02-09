@@ -1,7 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_theme.dart';
+// Iconos adicionales
+import 'package:flutter/cupertino.dart';
+
 import '../../agenda/presentation/agenda_screen.dart';
 import '../../assignment/presentation/my_assignment_screen.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -11,12 +14,8 @@ import '../../projects/presentation/projects_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../sync/presentation/sync_screen.dart';
-import '../../tasks/presentation/tasks_screen.dart';
 import '../../team/presentation/team_screen.dart';
 import '../../team/presentation/team_blockers_screen.dart';
-
-// Iconos adicionales
-import 'package:flutter/cupertino.dart';
 
 /// ============================================
 /// HOME SHELL - Navegación Principal Premium
@@ -68,7 +67,7 @@ class _HomeShellState extends State<HomeShell> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.06),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -181,14 +180,28 @@ class _HomeShellState extends State<HomeShell> {
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 children: [
                   _buildSectionTitle('MI ESPACIO'),
-                  _buildDrawerItem(
-                    icon: CupertinoIcons.calendar,
-                    label: 'Mi Agenda',
-                    active: _currentIndex == 0,
+                  ListTile(
                     onTap: () {
                       setState(() => _currentIndex = 0);
                       Navigator.pop(context);
                     },
+                    dense: true,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    tileColor: _currentIndex == 0 ? const Color(0xFFECFDF5) : Colors.transparent,
+                    leading: Icon(
+                      CupertinoIcons.calendar,
+                      size: 20,
+                      color: _currentIndex == 0 ? const Color(0xFF059669) : const Color(0xFF64748B),
+                    ),
+                    title: Text(
+                      'Mi Agenda',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: _currentIndex == 0 ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
+                        color: _currentIndex == 0 ? const Color(0xFF059669) : const Color(0xFF64748B),
+                      ),
+                    ),
                   ),
                   _buildDrawerItem(
                     icon: CupertinoIcons.doc_text,
@@ -250,7 +263,7 @@ class _HomeShellState extends State<HomeShell> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0F172A).withOpacity(0.04),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.04),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -270,7 +283,7 @@ class _HomeShellState extends State<HomeShell> {
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF059669).withOpacity(0.2),
+                              color: const Color(0xFF059669).withValues(alpha: 0.2),
                               blurRadius: 8,
                             ),
                           ],
@@ -410,7 +423,6 @@ class _HomeShellState extends State<HomeShell> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
-    bool active = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -418,28 +430,21 @@ class _HomeShellState extends State<HomeShell> {
         onTap: onTap,
         dense: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        tileColor: active ? const Color(0xFFECFDF5) : Colors.transparent, // Green 50
+        // tileColor: active ? const Color(0xFFECFDF5) : Colors.transparent, // Green 50
         leading: Icon(
           icon,
           size: 20,
-          color: active ? const Color(0xFF059669) : const Color(0xFF64748B),
+          color: const Color(0xFF64748B),
         ),
         title: Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontFamily: 'Inter',
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: FontWeight.w500,
             fontSize: 14,
-            color: active ? const Color(0xFF059669) : const Color(0xFF64748B),
+            color: Color(0xFF64748B),
           ),
         ),
-        trailing: active 
-          ? Container(
-              width: 6, 
-              height: 6, 
-              decoration: const BoxDecoration(color: Color(0xFF059669), shape: BoxShape.circle)
-            )
-          : null,
       ),
     );
   }

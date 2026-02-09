@@ -26,17 +26,29 @@ class SyncWorker {
   void initialize() {
     log('🔄 SyncWorker: Inicializando...', name: 'Sync');
     
-    // 1. Intentar sincronizar al inicio si hay red
-    _checkAndSync();
+    try {
+      // 1. Intentar sincronizar al inicio si hay red
+      // Usamos un Future.microtask para no bloquear el hilo principal durante el arranque
+      Future.microtask(() => _checkAndSync().catchError((e) {
+        log('⚠️ Error inicial en SyncWorker check: $e', name: 'Sync');
+      }));
 
-    // 2. Escuchar cambios de red
-    _subscription = _connectivity.onConnectivityChanged.listen((result) {
-      if (result.contains(ConnectivityResult.mobile) || 
-          result.contains(ConnectivityResult.wifi)) {
-        log('🌐 SyncWorker: Conexión detectada, iniciando sync...', name: 'Sync');
-        _checkAndSync();
-      }
-    });
+      // 2. Escuchar cambios de red
+      _subscription = _connectivity.onConnectivityChanged.listen((result) {
+        try {
+          if (result.contains(ConnectivityResult.mobile) || 
+              result.contains(ConnectivityResult.wifi)) {
+             log('🌐 SyncWorker: Conexión detectada, iniciando sync...', name: 'Sync');
+             _checkAndSync();
+          }
+        } catch (e) {
+          log('⚠️ Error procesando cambio de red: $e', name: 'Sync');
+        }
+      });
+    } catch (e) {
+      log('❌ Error FATAL inicializando SyncWorker: $e', name: 'Sync');
+      // No re-lanzamos para no tumbar la app
+    }
   }
 
   void dispose() {

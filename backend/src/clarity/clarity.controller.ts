@@ -1,5 +1,5 @@
 import {
-    Controller, Get, Post, Patch, Delete, Body, Query, Param, UseGuards, Request, ForbiddenException
+    Controller, Get, Post, Patch, Put, Delete, Body, Query, Param, UseGuards, Request, ForbiddenException
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -56,6 +56,7 @@ export class ClarityController {
     }
 
     @Post('tareas/rapida')
+    @Post('tasks') // Alias para Sync Móvil
     @ApiOperation({ summary: 'Crear tarea rápida' })
     async crearTareaRapida(@Body() dto: TareaCrearRapidaDto, @Request() req) {
         // Asegurar manejo robusto del ID de usuario (permitir coerción si viene como string)
@@ -78,8 +79,9 @@ export class ClarityController {
     }
 
     @Get('tareas/mias')
-    @ApiOperation({ summary: 'Listar mis tareas' })
-    async getMisTareas(@Request() req, @Query() filters: TaskFilterDto) {
+    @Get('tasks/me') // Alias para Sync Móvil
+    @ApiOperation({ summary: 'Obtener mis tareas' })
+    async getTareasMias(@Request() req, @Query() filters: TaskFilterDto) {
         const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
         return this.tasksService.tareasMisTareas(carnet, filters.estado, filters.idProyecto, filters.startDate, filters.endDate);
     }
@@ -91,9 +93,11 @@ export class ClarityController {
     }
 
     @Patch('tareas/:id')
-    @ApiOperation({ summary: 'Actualizar tarea' })
-    async actualizarTarea(@Param('id') id: number, @Body() body: TareaActualizarDto, @Request() req) {
-        return this.tasksService.tareaActualizar(id, body, req.user.userId);
+    @Patch('tasks/:id') // Alias para Sync Móvil (Compatibility)
+    @Put('tasks/:id') // Alias para Sync Móvil (Compatibility)
+    @ApiOperation({ summary: 'Actualizar tarea (Patch/Put)' })
+    async actualizarTarea(@Param('id') id: number, @Body() dto: TareaActualizarDto, @Request() req) {
+        return this.tasksService.tareaActualizar(id, dto, req.user.userId);
     }
 
     @Post('tareas/:id/revalidar')
@@ -432,12 +436,15 @@ export class ClarityController {
     }
 
     @Post('notas')
+    @Post('notes') // Alias Sync Móvil
     async crearNota(@Body() body: { title: string, content: string }, @Request() req) {
         const carnet = req.user.carnet || await this.tasksService.resolveCarnet(req.user.userId);
         return this.tasksService.notaCrear(carnet, body.title, body.content);
     }
 
     @Patch('notas/:id')
+    @Patch('notes/:id') // Alias Sync Móvil
+    @Put('notes/:id')   // Alias Sync Móvil
     async updateNota(@Param('id') id: number, @Body() body: { title: string, content: string }, @Request() req) {
         return this.tasksService.notaActualizar(id, body.title, body.content);
     }

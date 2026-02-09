@@ -38,10 +38,12 @@ export const LoginPage = () => {
         const correo = email.trim().toLowerCase();
         const pwd = password;
 
-        // Nota: input type="email" ya valida bastante, pero esto mejora el mensaje antes del request
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // Nota: Permitimos Correo o Carnet (Login Híbrido)
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+        const isCarnet = /^[a-zA-Z0-0]{3,10}$/.test(correo); // Formato típico de carnet (solo letras/números, 3-10 caracteres)
+
         if (correo.length === 0) return { correoNormalizado: correo, puedeEnviar: false, errorValidacion: '' };
-        if (!emailRegex.test(correo)) return { correoNormalizado: correo, puedeEnviar: false, errorValidacion: 'Por favor ingresa un correo válido' };
+        if (!isEmail && !isCarnet) return { correoNormalizado: correo, puedeEnviar: false, errorValidacion: 'Ingresa un Correo o Carnet válido' };
         if (pwd.length > 0 && pwd.length < 6) return { correoNormalizado: correo, puedeEnviar: false, errorValidacion: 'La contraseña debe tener al menos 6 caracteres' };
 
         return { correoNormalizado: correo, puedeEnviar: correo.length > 0 && pwd.length >= 6, errorValidacion: '' };
@@ -182,7 +184,7 @@ export const LoginPage = () => {
                             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                                 {/* Email */}
                                 <div className="space-y-2">
-                                    <label htmlFor="login-email" className="block text-sm font-semibold text-slate-700">Correo Electrónico</label>
+                                    <label htmlFor="login-email" className="block text-sm font-semibold text-slate-700">Correo o Carnet</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
@@ -198,7 +200,7 @@ export const LoginPage = () => {
                                             aria-invalid={!!error}
                                             aria-describedby={error ? 'login-error' : undefined}
                                             className="block w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-400 focus:ring-4 focus:ring-slate-100 transition-all"
-                                            placeholder="tu@claro.com.ni"
+                                            placeholder="tu@claro.com.ni o Carnet"
                                         />
                                     </div>
                                 </div>

@@ -10,7 +10,7 @@ export class NotificationController {
 
     @Post('device-token')
     async registerDeviceToken(@Req() req, @Body() body: { token: string, platform?: string }) {
-        const idUsuario = req.user.idUsuario; // Asegúrate de que el JWT decodificado tiene idUsuario
+        const idUsuario = req.user.userId || req.user.idUsuario || req.user.id;
         const { token, platform } = body;
 
         // Validar idUsuario

@@ -197,7 +197,7 @@ export class AnalyticsService {
             }>(`
                 SELECT TOP 10
                     t.idTarea,
-                    t.titulo,
+                    t.nombre as titulo,
                     t.fechaObjetivo,
                     DATEDIFF(DAY, t.fechaObjetivo, GETDATE()) as diasRetraso,
                     u.nombre as asignado
@@ -241,7 +241,7 @@ export class AnalyticsService {
             }>(`
                 SELECT TOP 20
                     b.idBloqueo as id,
-                    ISNULL(t.titulo, 'Sin tarea') as tarea,
+                    ISNULL(t.nombre, 'Sin tarea') as tarea,
                     ISNULL(p.nombre, 'General') as proyecto,
                     u.nombre as usuario,
                     b.motivo,

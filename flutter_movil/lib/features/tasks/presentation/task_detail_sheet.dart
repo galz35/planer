@@ -519,10 +519,15 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
               final display = s == 'EnCurso' ? 'En Curso' : s;
               
               Color activeColor;
-              if (s == 'Hecha') activeColor = const Color(0xFF10B981);
-              else if (s == 'Bloqueada') activeColor = const Color(0xFFEF4444);
-              else if (s == 'EnCurso') activeColor = const Color(0xFF3B82F6);
-              else activeColor = const Color(0xFF64748B);
+              if (s == 'Hecha') {
+                activeColor = const Color(0xFF10B981);
+              } else if (s == 'Bloqueada') {
+                activeColor = const Color(0xFFEF4444);
+              } else if (s == 'EnCurso') {
+                activeColor = const Color(0xFF3B82F6);
+              } else {
+                activeColor = const Color(0xFF64748B);
+              }
 
               return GestureDetector(
                 onTap: () => setState(() { 

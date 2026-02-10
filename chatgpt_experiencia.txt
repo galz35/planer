@@ -1,0 +1,81 @@
+# MASTER TECHNICAL EXPERIENCE: ECOSISTEMA MOMENTUS
+# Guía Definitiva de Arquitectura, Configuración y Estabilidad
+# Fecha: 10 de Febrero de 2026
+
+Este documento centraliza la inteligencia técnica de los tres proyectos principales para garantizar que el desarrollo futuro sea ágil, escalable y libre de errores de configuración ya superados.
+
+---
+
+## 🏗️ 1. BACKEND: NESTJS FASTIFY ENGINE
+El corazón del sistema, diseñado para alto rendimiento y seguridad.
+
+### A. Configuración de Motor (Fastify)
+*   **Engine**: Se utiliza `FastifyAdapter` en lugar de Express. Es hasta 2x más rápido en el manejo de peticiones JSON.
+*   **Límites de Carga**: Configurado `bodyLimit: 10MB` para permitir la subida de documentos y reportes pesados.
+*   **CORS**: Habilitado dinámicamente para permitir peticiones tanto de la PWA (Web) como de la App (Móvil).
+
+### B. Librerías y Herramientas Críticas
+*   `mssql`: Driver oficial para conexión directa y segura con SQL Server.
+*   `nest-winston` & `winston-daily-rotate-file`: Sistema de logs profesional que rota archivos diariamente para auditoría.
+*   `@nestjs/swagger`: Documentación viva disponible en `/api/docs`.
+*   `class-validator` & `class-transformer`: Garantizan que NINGÚN dato mal formado entre al sistema (Global Validation Pipes).
+
+### C. Reglas de Negocio
+*   **Prefix**: Todos los endpoints inician con `/api`.
+*   **Errores**: Uso de `GlobalExceptionFilter` para que cualquier error devuelva un JSON estandarizado, evitando que la app móvil se cierre por errores inesperados.
+
+---
+
+## ⚛️ 2. WEB PWA: REACT INTELLIGENT FRONTEND
+La plataforma de gestión administrativa con capacidades de App.
+
+### A. Tecnologías de Visualización y Estado
+*   **TanStack Query (React Query)**: El "cerebro" de la sincronización. Maneja caché automático, reintentos y carga optimizada de datos.
+*   **Vite**: Motor de compilación ultra-rápido para una experiencia de desarrollo instantánea.
+*   **Framer Motion**: Librería de animaciones utilizada para las transiciones suaves y los efectos "Premium" de la interfaz.
+
+### B. Capacidades Híbridas (Capacitor)
+*   **@capacitor/core & android**: El proyecto está listo para ser convertido en una App nativa de Android desde el mismo código de React si fuera necesario.
+*   **Vite PWA Plugin**: Permite que la web se instale en teléfonos y funcione (en parte) offline.
+
+### C. Estilos y Componentes
+*   **Tailwind CSS**: Utilizado para un diseño "Utility-First" que permite cambios visuales rápidos.
+*   **Lucide React**: Set de iconos modernos y consistentes.
+
+---
+
+## 📱 3. MÓVIL: FLUTTER NATIVE EXPERIENCE
+La herramienta de ejecución rápida y movilidad.
+
+### A. Configuración de Sistema (El "Secreto" del Build)
+*   **Java 17**: Requisito obligatorio para la compatibilidad con los plugins actuales de Android.
+*   **Kotlin DSL (`.gradle.kts`)**: Se utiliza este formato moderno para definir el build, lo que evita errores de sintaxis en proyectos grandes.
+*   **minSdkVersion 21**: Compatibilidad amplia garantizando funciones de seguridad modernas.
+
+### B. Librerías Ganadoras (Winning Stack)
+*   `dio`: Cliente HTTP con **Interceptores de Seguridad**. Maneja el "Silent Token Refresh" automáticamente.
+*   `provider`: Gestión de estado ligera y predecible.
+*   `flutter_secure_storage`: Almacenamiento cifrado de credenciales (nunca guardar passwords en texto plano).
+*   `sqflite`: Base de datos local para el funcionamiento offline de la agenda.
+
+### C. Implementaciones de Lógica Clave
+*   **MomentusTheme**: Centralización de colores (`Slate 900`, `Corporate Red`), tipografía `Inter` y radios de bordes.
+*   **Auto-Asignación**: Lógica frontend que inyecta automáticamente el ID del usuario actual si no se selecciona responsable al crear tareas.
+*   **Agenda Multi-Foco**: Capacidad de enviar múltiples IDs para el check-in diario, rompiendo la limitación de "una sola tarea".
+
+---
+
+## 🛡️ 4. CONFIGURACIÓN DE DESPLIEGUE (SECURITY & OPS)
+
+### A. Gestión de IP y Dominios
+*   **Environment**: La App móvil usa `String.fromEnvironment('API_BASE_URL')`. 
+*   **Recomendación**: Para producción, nunca exponer IPs en documentos públicos. El sistema está configurado para usar nombres de dominio o placeholders tipo `<YOUR_PRODUCTION_DOMAIN>`.
+
+### B. Metodología de Publicación
+1.  **Backend**: `npm run build` -> `dist/main.js`.
+2.  **Web**: `npm run build` -> carpeta `dist/` (servida por Fastify o Nginx).
+3.  **Móvil**: `flutter build apk --release --no-tree-shake-icons`.
+
+---
+
+**Este documento es el plano maestro del sistema Momentus. Cualquier nuevo integrante o asistente de IA debe leerlo para entender cómo funciona la maquinaria sin repetir errores del pasado.**

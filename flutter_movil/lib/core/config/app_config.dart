@@ -5,7 +5,7 @@ class AppConfig {
   /// flutter run --dart-define=API_BASE_URL=https://api.mi-dominio.com
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://100.26.176.32/api/',
+    defaultValue: 'http://TU_IP_O_DOMINIO/api/',
   );
 
   /// Ventana de debounce para auto-sync (segundos).

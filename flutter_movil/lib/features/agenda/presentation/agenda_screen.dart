@@ -260,10 +260,11 @@ class _PlanningViewState extends State<_PlanningView>
     super.dispose();
   }
 
-  // Helper: todas las tareas disponibles (sin duplicados)
+  // Helper: todas las tareas disponibles (sin duplicados y no hechas)
   List<Tarea> get _allTasks {
     final seen = <int>{};
     return [...widget.sugeridas, ...widget.backlog]
+        .where((t) => t.estado != 'Hecha' && t.estado != 'Completada')
         .where((t) => seen.add(t.idTarea))
         .toList();
   }
@@ -817,9 +818,13 @@ class _PlanningViewState extends State<_PlanningView>
                     children: [
                       // Checkbox visual para completar
                       IconButton(
-                        onPressed: () {
+                        onPressed: () async {
                           HapticFeedback.lightImpact();
-                          widget.controller.completeTask(t.idTarea);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Completando tarea...'),
+                                  duration: Duration(seconds: 1)));
+                          await widget.controller.completeTask(t.idTarea);
                         },
                         icon: const Icon(Icons.radio_button_unchecked,
                             color: Color(0xFFEF9A9A)),

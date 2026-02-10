@@ -5,12 +5,22 @@ class ProjectsRepository {
     required String nombre,
     String? descripcion,
     String? tipo,
+    String? color,
+    String? icono,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+    int? clienteId,
   }) async {
     final data = {
       'nombre': nombre,
-      if (descripcion != null) 'descripcion': descripcion,
-      if (tipo != null) 'tipo': tipo,
-    };
+      'descripcion': descripcion,
+      'tipo': tipo,
+      'color': color,
+      'icono': icono,
+      'fechaInicio': fechaInicio?.toIso8601String(),
+      'fechaFin': fechaFin?.toIso8601String(),
+      'clienteId': clienteId,
+    }..removeWhere((key, value) => value == null);
     await ApiClient.dio.post('proyectos', data: data);
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import '../../auth/presentation/auth_controller.dart';
 import 'package:intl/intl.dart';
 
 import '../data/tasks_repository.dart';
@@ -408,7 +410,7 @@ class _QuickCreateTaskSheetState extends State<QuickCreateTaskSheet> {
                     Expanded(
                       child: Text(
                         _responsable?.nombreCompleto ??
-                            'Asignar a alguien (opcional)',
+                            'Asignar a mí (Automático)',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: _responsable != null
@@ -662,10 +664,11 @@ class _QuickCreateTaskSheetState extends State<QuickCreateTaskSheet> {
         esfuerzo: _esfuerzo,
         descripcion:
             _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
-        assignedToUserId: _responsable?.idUsuario,
+        assignedToUserId: _responsable?.idUsuario ??
+            context.read<AuthController>().user?.id, // Auto-asignar a mí
         projectId: _proyecto != null
             ? (_proyecto!['idProyecto'] ?? _proyecto!['id'])
-            : null, // Enviar ID proyecto
+            : null,
       );
 
       if (mounted) {

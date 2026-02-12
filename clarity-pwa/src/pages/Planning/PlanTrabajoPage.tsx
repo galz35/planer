@@ -292,45 +292,42 @@ const RoadmapView: React.FC<{ projects: Proyecto[] }> = ({ projects }) => {
 const BoardView: React.FC<{ tasks: Tarea[], team: TeamMember[], onAssign: (tid: number, uid: number) => void, onTaskClick: (t: Tarea) => void }> = ({ tasks, team, onAssign, onTaskClick }) => {
     const columns = ['Pendiente', 'En Curso', 'Bloqueada', 'Revisión', 'Hecha'];
 
-    // Status color mapping for board headers
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Pendiente': return 'bg-slate-400';
-            case 'En Curso': return 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]';
-            case 'Bloqueada': return 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]';
-            case 'Revisión': return 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]';
-            case 'Revision': return 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'; // Fallback
-            case 'Hecha': return 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+            case 'En Curso': return 'bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.4)]';
+            case 'Bloqueada': return 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]';
+            case 'Revisión': return 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]';
+            case 'Hecha': return 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]';
             default: return 'bg-slate-400';
         }
     };
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case 'Pendiente': return 'Por Hacer';
             case 'En Curso': return 'En Ejecución';
-            case 'Bloqueada': return 'Bloqueada';
-            case 'Revisión': return 'En Revisión';
-            case 'Revision': return 'En Revisión';
             case 'Hecha': return 'Completado';
             default: return status;
         }
     };
 
     return (
-        <div className="flex gap-6 h-full overflow-x-auto pb-6 px-4">
+        <div className="flex gap-6 h-full overflow-x-auto pb-8 pt-2 px-6 custom-scrollbar">
             {columns.map(status => (
-                <div key={status} className="w-[320px] shrink-0 flex flex-col bg-slate-100/40 rounded-3xl border border-slate-200/50 max-h-full backdrop-blur-sm">
-                    <div className="p-5 flex justify-between items-center">
+                <div key={status} className="w-[340px] shrink-0 flex flex-col bg-slate-100/30 rounded-[2rem] border border-white/40 shadow-xl backdrop-blur-xl overflow-hidden">
+                    {/* Header */}
+                    <div className="p-6 flex justify-between items-center bg-white/40 border-b border-white/20 backdrop-blur-md">
                         <div className="flex items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(status)}`} />
-                            <h3 className="font-black text-[11px] text-slate-500 uppercase tracking-[0.2em]">{getStatusLabel(status)}</h3>
+                            <div className={`w-3 h-3 rounded-full ${getStatusColor(status)} ring-4 ring-white/30`} />
+                            <h3 className="font-black text-xs text-slate-800 uppercase tracking-[0.25em]">{getStatusLabel(status)}</h3>
                         </div>
-                        <span className="bg-white/80 border border-slate-200 text-slate-900 text-[10px] font-black px-3 py-1 rounded-full shadow-sm">
+                        <span className="bg-white px-3 py-1 rounded-full text-[10px] font-black text-slate-900 shadow-sm border border-slate-100">
                             {tasks.filter(t => t.estado === status || (status === 'En Curso' && t.estado === 'EnCurso') || (status === 'Revisión' && (t.estado === 'Revision' || t.estado === 'Revisión'))).length}
                         </span>
                     </div>
-                    <div className="px-3 pb-4 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+
+                    {/* Content */}
+                    <div className="px-4 py-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar min-h-[500px]">
                         {tasks.filter(t => t.estado === status || (status === 'En Curso' && t.estado === 'EnCurso') || (status === 'Revisión' && (t.estado === 'Revision' || t.estado === 'Revisión'))).map(task => {
                             const daysDelayed = task.fechaObjetivo && task.estado !== 'Hecha' && isAfter(startOfDay(new Date()), new Date(task.fechaObjetivo))
                                 ? differenceInDays(startOfDay(new Date()), new Date(task.fechaObjetivo))
@@ -338,33 +335,41 @@ const BoardView: React.FC<{ tasks: Tarea[], team: TeamMember[], onAssign: (tid: 
                             const isDone = task.estado === 'Hecha';
                             const isDelayed = daysDelayed > 0;
 
-                            let cardClass = "p-5 rounded-2xl border shadow-sm hover:shadow-xl transition-all group cursor-pointer active:scale-[0.98] border-b-4 ";
-                            if (isDone) cardClass += "bg-emerald-50/60 border-emerald-100 border-b-emerald-200 hover:border-b-emerald-400";
-                            else if (isDelayed) cardClass += "bg-orange-50/60 border-orange-100 border-b-orange-200 hover:border-b-orange-400";
-                            else cardClass += "bg-white border-slate-200/60 border-b-slate-100 hover:border-b-indigo-500";
-
                             return (
-                                <div key={task.idTarea} onClick={() => onTaskClick(task)} className={cardClass}>
+                                <div
+                                    key={task.idTarea}
+                                    onClick={() => onTaskClick(task)}
+                                    className={`group relative p-6 rounded-3xl border bg-white shadow-sm hover:shadow-2xl hover:-translate-y-1 active:scale-[0.97] transition-all cursor-pointer overflow-hidden ${isDone ? 'border-emerald-100' : isDelayed ? 'border-orange-100' : 'border-slate-100 hover:border-indigo-200'}`}
+                                >
+                                    {/* Sidebar indicator */}
+                                    <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isDone ? 'bg-emerald-400' : isDelayed ? 'bg-orange-400' : getStatusColor(status)}`} />
+
                                     <div className="flex justify-between items-start mb-4">
-                                        <span className={`text-[10px] font-black tracking-widest uppercase ${isDone || isDelayed ? 'text-slate-500' : 'text-slate-400'}`}>ID-{task.idTarea}</span>
                                         <div className="flex items-center gap-2">
-                                            {(task as any).isLockedByManager && <Lock size={10} className="text-indigo-400" />}
-                                            <TipoBadge tipo={task.tipo} />
+                                            <span className="text-[10px] font-black text-slate-400 tracking-wider">#{task.idTarea}</span>
+                                            {isDelayed && (
+                                                <div className="flex items-center gap-1 bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse">
+                                                    <AlertCircle size={10} /> {daysDelayed}d retraso
+                                                </div>
+                                            )}
                                         </div>
+                                        <TipoBadge tipo={task.tipo} />
                                     </div>
-                                    <h4 className="text-sm font-black text-slate-800 leading-relaxed mb-4 group-hover:text-indigo-600 transition-colors uppercase tracking-tight line-clamp-2">{task.titulo}</h4>
-                                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+
+                                    <h4 className={`text-sm font-bold text-slate-800 leading-snug mb-5 group-hover:text-indigo-600 transition-colors uppercase tracking-tight line-clamp-2 ${isDone ? 'line-through text-slate-400' : ''}`}>
+                                        {task.titulo}
+                                    </h4>
+
+                                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                                         <QuickAssignDropdown
                                             currentAssignee={task.asignados && task.asignados.length > 0 ? { id: task.asignados[0].idUsuario, nombre: task.asignados[0].usuario?.nombre || 'U' } : null}
                                             team={team}
                                             onAssign={(uid) => onAssign(task.idTarea, uid)}
                                         />
-                                        {task.fechaObjetivo && (
-                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-[10px] font-black text-slate-500">
-                                                <CalendarIcon size={12} className="text-slate-400" />
-                                                {format(new Date(task.fechaObjetivo), 'dd MMM')}
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl text-[10px] font-black text-slate-500 border border-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-colors">
+                                            <CalendarIcon size={12} />
+                                            {task.fechaObjetivo ? format(new Date(task.fechaObjetivo), 'dd MMM') : '--'}
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -379,10 +384,8 @@ const BoardView: React.FC<{ tasks: Tarea[], team: TeamMember[], onAssign: (tid: 
 const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    // Configuración visual
-    const COL_WIDTH = 48; // px por día
-    const ROW_HEIGHT = 52; // px por tarea
-
+    const COL_WIDTH = 56; // px por día
+    const ROW_HEIGHT = 64; // px por tarea
 
     const days = useMemo(() => {
         const start = startOfMonth(currentDate);
@@ -393,12 +396,9 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
     const viewStart = startOfMonth(currentDate);
     const viewEnd = endOfMonth(currentDate);
 
-    // Helper para posición de la barra
     const getTaskStyle = (task: Tarea) => {
         if (!task.fechaInicioPlanificada || !task.fechaObjetivo) return null;
 
-        // Parse dates explicitly as local time to avoid UTC inconsistencies
-        // "2026-01-28" -> parts -> new Date(2026, 0, 28) = Local Midnight
         const parseLocal = (dateStr: string | Date) => {
             const s = String(dateStr).split('T')[0];
             const [y, m, d] = s.split('-').map(Number);
@@ -408,10 +408,8 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
         const start = parseLocal(task.fechaInicioPlanificada);
         const end = parseLocal(task.fechaObjetivo);
 
-        // Si la tarea está fuera del rango de vista, no mostramos o mostramos parcial
         if (isAfter(start, viewEnd) || isAfter(viewStart, end)) return null;
 
-        // Clamping dates to view range for rendering
         const renderStart = start < viewStart ? viewStart : start;
         const renderEnd = end > viewEnd ? viewEnd : end;
 
@@ -419,60 +417,64 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
         const durationDays = differenceInDays(renderEnd, renderStart) + 1;
 
         return {
-            left: `${offsetDays * COL_WIDTH} px`,
-            width: `${durationDays * COL_WIDTH} px`
+            left: offsetDays * COL_WIDTH,
+            width: durationDays * COL_WIDTH
         };
     };
 
     const getBarColor = (status: string) => {
         switch (status) {
-            case 'Hecha': return 'bg-emerald-500 hover:bg-emerald-400 border-emerald-600';
-            case 'En Curso': return 'bg-indigo-500 hover:bg-indigo-400 border-indigo-600';
-            case 'Bloqueada': return 'bg-rose-500 hover:bg-rose-400 border-rose-600';
-            case 'Revisión': return 'bg-purple-500 hover:bg-purple-400 border-purple-600';
-            default: return 'bg-slate-400 hover:bg-slate-300 border-slate-500';
+            case 'Hecha': return 'bg-emerald-500 from-emerald-500 to-emerald-600 shadow-[0_4px_12px_rgba(16,185,129,0.3)]';
+            case 'En Curso': return 'bg-indigo-500 from-indigo-500 to-indigo-600 shadow-[0_4px_12px_rgba(99,102,241,0.3)]';
+            case 'Bloqueada': return 'bg-rose-500 from-rose-500 to-rose-600 shadow-[0_4px_12px_rgba(244,63,94,0.3)]';
+            case 'Revisión': return 'bg-amber-500 from-amber-500 to-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.3)]';
+            default: return 'bg-slate-400 from-slate-400 to-slate-500';
         }
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+        <div className="flex flex-col h-full bg-slate-50/50 rounded-[2.5rem] border border-white shadow-2xl overflow-hidden backdrop-blur-sm">
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
-                <div className="flex items-center gap-6">
-                    <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                        <span className="capitalize">{format(currentDate, 'MMMM', { locale: es })}</span>
-                        <span className="text-slate-300 font-medium">{format(currentDate, 'yyyy')}</span>
-                    </h3>
-                    <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-100 p-1 shadow-sm">
-                        <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2 hover:bg-white hover:text-indigo-600 hover:shadow-md rounded-lg transition-all text-slate-500"><ChevronLeft size={18} /></button>
-                        <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-xs font-bold text-slate-500 hover:text-indigo-600 hover:bg-white hover:shadow-md rounded-lg transition-all">Hoy</button>
-                        <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-2 hover:bg-white hover:text-indigo-600 hover:shadow-md rounded-lg transition-all text-slate-500"><ChevronRight size={18} /></button>
+            <div className="flex items-center justify-between px-8 py-6 border-b border-white bg-white/60 backdrop-blur-md">
+                <div className="flex items-center gap-8">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-1">Visualización de Tiempo</span>
+                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter flex items-center gap-3">
+                            <span className="capitalize">{format(currentDate, 'MMMM', { locale: es })}</span>
+                            <span className="text-slate-300 font-light">{format(currentDate, 'yyyy')}</span>
+                        </h3>
+                    </div>
+                    <div className="flex items-center gap-2 bg-slate-200/50 rounded-2xl p-1.5 backdrop-blur-md border border-white">
+                        <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2.5 hover:bg-white hover:text-indigo-600 hover:shadow-xl rounded-xl transition-all text-slate-500"><ChevronLeft size={20} /></button>
+                        <button onClick={() => setCurrentDate(new Date())} className="px-5 py-2 text-xs font-black text-slate-600 hover:text-indigo-600 hover:bg-white hover:shadow-xl rounded-xl transition-all uppercase tracking-widest">Hoy</button>
+                        <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-2.5 hover:bg-white hover:text-indigo-600 hover:shadow-xl rounded-xl transition-all text-slate-500"><ChevronRight size={20} /></button>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-400"></span> Pendiente</div>
-                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-indigo-500"></span> En Curso</div>
-                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-500"></span> Hecha</div>
-                    <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-rose-500"></span> Bloqueada</div>
+                <div className="hidden lg:flex items-center gap-6 bg-white/40 px-6 py-3 rounded-3xl border border-white/60">
+                    {['Pendiente', 'En Curso', 'Hecha', 'Bloqueada'].map(s => (
+                        <div key={s} className="flex items-center gap-2.5 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                            <span className={`w-3 h-3 rounded-full ${getBarColor(s)}`}></span> {s}
+                        </div>
+                    ))}
                 </div>
             </div>
 
             <div className="flex-1 flex overflow-hidden relative">
-                {/* Sidebar: Lista de Tareas */}
-                <div className="w-80 shrink-0 border-r border-slate-200 bg-white flex flex-col z-20 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.1)]">
-                    <div className="h-20 border-b border-slate-100 flex items-center px-6 bg-slate-50/50 backdrop-blur-sm">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Listado de Tareas</span>
+                {/* Sidebar: Task List */}
+                <div className="w-80 shrink-0 border-r border-white/60 bg-white/40 flex flex-col z-20 backdrop-blur-xl shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)]">
+                    <div className="h-24 border-b border-white flex items-center px-8">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Tareas del Proyecto</span>
                     </div>
                     <div className="flex-1 overflow-hidden hover:overflow-y-auto custom-scrollbar">
-                        {tasks.map(task => (
-                            <div key={task.idTarea} className="flex flex-col justify-center px-6 border-b border-slate-50 hover:bg-indigo-50/30 transition-colors group" style={{ height: ROW_HEIGHT }}>
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.estado === 'Hecha' ? 'bg-emerald-400' : task.estado === 'En Curso' ? 'bg-indigo-400' : 'bg-slate-300'}`} />
-                                    <span className="text-sm font-bold text-slate-700 truncate group-hover:text-indigo-700 transition-colors">{task.titulo}</span>
+                        {tasks.map((task, i) => (
+                            <div key={task.idTarea} className={`flex flex-col justify-center px-8 border-b border-white/40 hover:bg-white/80 transition-all group relative ${i % 2 === 0 ? 'bg-white/20' : ''}`} style={{ height: ROW_HEIGHT }}>
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${task.estado === 'Hecha' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : task.estado === 'En Curso' ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]' : 'bg-slate-300'}`} />
+                                    <span className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors tracking-tight">{task.titulo}</span>
                                 </div>
-                                <div className="pl-4 text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
-                                    <span className="font-medium">{task.responsableNombre ? task.responsableNombre.split(' ')[0] : 'Sin Asignar'}</span>
-                                    {task.fechaObjetivo && <span>• {format(new Date(task.fechaObjetivo), 'dd MMM')}</span>}
+                                <div className="pl-6 text-[10px] text-slate-400 flex items-center gap-2.5 mt-1.5 font-bold uppercase tracking-wider">
+                                    <span className="flex items-center gap-1"><User size={10} /> {task.responsableNombre ? task.responsableNombre.split(' ')[0] : 'U'}</span>
+                                    {task.fechaObjetivo && <span className="flex items-center gap-1">• <CalendarIcon size={10} /> {format(new Date(task.fechaObjetivo), 'dd MMM')}</span>}
                                 </div>
                             </div>
                         ))}
@@ -480,29 +482,27 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
                 </div>
 
                 {/* Timeline Area */}
-                <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar bg-slate-50/30 relative" id="gantt-scroll-area">
+                <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar bg-white/10 relative" id="gantt-scroll-area">
                     <div style={{ width: days.length * COL_WIDTH, minWidth: '100%' }}>
 
                         {/* Headers */}
-                        <div className="sticky top-0 z-10 bg-white shadow-sm">
-                            {/* Day Numbers */}
-                            <div className="flex border-b border-slate-200 h-10">
+                        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl shadow-sm border-b border-white">
+                            <div className="flex h-12">
                                 {days.map(day => (
                                     <div
                                         key={day.toString()}
-                                        className={`shrink - 0 flex items - center justify - center border - r border - slate - 100 text - [10px] font - bold ${isWeekend(day) ? 'bg-slate-50/80 text-slate-300' : 'text-slate-500'} `}
+                                        className={`shrink-0 flex items-center justify-center border-r border-white/60 text-[11px] font-black ${isWeekend(day) ? 'bg-slate-100/50 text-slate-300' : 'text-slate-400'} `}
                                         style={{ width: COL_WIDTH }}
                                     >
                                         {format(day, 'd')}
                                     </div>
                                 ))}
                             </div>
-                            {/* Day Names */}
-                            <div className="flex border-b border-slate-200 h-10 bg-slate-50/50">
+                            <div className="flex h-12 bg-slate-50/50">
                                 {days.map(day => (
                                     <div
                                         key={day.toString()}
-                                        className={`shrink-0 flex items-center justify-center border-r border-slate-100 text-[9px] font-black uppercase tracking-wider ${isWeekend(day) ? 'text-slate-300' : 'text-indigo-300'}`}
+                                        className={`shrink-0 flex items-center justify-center border-r border-white/60 text-[9px] font-black uppercase tracking-widest ${isToday(day) ? 'text-indigo-600 bg-indigo-50/50' : isWeekend(day) ? 'text-slate-300' : 'text-slate-400'}`}
                                         style={{ width: COL_WIDTH }}
                                     >
                                         {format(day, 'EEE', { locale: es })}
@@ -513,46 +513,34 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
 
                         {/* Grid & Bars */}
                         <div className="relative">
-
-                            {/* Background Grid Columns */}
                             <div className="absolute inset-0 flex pointer-events-none">
-                                {days.map(day => {
-                                    const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-                                    return (
-                                        <div
-                                            key={day.toString()}
-                                            className={`shrink - 0 border - r border - slate - 100 / 60 h - full relative ${isWeekend(day) ? 'bg-slate-50/30' : ''} `}
-                                            style={{ width: COL_WIDTH }}
-                                        >
-                                            {isToday && (
-                                                <div className="absolute inset-y-0 left-1/2 w-0.5 bg-indigo-500/20 z-0">
-                                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full absolute -top-1 -left-0.5 shadow-sm"></div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                {days.map(day => (
+                                    <div
+                                        key={day.toString()}
+                                        className={`shrink-0 border-r border-white/40 h-full relative ${isWeekend(day) ? 'bg-slate-100/20' : ''} ${isToday(day) ? 'bg-indigo-50/20' : ''}`}
+                                        style={{ width: COL_WIDTH }}
+                                    />
+                                ))}
                             </div>
 
-                            {/* Task Rows */}
-                            {tasks.map(task => {
+                            {tasks.map((task, i) => {
                                 const style = getTaskStyle(task);
                                 return (
-                                    <div key={task.idTarea} className="relative border-b border-slate-100/50 hover:bg-white/50 transition-colors" style={{ height: ROW_HEIGHT }}>
+                                    <div key={task.idTarea} className={`relative border-b border-white/40 hover:bg-white/40 transition-colors ${i % 2 === 0 ? 'bg-white/10' : ''}`} style={{ height: ROW_HEIGHT }}>
                                         {style && (
                                             <div
-                                                className={`absolute top - 1 / 2 - translate - y - 1 / 2 h - 8 rounded - lg shadow - sm border box - border group cursor - pointer overflow - hidden flex items - center px - 3 transition - all hover: scale - [1.02] hover: shadow - lg hover: z - 10 ${getBarColor(task.estado)} `}
+                                                className={`absolute top-1/2 -translate-y-1/2 h-10 rounded-2xl bg-gradient-to-r border-y border-white/30 backdrop-blur-sm group cursor-pointer overflow-hidden flex items-center px-4 transition-all hover:scale-[1.02] hover:z-30 hover:shadow-2xl active:scale-100 ${getBarColor(task.estado)}`}
                                                 style={{ left: style.left, width: style.width }}
-                                                title={`${task.titulo} (${task.estado})`}
                                             >
-                                                {/* Striped pattern for In Progress */}
                                                 {task.estado === 'En Curso' && (
-                                                    <div className="absolute inset-0 opacity-10 bg-[linear-gradient(45deg,transparent_25%,#fff_25%,#fff_50%,transparent_50%,transparent_75%,#fff_75%,#fff_100%)] bg-[length:10px_10px]"></div>
+                                                    <div className="absolute inset-0 opacity-20 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-shimmer" />
                                                 )}
 
-                                                <span className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-md truncate relative z-10 w-full">
-                                                    {parseInt(style.width) > 40 ? task.titulo : ''}
-                                                </span>
+                                                <div className="flex items-center gap-2 relative z-10 w-full overflow-hidden">
+                                                    <span className="text-[11px] font-black text-white whitespace-nowrap drop-shadow-lg truncate">
+                                                        {style.width > 120 ? task.titulo : ''}
+                                                    </span>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -565,6 +553,9 @@ const GanttView: React.FC<{ tasks: Tarea[] }> = ({ tasks }) => {
         </div>
     );
 };
+
+const isToday = (date: Date) => format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+
 
 // --- MAIN PAGE ---
 

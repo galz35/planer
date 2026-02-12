@@ -40,6 +40,7 @@ export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProje
     // Assignee State
     const [searchAsignado, setSearchAsignado] = useState('');
     const [apiResults, setApiResults] = useState<Empleado[]>([]);
+    const [gerenciaUsers, setGerenciaUsers] = useState<Empleado[]>([]);
     const [selectedAsignados, setSelectedAsignados] = useState<Empleado[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [areas, setAreas] = useState<string[]>([]);
@@ -112,6 +113,20 @@ export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProje
             }
 
             setApiResults([]);
+
+            // Cargar usuarios de la misma gerencia por defecto
+            if (user && isOpen) {
+                const g = (user as any).gerencia || (user as any).orgGerencia || (user as any).departamento;
+                if (g) {
+                    clarityService.getEmpleadosPorGerencia(g)
+                        .then(res => {
+                            // Fix TS Error: Usuario vs Empleado incompatibility
+                            const valid = (res || []).filter(u => u.carnet) as unknown as Empleado[];
+                            setGerenciaUsers(valid);
+                        })
+                        .catch(e => console.error('Error loading management users', e));
+                }
+            }
         }
     }, [isOpen, user, defaultTeam]);
 
@@ -128,18 +143,28 @@ export const CreateTaskModal: React.FC<Props> = ({ isOpen, onClose, currentProje
 
     // Filter Logic
     const filteredResults = useMemo(() => {
-        let baseList = (searchAsignado.length >= 2) ? apiResults : (defaultTeam || []);
+        // Prioridad: 1. API Results (Search), 2. Gerencia Users (Default), 3. Default Team
+        let baseList: Empleado[] = [];
+
+        if (searchAsignado.length >= 2 && apiResults.length > 0) {
+            baseList = apiResults;
+        } else if (gerenciaUsers.length > 0) {
+            baseList = gerenciaUsers;
+        } else {
+            baseList = defaultTeam || [];
+        }
+
         const term = searchAsignado.toLowerCase();
 
         return baseList.filter(e => {
             const matchesText = !term ||
                 (e.nombreCompleto || (e as any).nombre || '').toLowerCase().includes(term) ||
                 (e.carnet || '').toLowerCase().includes(term);
-            const eArea = (e.area || e.departamento || e.orgDepartamento || '').toLowerCase();
+            const eArea = (e.area || e.departamento || e.orgDepartamento || e.gerencia || '').toLowerCase();
             const matchesArea = !selectedArea || eArea === selectedArea.toLowerCase();
             return matchesText && matchesArea;
         }).slice(0, 50);
-    }, [searchAsignado, apiResults, defaultTeam, selectedArea]);
+    }, [searchAsignado, apiResults, defaultTeam, selectedArea, gerenciaUsers]);
 
     const handleSearchAsignado = async (value: string) => {
         setSearchAsignado(value);

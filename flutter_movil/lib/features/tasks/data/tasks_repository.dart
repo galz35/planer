@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'local/task_local_data_source.dart';
 import '../domain/task_item.dart';
@@ -118,20 +120,53 @@ class TasksRepository {
   }
 
   Future<int> syncPendingEvents() async {
-    // Reutilizamos lógica de sincronización si existe en _local
-    // Si no, implementamos lógica similar al repo antiguo
-    try {
-      final queue = await _local.getPendingSyncEvents();
-      var synced = 0;
-      // Nota: Aquí necesitaríamos importar jsonDecode si no está
-      // Por simplicidad, asumimos que TaskLocalDataSource maneja esto o
-      // copiamos la lógica completa si tenemos acceso a _remote.pushTaskEvent
-      // Pero TasksRemoteDataSource tiene pushTaskEvent?
-      // Verificaré esto.
-      return 0; // Placeholder para evitar error de compilación inmediato
-    } catch (e) {
-      return 0;
+    final queue = await _local.getPendingSyncEvents();
+    if (queue.isEmpty) return 0;
+
+    int synced = 0;
+    for (final event in queue) {
+      final queueId = event['id'] as int;
+      final operacion = event['operacion'] as String;
+      final payload = event['payload'] as String?;
+      final attempts = (event['sync_attempts'] as int?) ?? 0;
+
+      try {
+        final data = payload != null
+            ? jsonDecode(payload) as Map<String, dynamic>
+            : <String, dynamic>{};
+
+        if (operacion == 'create') {
+          await _remote.createTaskFull(
+            title: data['titulo'] ?? '',
+            date: DateTime.tryParse(data['fechaObjetivo'] ?? '') ??
+                DateTime.now(),
+            tipo: data['tipo'] ?? 'Operativa',
+            prioridad: data['prioridad'] ?? 'Media',
+            esfuerzo: data['esfuerzo'] ?? 'M',
+            descripcion: data['descripcion'],
+            assignedToUserId:
+                data['idResponsable'] is int ? data['idResponsable'] : null,
+            projectId: data['idProyecto'] is int ? data['idProyecto'] : null,
+          );
+        }
+        // update operations are handled by agenda/task controllers directly
+
+        // Success: remove from queue and mark task as synced
+        await _local.removeSyncEvent(queueId);
+        final entidadId = event['entidad_id'] as int?;
+        if (entidadId != null) {
+          await _local.markAsSynced(entidadId);
+        }
+        synced++;
+      } catch (e) {
+        await _local.markSyncEventFailed(
+          queueId: queueId,
+          attempts: attempts + 1,
+          error: e.toString(),
+        );
+      }
     }
+    return synced;
   }
 
   bool _isNetworkError(Object e) {

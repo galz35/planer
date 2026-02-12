@@ -142,7 +142,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
 
     try {
       final colorHex =
-          '#${_selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}'; // ARGB without A
+          '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}'; // ARGB without A
 
       if (widget.project != null) {
         // Update

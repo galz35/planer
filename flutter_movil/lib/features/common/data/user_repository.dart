@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_utils.dart';
 import '../domain/empleado.dart';
 
 class UserRepository {
@@ -13,10 +12,26 @@ class UserRepository {
     try {
       final response = await ApiClient.dio.get('acceso/empleados/buscar',
           queryParameters: {'q': query, 'limit': 10});
-      final list = unwrapApiList(response.data);
+      final list = (response.data as List)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
       return list.map((e) => Empleado.fromJson(e)).toList();
     } catch (e) {
       debugPrint('❌ Error searching users: $e');
+      return [];
+    }
+  }
+
+  Future<List<Empleado>> getEmployeesByDepartment(String department) async {
+    try {
+      final response =
+          await ApiClient.dio.get('acceso/empleados/gerencia/$department');
+      final list = (response.data as List)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+      return list.map((e) => Empleado.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint('❌ Error getting management users: $e');
       return [];
     }
   }

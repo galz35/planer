@@ -251,7 +251,7 @@ class _PlanningViewState extends State<_PlanningView>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -278,15 +278,10 @@ class _PlanningViewState extends State<_PlanningView>
   }
 
   List<Tarea> get _overdueTasks => _allTasks.where(_isOverdue).toList();
-  List<Tarea> get _currentTasks =>
-      _allTasks.where((t) => !_isOverdue(t)).toList();
 
   // Abrir selector de tareas (buzón)
-  void _openTaskSelector({required bool forMain}) {
-    final alreadySelected = <int>{
-      ...widget.controller.selectedMainTaskIds,
-      ...widget.controller.selectedOtherTaskIds,
-    };
+  void _openTaskSelector() {
+    final alreadySelected = widget.controller.selectedMainTaskIds;
 
     showModalBottomSheet(
       context: context,
@@ -296,14 +291,9 @@ class _PlanningViewState extends State<_PlanningView>
         available: _allTasks
             .where((t) => !alreadySelected.contains(t.idTarea))
             .toList(),
-        forMain: forMain,
         onSelect: (tarea) {
           Navigator.pop(ctx);
-          if (forMain) {
-            widget.controller.toggleMainTask(tarea.idTarea);
-          } else {
-            widget.controller.toggleOtherTask(tarea.idTarea);
-          }
+          widget.controller.toggleTask(tarea.idTarea);
         },
         onQuickCreate: () {
           Navigator.pop(ctx);
@@ -317,8 +307,7 @@ class _PlanningViewState extends State<_PlanningView>
 
   @override
   Widget build(BuildContext context) {
-    final selectedCount = widget.controller.selectedMainTaskIds.length +
-        widget.controller.selectedOtherTaskIds.length;
+    final selectedCount = widget.controller.selectedMainTaskIds.length;
     final overdueCount = _overdueTasks.length;
 
     return Scaffold(
@@ -392,19 +381,7 @@ class _PlanningViewState extends State<_PlanningView>
                       const Text('🎯', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 4),
                       Text(
-                          'Foco (${widget.controller.selectedMainTaskIds.length})'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  height: 40,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('📋', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 4),
-                      Text(
-                          'Gestión (${widget.controller.selectedOtherTaskIds.length})'),
+                          'Tareas (${widget.controller.selectedMainTaskIds.length})'),
                     ],
                   ),
                 ),
@@ -415,7 +392,7 @@ class _PlanningViewState extends State<_PlanningView>
                     children: [
                       const Text('⏰', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 4),
-                      const Text('Pendientes'),
+                      const Text('Atrasadas'),
                       if (overdueCount > 0) ...[
                         const SizedBox(width: 4),
                         Container(
@@ -448,11 +425,9 @@ class _PlanningViewState extends State<_PlanningView>
             child: TabBarView(
               controller: _tabCtrl,
               children: [
-                // TAB 1: FOCO
+                // TAB 1: TAREAS
                 _buildFocoTab(),
-                // TAB 2: GESTIÓN
-                _buildGestionTab(),
-                // TAB 3: PENDIENTES
+                // TAB 2: ATRASADAS
                 _buildPendientesTab(),
               ],
             ),
@@ -462,7 +437,7 @@ class _PlanningViewState extends State<_PlanningView>
     );
   }
 
-  // ── TAB 1: FOCO (Tarea Principal) ──
+  // ── TAB 1: MIS TAREAS ──
   Widget _buildFocoTab() {
     final mainIds = widget.controller.selectedMainTaskIds;
     final mainTasks =
@@ -487,14 +462,15 @@ class _PlanningViewState extends State<_PlanningView>
             ),
             child: const Row(
               children: [
-                Icon(Icons.adjust_rounded, color: Color(0xFFE53935), size: 20),
+                Icon(Icons.check_circle_rounded,
+                    color: Color(0xFFE53935), size: 20),
                 SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tarea Principal',
+                        'Mis Tareas',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 14,
@@ -504,7 +480,7 @@ class _PlanningViewState extends State<_PlanningView>
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Lo único que DEBE salir hoy pase lo que pase',
+                        'Lo que haré hoy',
                         style: TextStyle(
                           fontSize: 11,
                           color: Color(0xFFEF5350),
@@ -526,28 +502,80 @@ class _PlanningViewState extends State<_PlanningView>
                   child: _SlotCard(
                     task: t,
                     accentColor: MomentusTheme.primary,
-                    onRemove: () => widget.controller.toggleMainTask(t.idTarea),
+                    onRemove: () => widget.controller.toggleTask(t.idTarea),
                   ),
                 )),
           ],
 
-          // Botón para agregar (siempre visible o si está vacío)
+          // Botón para agregar
           _EmptySlot(
             label: mainTasks.isEmpty
-                ? 'Seleccionar tarea principal'
-                : 'Agregar otra tarea prioritaria',
+                ? 'Agregar tarea al plan'
+                : 'Agregar otra tarea',
             hint: mainTasks.isEmpty
                 ? 'Toca para elegir de tu buzón'
-                : 'Puedes tener múltiples focos',
+                : 'Define tu día completo',
             accentColor: MomentusTheme.primary,
-            icon: Icons.adjust_rounded,
-            onTap: () => _openTaskSelector(forMain: true),
+            icon: Icons.add_circle_outline_rounded,
+            onTap: () => _openTaskSelector(),
           ),
+
+          // ALERTA DE VENCIDAS (Link a Tab 2)
+          if (_overdueTasks
+              .where((t) =>
+                  !widget.controller.selectedMainTaskIds.contains(t.idTarea))
+              .isNotEmpty) ...[
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                _tabCtrl.animateTo(1); // Ir a Pendientes (Atrasadas)
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF5F5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFCDD2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time_filled_rounded,
+                        color: Color(0xFFE53935), size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              color: Color(0xFFB91C1C)),
+                          children: [
+                            const TextSpan(text: 'Tienes '),
+                            TextSpan(
+                              text:
+                                  '${_overdueTasks.where((t) => !widget.controller.selectedMainTaskIds.contains(t.idTarea)).length} tareas atrasadas',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_rounded,
+                        color: Color(0xFFEF5350), size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
 
           const SizedBox(height: 24),
 
           // Sugerencias rápidas (tareas con prioridad alta)
-          if (_currentTasks
+          if (_allTasks
               .where((t) =>
                   t.prioridad.toLowerCase() == 'alta' &&
                   !mainIds.contains(t.idTarea))
@@ -565,7 +593,7 @@ class _PlanningViewState extends State<_PlanningView>
                 ),
               ),
             ),
-            ..._currentTasks
+            ..._allTasks
                 .where((t) =>
                     t.prioridad.toLowerCase() == 'alta' &&
                     !mainIds.contains(t.idTarea))
@@ -574,7 +602,7 @@ class _PlanningViewState extends State<_PlanningView>
                       task: t,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        widget.controller.toggleMainTask(t.idTarea);
+                        widget.controller.toggleTask(t.idTarea);
                       },
                     )),
           ],
@@ -583,123 +611,9 @@ class _PlanningViewState extends State<_PlanningView>
     );
   }
 
-  // ── TAB 2: GESTIÓN (Otras Tareas) ──
-  Widget _buildGestionTab() {
-    final otherIds = widget.controller.selectedOtherTaskIds;
-    final selectedTasks =
-        _allTasks.where((t) => otherIds.contains(t.idTarea)).toList();
+  // Se eliminó _buildGestionTab por solicitud de UX Simplificada
 
-    return RefreshIndicator(
-      onRefresh: () async => await widget.controller.loadAgenda(),
-      color: MomentusTheme.primary,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF0F4FF), Color(0xFFE8EAF6)],
-              ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFC5CAE9)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.checklist_rounded,
-                    color: Color(0xFF3949AB), size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Gestión de Tareas',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF283593),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${selectedTasks.length} tarea${selectedTasks.length == 1 ? '' : 's'} seleccionada${selectedTasks.length == 1 ? '' : 's'}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF5C6BC0),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Slots selecionados
-          ...selectedTasks.map((t) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _SlotCard(
-                  task: t,
-                  accentColor: const Color(0xFF3949AB),
-                  onRemove: () => widget.controller.toggleOtherTask(t.idTarea),
-                ),
-              )),
-
-          // Botón agregar
-          _EmptySlot(
-            label: 'Agregar tarea de gestión',
-            hint: 'Buscar o crear una nueva',
-            accentColor: const Color(0xFF3949AB),
-            icon: Icons.add_rounded,
-            onTap: () => _openTaskSelector(forMain: false),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Lista de tareas disponibles para selección rápida
-          if (_currentTasks
-              .where((t) =>
-                  !widget.controller.selectedMainTaskIds.contains(t.idTarea) &&
-                  !otherIds.contains(t.idTarea))
-              .isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text(
-                'DISPONIBLES',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF94A3B8),
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-            ..._currentTasks
-                .where((t) =>
-                    !widget.controller.selectedMainTaskIds
-                        .contains(t.idTarea) &&
-                    !otherIds.contains(t.idTarea))
-                .map((t) => _SuggestionChip(
-                      task: t,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        widget.controller.toggleOtherTask(t.idTarea);
-                      },
-                    )),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ── TAB 3: PENDIENTES (Overdue) ──
+  // ── TAB 2: PENDIENTES (Overdue) ──
   Widget _buildPendientesTab() {
     final overdueList = _overdueTasks;
 
@@ -785,8 +699,7 @@ class _PlanningViewState extends State<_PlanningView>
             // Lista de tareas atrasadas
             ...overdueList.map((t) {
               final isSelected =
-                  widget.controller.selectedOtherTaskIds.contains(t.idTarea) ||
-                      widget.controller.selectedMainTaskIds.contains(t.idTarea);
+                  widget.controller.selectedMainTaskIds.contains(t.idTarea);
               final fechaStr = t.fechaObjetivo?.split('T')[0] ?? '';
 
               return Padding(
@@ -841,7 +754,7 @@ class _PlanningViewState extends State<_PlanningView>
                         child: GestureDetector(
                           onTap: () {
                             HapticFeedback.selectionClick();
-                            widget.controller.toggleOtherTask(t.idTarea);
+                            widget.controller.toggleTask(t.idTarea);
                           },
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1148,13 +1061,11 @@ class _SuggestionChip extends StatelessWidget {
 
 class _TaskSelectorSheet extends StatefulWidget {
   final List<Tarea> available;
-  final bool forMain;
   final Function(Tarea) onSelect;
   final VoidCallback onQuickCreate;
 
   const _TaskSelectorSheet({
     required this.available,
-    required this.forMain,
     required this.onSelect,
     required this.onQuickCreate,
   });
@@ -1184,8 +1095,7 @@ class _TaskSelectorSheetState extends State<_TaskSelectorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor =
-        widget.forMain ? MomentusTheme.primary : const Color(0xFF3949AB);
+    const accentColor = MomentusTheme.primary;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -1223,9 +1133,7 @@ class _TaskSelectorSheetState extends State<_TaskSelectorSheet> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      widget.forMain
-                          ? Icons.adjust_rounded
-                          : Icons.checklist_rounded,
+                      Icons.adjust_rounded,
                       size: 18,
                       color: accentColor,
                     ),
@@ -1235,11 +1143,9 @@ class _TaskSelectorSheetState extends State<_TaskSelectorSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.forMain
-                              ? 'Seleccionar Tarea Principal'
-                              : 'Agregar a Gestión',
-                          style: const TextStyle(
+                        const Text(
+                          'Seleccionar Tarea',
+                          style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 16,
                             fontWeight: FontWeight.w800,

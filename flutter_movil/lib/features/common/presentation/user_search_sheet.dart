@@ -1,7 +1,8 @@
-
 import 'package:flutter/material.dart';
 import '../../common/data/user_repository.dart';
 import '../../common/domain/empleado.dart';
+import 'package:provider/provider.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 class UserSearchSheet extends StatefulWidget {
   final Function(Empleado) onSelected;
@@ -38,14 +39,44 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
   @override
   void initState() {
     super.initState();
-    _loadRecents();
+    _loadInitialData();
   }
 
-  void _loadRecents() async {
+  void _loadInitialData() async {
+    setState(() => _loading = true);
+
+    // 1. Recientes
     final recents = await _repo.getRecents();
+
+    // 2. Gerencia
+    List<Empleado> combined = [...recents];
+    try {
+      final auth = context.read<AuthController>();
+      final user = auth.user;
+      if (user != null) {
+        // Buscar gerencia o departamento
+        final g = user.gerencia.isNotEmpty
+            ? user.gerencia
+            : (user.departamento.isNotEmpty ? user.departamento : '');
+
+        if (g.isNotEmpty) {
+          final mUsers = await _repo.getEmployeesByDepartment(g);
+          // Merge without duplicates
+          final existingIds = recents.map((e) => e.idUsuario).toSet();
+          for (final u in mUsers) {
+            if (!existingIds.contains(u.idUsuario)) {
+              combined.add(u);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading management users: $e');
+    }
+
     if (mounted && _searchCtrl.text.isEmpty) {
       setState(() {
-        _results = recents;
+        _results = combined;
         _showingRecents = true;
         _loading = false;
       });
@@ -54,7 +85,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
 
   void _onSearch(String query) async {
     if (query.length < 2) {
-      _loadRecents();
+      _loadInitialData();
       return;
     }
 
@@ -93,10 +124,12 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
               margin: const EdgeInsets.only(top: 12),
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2)),
             ),
           ),
-          
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -108,7 +141,9 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.grey[100],
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
             ),
           ),
@@ -118,9 +153,12 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  Icon(Icons.history, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.people, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 8),
-                  Text('Recientes', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                  Text('Sugeridos (Mi Gerencia)',
+                      style: TextStyle(
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -128,22 +166,33 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _results.isEmpty 
-                    ? Center(child: Text(_searchCtrl.text.length < 2 ? 'Escribe para buscar' : 'No se encontraron resultados'))
+                : _results.isEmpty
+                    ? Center(
+                        child: Text(_searchCtrl.text.length < 2
+                            ? 'Escribe para buscar'
+                            : 'No se encontraron resultados'))
                     : ListView.builder(
                         itemCount: _results.length,
                         itemBuilder: (context, index) {
                           final user = _results[index];
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: _showingRecents ? Colors.grey[200] : Colors.blue[100],
+                              backgroundColor: _showingRecents
+                                  ? Colors.grey[200]
+                                  : Colors.blue[100],
                               child: Text(
-                                user.nombreCompleto.isNotEmpty ? user.nombreCompleto[0].toUpperCase() : '?',
-                                style: TextStyle(color: _showingRecents ? Colors.grey[700] : Colors.blue[900]),
+                                user.nombreCompleto.isNotEmpty
+                                    ? user.nombreCompleto[0].toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                    color: _showingRecents
+                                        ? Colors.grey[700]
+                                        : Colors.blue[900]),
                               ),
                             ),
                             title: Text(user.nombreCompleto),
-                            subtitle: Text('${user.cargo ?? 'Sin cargo'} • ${user.area ?? 'Sin área'}'),
+                            subtitle: Text(
+                                '${user.cargo ?? 'Sin cargo'} • ${user.area ?? 'Sin área'}'),
                             onTap: () {
                               _repo.saveRecent(user);
                               widget.onSelected(user);

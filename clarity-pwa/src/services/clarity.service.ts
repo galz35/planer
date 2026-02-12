@@ -612,6 +612,16 @@ export const clarityService = {
         return response.data;
     },
 
+    getEmpleadosSelector: async () => {
+        const { data } = await api.get<Usuario[]>('/acceso/empleados');
+        return data;
+    },
+
+    getEmpleadosPorGerencia: async (gerencia: string) => {
+        const { data } = await api.get<Usuario[]>(`/acceso/empleados/gerencia/${encodeURIComponent(gerencia)}`);
+        return data;
+    },
+
     getEstructuraUsuarios: async () => {
         const { data: response } = await api.get<ApiResponse<{ gerencia: string, subgerencia: string, area: string }[]>>('/organizacion/estructura-usuarios');
         return response.data;

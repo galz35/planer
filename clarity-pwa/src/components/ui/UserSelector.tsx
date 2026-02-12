@@ -20,8 +20,8 @@ export const UserSelector: React.FC<Props> = ({ isOpen, onClose, onSelect, title
         const load = async () => {
             setLoading(true);
             try {
-                const res = await clarityService.getUsuarios(1, 100);
-                setUsers(res?.items || []);
+                const res = await clarityService.getEmpleadosSelector();
+                setUsers(res || []);
             } catch (e) {
                 // Silently fail
             } finally {

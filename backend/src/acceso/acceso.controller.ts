@@ -131,6 +131,11 @@ export class AccesoController {
         return this.accesoService.listarEmpleadosActivos();
     }
 
+    @Get('empleados/gerencia/:nombre')
+    async listarEmpleadosPorGerencia(@Param('nombre') nombre: string) {
+        return this.accesoService.listarEmpleadosPorGerencia(nombre);
+    }
+
     @Get('empleados/buscar')
     async buscarEmpleados(@Query('q') q: string, @Query('limit') limit: string) {
         if (!q || q.length < 2) return [];

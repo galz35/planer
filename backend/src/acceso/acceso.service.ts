@@ -142,6 +142,18 @@ export class AccesoService {
         return accesoRepo.listarEmpleadosActivos();
     }
 
+    async listarEmpleadosPorGerencia(gerencia: string) {
+        const todos = await accesoRepo.listarEmpleadosActivos();
+        if (!gerencia) return todos;
+
+        const g = gerencia.trim().toLowerCase();
+        return todos.filter(u =>
+            (u.gerencia && u.gerencia.toLowerCase() === g) ||
+            (u.orgGerencia && u.orgGerencia.toLowerCase() === g) ||
+            (u.departamento && u.departamento.toLowerCase() === g) // Fallback a departamento si gerencia no machea
+        );
+    }
+
     async buscarEmpleados(termino: string, limite: number = 10) {
         return accesoRepo.buscarUsuarios(termino, limite);
     }

@@ -17,6 +17,8 @@ class AuthRepository {
   static const _keyUserId = 'momentus_user_id';
   static const _keyUserName = 'momentus_user_name';
   static const _keyUserMail = 'momentus_user_mail';
+  static const _keyGerencia = 'momentus_user_gerencia';
+  static const _keyDepto = 'momentus_user_depto';
 
   Future<SessionUser> login(
       {required String correo, required String password}) async {
@@ -44,6 +46,11 @@ class AuthRepository {
       id: (usuario['idUsuario'] ?? usuario['id'] ?? 0) as int,
       nombre: (usuario['nombre'] ?? 'Usuario') as String,
       correo: (usuario['correo'] ?? correo) as String,
+      gerencia: (usuario['gerencia'] ?? usuario['orgGerencia'] ?? '') as String,
+      departamento: (usuario['departamento'] ??
+          usuario['orgDepartamento'] ??
+          usuario['area'] ??
+          '') as String,
     );
 
     await _storage.write(key: _keyAccess, value: accessToken);
@@ -51,6 +58,8 @@ class AuthRepository {
     await _storage.write(key: _keyUserId, value: user.id.toString());
     await _storage.write(key: _keyUserName, value: user.nombre);
     await _storage.write(key: _keyUserMail, value: user.correo);
+    await _storage.write(key: _keyGerencia, value: user.gerencia);
+    await _storage.write(key: _keyDepto, value: user.departamento);
 
     ApiClient.dio.options.headers['Authorization'] = 'Bearer $accessToken';
     return user;
@@ -65,6 +74,8 @@ class AuthRepository {
       id: int.tryParse(userId) ?? 0,
       nombre: (await _storage.read(key: _keyUserName)) ?? 'Usuario',
       correo: (await _storage.read(key: _keyUserMail)) ?? '',
+      gerencia: (await _storage.read(key: _keyGerencia)) ?? '',
+      departamento: (await _storage.read(key: _keyDepto)) ?? '',
     );
 
     ApiClient.dio.options.headers['Authorization'] = 'Bearer $accessToken';
@@ -77,6 +88,8 @@ class AuthRepository {
     await _storage.delete(key: _keyUserId);
     await _storage.delete(key: _keyUserName);
     await _storage.delete(key: _keyUserMail);
+    await _storage.delete(key: _keyGerencia);
+    await _storage.delete(key: _keyDepto);
     ApiClient.dio.options.headers.remove('Authorization');
   }
 }

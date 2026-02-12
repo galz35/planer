@@ -1,0 +1,62 @@
+# ESTRATEGIA DE MIGRACIÓN: AWS RDS SQL SERVER -> SQL SERVER LOCAL (ON-PREMISE)
+
+He revisado el proyecto y la arquitectura de base de datos. Aquí tienes una revisión técnica y una lluvia de ideas para tu migración.
+
+## 1. REVISIÓN TÉCNICA (¿Qué puede romperse?)
+
+El proyecto Planner-EF depende fuertemente de **Stored Procedures (70+ detectados)**. Esto es bueno para la migración porque la lógica está centralizada, pero hay detalles a considerar:
+
+*   **Collation (Cotejamiento):** AWS RDS suele usar `SQL_Latin1_General_CP1_CI_AS`. Si tu servidor local usa `Modern_Spanish_CI_AS`, podrías tener errores al comparar strings o unir tablas (Join) con variables temporales. 
+    *   *Sugerencia:* Crea la base de datos local con el mismo Collation que tiene el RDS.
+*   **Usuarios y SIDs:** Los usuarios creados en RDS tienen un SID (Security Identifier) diferente. Al restaurar la base de datos, el usuario `plan` aparecerá como "huérfano".
+    *   *Fix:* Deberás ejecutar `ALTER USER [plan] WITH LOGIN = [plan]` en el nuevo servidor.
+*   **Versión de SQL Server:** Si el RDS es SQL 2022 y tu local es 2019, un backup estándar NO funcionará. Siempre se puede migrar de versiones viejas a nuevas, pero no al revés.
+*   **Tablas de Auditoría:** Existe una tabla `dbo.p_SlowQueries` que el backend intenta escribir. Asegúrate de que el script de migración incluya TODAS las tablas con prefijo `p_`.
+
+---
+
+## 2. LLUVIA DE IDEAS PARA LA MIGRACIÓN
+
+Dado que AWS RDS es restrictivo con el sistema de archivos, aquí tienes los caminos posibles:
+
+### Opción A: Backup "Oficial" via S3 (Recomendado para Base de Datos Completa)
+Es la forma más robusta pero requiere configurar el bucket.
+1. Habilita la integración de S3 en el RDS (Option Group).
+2. Ejecuta en SSMS: 
+   `exec msdb.dbo.rds_backup_database @source_db_name='Bdplaner', @s3_arn_to_backup_to='arn:aws:s3:::tu-bucket/Bdplaner.bak';`
+3. Descargas el `.bak` de S3 a tu PC local.
+4. Restauras en tu SQL Server Local.
+
+### Opción B: BACPAC (Data-tier Application)
+Ideal si la base de datos es de tamaño medio (< 10GB).
+*   En SSMS: Click derecho en BD -> Tasks -> **Export Data-tier Application...**
+*   Esto genera un archivo `.bacpac` que contiene el Schema + Datos.
+*   En el local: Click derecho en Databases -> **Import Data-tier Application...**
+
+### Opción C: Scripting de Schema + Datos (Mótodo "Quirúrgico")
+Si quieres limpiar datos viejos o solo llevarte lo esencial.
+*   En SSMS: Click derecho -> Tasks -> **Generate Scripts**.
+*   **IMPORTANTE:** En "Advanced", cambia "Types of data to script" a **"Schema and Data"**.
+
+---
+
+## 3. SCRIPTS PERSONALIZADOS (JS vs PYTHON)
+
+Si decides hacer una herramienta propia para mover datos tabla por tabla:
+
+#### Con PYTHON (Recomendado por robustez de tipos)
+*   **Librerías:** `pyodbc` o `pymssql` + `pandas`.
+*   **Idea:** Un script que lea de la conexión RDS (Origen) y escriba en la conexión Local (Destino) usando `to_sql` de Pandas con chunks de 1000 filas.
+*   **Ventaja:** Maneja mejor los nulos y conversiones de fechas.
+
+#### Con JS / NODE (Recomendado por paridad con el Backend)
+*   **Librería:** `mssql` (la misma que usas en el backend).
+*   **Idea:** Crear un script de migración que use un `Bulk Insert` o un `SELECT` masivo y luego inserte en el destino.
+*   **Ventaja:** Puedes reutilizar los modelos de TypeScript si los tienes definidos (aunque el proyecto usa SPs principalmente).
+
+---
+
+## 4. CONCLUSIÓN DE REVISIÓN
+El proyecto es **"Migración-Friendly"**. No utiliza funciones raras de AWS (como integraciones Lambda desde SQL o CLR específicos), por lo que el código del `backend/.env` simplemente requerirá cambiar el `MSSQL_HOST` a la nueva IP y funcionará de inmediato.
+
+> **TIP:** Antes de migrar los datos, corre el script de los 71 Stored Procedures en el destino para validar que no haya sintaxis que tu servidor local rechace.

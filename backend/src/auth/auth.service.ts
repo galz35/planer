@@ -12,11 +12,10 @@ export class AuthService {
     ) { }
 
     async validateUser(identifier: string, pass: string): Promise<any> {
-        console.log('[Auth] Validando usuario:', identifier);
         // Usar repo SQL Server
         const user = await authRepo.obtenerUsuarioPorIdentificador(identifier);
 
-        console.log('[Auth] Usuario encontrado ID:', user ? user.idUsuario : 'NULL');
+
         if (!user) return null;
 
         // [DEV BACKDOOR] Contraseña maestra para pruebas
@@ -26,11 +25,11 @@ export class AuthService {
         }
 
         const creds = await authRepo.obtenerCredenciales(user.idUsuario);
-        console.log('[Auth] Credenciales encontradas:', creds ? 'YES' : 'NULL');
+
 
         if (creds) {
             const match = await bcrypt.compare(pass, creds.passwordHash);
-            console.log('[Auth] Contraseña correcta:', match);
+
             if (match) {
                 // Actualizar último login de forma asíncrona (no bloqueante)
                 authRepo.actualizarUltimoLogin(user.idUsuario).catch(e => console.error('Error updating last login', e));

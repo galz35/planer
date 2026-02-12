@@ -38,34 +38,21 @@ class AgendaController extends ChangeNotifier {
     }
   }
 
-  // Estado de Selección para Planificación
+  // Estado de Selección para Planificación (Unificado: Solo Foco)
   Set<int> selectedMainTaskIds = {};
-  Set<int> selectedOtherTaskIds = {};
   bool startDayLoading = false;
 
-  void toggleMainTask(int id) {
+  void toggleTask(int id) {
     if (selectedMainTaskIds.contains(id)) {
       selectedMainTaskIds.remove(id);
     } else {
       selectedMainTaskIds.add(id);
-      selectedOtherTaskIds.remove(id); // No puede estar en ambos
-    }
-    notifyListeners();
-  }
-
-  void toggleOtherTask(int id) {
-    if (selectedMainTaskIds.contains(id)) return; // Ya es principal
-
-    if (selectedOtherTaskIds.contains(id)) {
-      selectedOtherTaskIds.remove(id);
-    } else {
-      selectedOtherTaskIds.add(id);
     }
     notifyListeners();
   }
 
   Future<void> saveCheckin(int userId) async {
-    if (selectedMainTaskIds.isEmpty && selectedOtherTaskIds.isEmpty) {
+    if (selectedMainTaskIds.isEmpty) {
       error = "Selecciona al menos una tarea para iniciar tu día.";
       notifyListeners();
       return;
@@ -81,10 +68,9 @@ class AgendaController extends ChangeNotifier {
       final checkinPayload = {
         "idUsuario": userId,
         "fecha": fechaStr,
-        "entregableTexto":
-            "Objetivo del día", // Opcional: Podríamos pedir input
+        "entregableTexto": "Objetivo del día",
         "entrego": selectedMainTaskIds.toList(),
-        "avanzo": selectedOtherTaskIds.toList(),
+        "avanzo": [], // Unificado: Todo es Foco/Entrego
         "extras": [],
         "estadoAnimo": "Normal"
       };
@@ -96,7 +82,6 @@ class AgendaController extends ChangeNotifier {
 
       // Limpiar selección
       selectedMainTaskIds.clear();
-      selectedOtherTaskIds.clear();
     } catch (e) {
       error = 'Error al guardar plan: $e';
     } finally {
@@ -107,10 +92,6 @@ class AgendaController extends ChangeNotifier {
 
   Future<void> completeTask(int taskId) async {
     try {
-      // Usar repositorio de tareas es lo ideal, pero aquí usaremos una llamada directa o a través de repository
-      // Como no tenemos TasksRepository inyectado, asumimos que AgendaRepository puede hacerlo o lo añadimos
-      // Por ahora simularemos la recarga
-      // TODO: Implementar llamada real a actualizar estado
       await _repository.completeTask(taskId);
       await loadAgenda();
     } catch (e) {

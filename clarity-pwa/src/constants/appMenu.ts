@@ -13,6 +13,7 @@ export const APP_MENU = [
             { path: '/app/pendientes', label: 'Mis Tareas', icon: 'CheckSquare' },
             { path: '/app/planning/proyectos', label: 'Gestión Proyectos', icon: 'FileCheck' },
             { path: '/app/notas', label: 'Mis Notas', icon: 'FileText' },
+            { path: '/app/mi-asignacion', label: 'Mi Asignación', icon: 'Briefcase' },
         ]
     },
     {
@@ -51,7 +52,6 @@ export const APP_MENU = [
             { path: '/app/admin/import', label: 'Importar Datos', icon: 'Database' },
             { path: '/app/admin/logs', label: 'Monitor Sistema', icon: 'Terminal' },
             { path: '/app/admin/papelera', label: 'Papelera', icon: 'Trash2' },
-            { path: '/app/admin/mi-asignacion', label: 'Mi Asignación', icon: 'Briefcase' }
         ]
     },
     /* {

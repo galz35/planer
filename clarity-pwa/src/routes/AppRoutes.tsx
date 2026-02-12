@@ -139,6 +139,8 @@ export const AppRoutes = () => {
                     <Route path="equipo/actividad" element={<ActividadEquipoPage />} />
                     <Route path="equipo/seguimiento-agenda" element={<AgendaCompliancePage />} />
 
+                    <Route path="mi-asignacion" element={<MiAsignacionPage />} />
+
                     {/* OTROS MODULOS */}
                     <Route path="notas" element={<MeetingNotesPage />} />
                     <Route path="reports" element={<ReportsPage />} />
@@ -157,7 +159,7 @@ export const AppRoutes = () => {
                         <Route path="admin/import" element={<ImportPage />} />
                         <Route path="admin/seguridad" element={<SecurityManagementPage />} />
                         <Route path="admin/papelera" element={<RecycleBinPage />} />
-                        <Route path="admin/mi-asignacion" element={<MiAsignacionPage />} />
+
                     </Route>
 
                     {/* DEFAULT REDIRECT */}

@@ -40,8 +40,9 @@ class ProjectGanttView extends StatelessWidget {
           .toList();
       if (starts.isNotEmpty) {
         final taskMin = starts.reduce((a, b) => a.isBefore(b) ? a : b);
-        if (taskMin.isBefore(minDate))
+        if (taskMin.isBefore(minDate)) {
           minDate = taskMin.subtract(const Duration(days: 2));
+        }
       }
 
       final ends = validTasks
@@ -50,8 +51,9 @@ class ProjectGanttView extends StatelessWidget {
           .toList();
       if (ends.isNotEmpty) {
         final taskMax = ends.reduce((a, b) => a.isAfter(b) ? a : b);
-        if (taskMax.isAfter(maxDate))
+        if (taskMax.isAfter(maxDate)) {
           maxDate = taskMax.add(const Duration(days: 5));
+        }
       }
     }
 
@@ -64,10 +66,10 @@ class ProjectGanttView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: slate200.withOpacity(0.5)),
+        border: Border.all(color: slate200.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -105,9 +107,9 @@ class ProjectGanttView extends StatelessWidget {
                         border:
                             const Border(right: BorderSide(color: slate100)),
                         color: isTodayDate
-                            ? Colors.indigo.withOpacity(0.05)
+                            ? Colors.indigo.withValues(alpha: 0.05)
                             : (isWeekend
-                                ? slate100.withOpacity(0.5)
+                                ? slate100.withValues(alpha: 0.5)
                                 : Colors.transparent),
                       ),
                       child: Column(
@@ -164,7 +166,7 @@ class ProjectGanttView extends StatelessWidget {
                                       border: const Border(
                                           right: BorderSide(color: slate50)),
                                       color: isWeekend
-                                          ? slate50.withOpacity(0.5)
+                                          ? slate50.withValues(alpha: 0.5)
                                           : null,
                                     ),
                                   );
@@ -181,7 +183,7 @@ class ProjectGanttView extends StatelessWidget {
                         (dayWidth / 2),
                     child: Container(
                       width: 2,
-                      color: Colors.indigo.withOpacity(0.3),
+                      color: Colors.indigo.withValues(alpha: 0.3),
                       child: Column(
                         children: [
                           Container(
@@ -239,7 +241,7 @@ class ProjectGanttView extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: color.withOpacity(0.3),
+                              color: color.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             )
@@ -264,7 +266,7 @@ class ProjectGanttView extends StatelessWidget {
                             if (width > 100)
                               Icon(
                                 _getStatusIcon(estado),
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 size: 14,
                               ),
                           ],

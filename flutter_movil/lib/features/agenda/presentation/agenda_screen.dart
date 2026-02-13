@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 
 import '../../agenda/domain/agenda_models.dart';
@@ -170,9 +169,7 @@ class _DateNavigator extends StatelessWidget {
                     Text(
                       _isToday
                           ? 'HOY'
-                          : DateFormat('EEE d MMM', 'es_ES')
-                              .format(controller.currentDate)
-                              .toUpperCase(),
+                          : "${controller.currentDate.day}/${controller.currentDate.month}",
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w700,
@@ -185,8 +182,7 @@ class _DateNavigator extends StatelessWidget {
                     if (_isToday) ...[
                       const SizedBox(width: 6),
                       Text(
-                        DateFormat('d MMM', 'es_ES')
-                            .format(controller.currentDate),
+                        "${controller.currentDate.day}/${controller.currentDate.month}",
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w400,
@@ -1142,7 +1138,7 @@ class _TaskSelectorSheetState extends State<_TaskSelectorSheet> {
                       color: accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.adjust_rounded,
                       size: 18,
                       color: accentColor,
@@ -1341,7 +1337,7 @@ class _TaskSelectorSheetState extends State<_TaskSelectorSheet> {
                                     color: accentColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(Icons.add_rounded,
+                                  child: const Icon(Icons.add_rounded,
                                       size: 16, color: accentColor),
                                 ),
                               ],
@@ -1561,8 +1557,8 @@ class _ExecutionViewState extends State<_ExecutionView>
             ),
             child: Row(
               children: [
-                Icon(Icons.circle_outlined,
-                    size: 18, color: const Color(0xFFCBD5E1)),
+                const Icon(Icons.circle_outlined,
+                    size: 18, color: Color(0xFFCBD5E1)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -1832,7 +1828,7 @@ class _ExecutionTaskRowState extends State<_ExecutionTaskRow> {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Error: No se pudo completar. Verifique conexión.'),
             backgroundColor: MomentusTheme.error,
             behavior: SnackBarBehavior.floating,

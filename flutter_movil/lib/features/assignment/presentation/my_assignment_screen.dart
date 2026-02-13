@@ -288,11 +288,10 @@ class _MyAssignmentScreenState extends State<MyAssignmentScreen> {
   }
 
   Widget _buildProjectCard(Map<String, dynamic> proyecto) {
-    final int id = proyecto['idProyecto'] ?? 0;
+    final int id = _parseInt(proyecto['idProyecto']) ?? 0;
     final String nombre = proyecto['nombre'] ?? 'Sin Nombre';
     final List tareas = (proyecto['misTareas'] as List?) ?? [];
-    final double progreso =
-        (proyecto['progresoProyecto'] as num?)?.toDouble() ?? 0.0;
+    final double progreso = _parseDouble(proyecto['progresoProyecto']);
     final bool isExpanded = _expandedProjects[id] ?? false;
     final bool hasAtraso =
         tareas.any((t) => (t['esAtrasada'] ?? false) == true);
@@ -300,9 +299,12 @@ class _MyAssignmentScreenState extends State<MyAssignmentScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isExpanded ? const Color(0xFFF8FAFC) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isExpanded
+                ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                : const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withValues(alpha: 0.04),
@@ -481,8 +483,8 @@ class _MyAssignmentScreenState extends State<MyAssignmentScreen> {
     final String prioridad = task['prioridad'] ?? 'Media';
     final String? fechaObjetivo = task['fechaObjetivo']; // String ISO?
     final bool esAtrasada = task['esAtrasada'] ?? false;
-    final int diasAtraso = task['diasAtraso'] ?? 0;
-    final double progreso = (task['progreso'] as num?)?.toDouble() ?? 0.0;
+    final int diasAtraso = _parseInt(task['diasAtraso']) ?? 0;
+    final double progreso = _parseDouble(task['progreso']);
     final bool isDone =
         estado == 'Hecha' || estado == 'Terminada' || estado == 'Completada';
 
@@ -712,6 +714,21 @@ class _MyAssignmentScreenState extends State<MyAssignmentScreen> {
       default:
         return const Color(0xFF64748B);
     }
+  }
+
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 }
 

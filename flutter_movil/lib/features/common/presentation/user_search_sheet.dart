@@ -51,6 +51,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
     // 2. Gerencia
     List<Empleado> combined = [...recents];
     try {
+      if (!mounted) return;
       final auth = context.read<AuthController>();
       final user = auth.user;
       if (user != null) {

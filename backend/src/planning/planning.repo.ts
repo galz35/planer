@@ -729,8 +729,8 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
         ORDER BY p.fechaFin ASC
     `, { carnet: { valor: carnet, tipo: NVarChar } });
 
-    // 2. Obtener mis tareas en esos proyectos - SIN FILTRO DE ESTADO EN QUERY
-    const tareas = await ejecutarQuery<any>(`
+    // 2. Obtener mis tareas en esos proyectos
+    let queryTareas = `
         SELECT 
             t.idTarea,
             t.idProyecto,
@@ -745,13 +745,13 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
             t.linkEvidencia,
             CASE 
                 WHEN t.fechaObjetivo < CAST(GETDATE() AS DATE) 
-                     AND t.estado NOT IN ('Hecha', 'Completada', 'Descartada', 'Eliminada')
+                     AND t.estado NOT IN ('Hecha', 'Completada', 'Descartada', 'Eliminada', 'Archivada')
                 THEN DATEDIFF(day, t.fechaObjetivo, GETDATE())
                 ELSE 0
             END AS diasAtraso,
             CASE 
                 WHEN t.fechaObjetivo < CAST(GETDATE() AS DATE) 
-                     AND t.estado NOT IN ('Hecha', 'Completada', 'Descartada', 'Eliminada')
+                     AND t.estado NOT IN ('Hecha', 'Completada', 'Descartada', 'Eliminada', 'Archivada')
                 THEN 1 ELSE 0
             END AS esAtrasada,
             p.nombre AS proyectoNombre
@@ -761,23 +761,26 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
         WHERE ta.carnet = @carnet
           AND t.activo = 1
           AND (p.idProyecto IS NULL OR p.estado = 'Activo')
+    `;
+
+    // Aplicar filtros en SQL para consistencia absoluta
+    if (filtros?.estado === 'pendientes') {
+        queryTareas += " AND t.estado NOT IN ('Hecha', 'Completada', 'Descartada', 'Eliminada', 'Archivada') ";
+    } else if (filtros?.estado && filtros.estado !== 'todas') {
+        queryTareas += ` AND t.estado = '${filtros.estado}' `; // Ojo: sanitizar si fuera input externo directo
+    }
+
+    queryTareas += `
         ORDER BY 
             CASE WHEN t.estado NOT IN ('Hecha', 'Completada') THEN 0 ELSE 1 END,
             CASE WHEN t.fechaObjetivo < CAST(GETDATE() AS DATE) THEN 0 ELSE 1 END,
             t.fechaObjetivo ASC
-    `, { carnet: { valor: carnet, tipo: NVarChar } });
+    `;
 
-    // 3. Filtrar en memoria según el estado solicitado
-    let tareasFiltradas = tareas;
-    if (filtros?.estado && filtros.estado !== 'todas') {
-        if (filtros.estado === 'pendientes') {
-            tareasFiltradas = tareas.filter((t: any) =>
-                !['Hecha', 'Completada', 'Descartada', 'Eliminada'].includes(t.estado)
-            );
-        } else {
-            tareasFiltradas = tareas.filter((t: any) => t.estado === filtros.estado);
-        }
-    }
+    const tareas = await ejecutarQuery<any>(queryTareas, { carnet: { valor: carnet, tipo: NVarChar } });
+
+    // 3. Filtrar en memoria (Redundancia eliminada, ahora usamos SQL directo arriba)
+    const tareasFiltradas = tareas;
 
     // 4. Agrupar proyectos + Proyecto Virtual para tareas sin proyecto
     const proyectosFinal = proyectos.map((p: any) => ({

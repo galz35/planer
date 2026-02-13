@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 
 import '../domain/task_item.dart';
 import 'task_controller.dart';
@@ -360,7 +359,10 @@ class _TaskItemState extends State<_TaskItem> {
 
     String? fechaFmt;
     if (task.fechaObjetivo != null) {
-      fechaFmt = DateFormat('d MMM', 'es_ES').format(task.fechaObjetivo!);
+      final fo = task.fechaObjetivo!;
+      // FIX CRASH: Manual format
+      fechaFmt =
+          "${fo.day.toString().padLeft(2, '0')}/${fo.month.toString().padLeft(2, '0')}";
     }
 
     // Colores según prioridad / estado
@@ -407,7 +409,7 @@ class _TaskItemState extends State<_TaskItem> {
                 InkWell(
                   onTap: isDone ? null : _handleToggle,
                   borderRadius: BorderRadius.circular(12),
-                  child: Container(
+                  child: SizedBox(
                     width: 24,
                     height: 24,
                     child: _isLoading

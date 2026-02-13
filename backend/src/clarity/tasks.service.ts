@@ -74,10 +74,17 @@ export class TasksService {
 
         let tareas = await clarityRepo.getTareasUsuario(carnet, undefined, undefined, start, end);
 
+        // 2026-02-13: Sanitizar estados para evitar bugs de espacios (ej: 'Hecha ' vs 'Hecha')
+        if (tareas) {
+            tareas.forEach(t => {
+                if (typeof t.estado === 'string') t.estado = t.estado.trim();
+            });
+        }
+
         // 2026-02-04: Filtro para evitar que tareas viejas completadas aparezcan en la bandeja de selección
         // Solo mostramos pendientes, en curso, bloqueadas o las terminadas HOY.
         tareas = (tareas || []).filter(t => {
-            const estado = t.estado?.trim();
+            const estado = t.estado; // ya está trimado
             if (estado === 'Hecha' || estado === 'Completada') {
                 const fComp = t.fechaCompletado || (t as any).fechaHecha;
                 if (!fComp) return false;

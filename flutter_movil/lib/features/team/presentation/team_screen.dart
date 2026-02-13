@@ -408,35 +408,35 @@ class _TeamScreenState extends State<TeamScreen> {
                   );
                 }
 
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() => _future = _fetchTeam());
-                  },
-                  child: Column(
-                    children: [
-                      if (data.fromCache)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(8),
-                          color: const Color(0xFFFEF3C7),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.cloud_off,
-                                  size: 16, color: Color(0xFFD97706)),
-                              SizedBox(width: 8),
-                              Text(
-                                'Mostrando datos en caché (sin conexión)',
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  color: Color(0xFFD97706),
-                                ),
+                return Column(
+                  children: [
+                    if (data.fromCache)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        color: const Color(0xFFFEF3C7),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.cloud_off,
+                                size: 16, color: Color(0xFFD97706)),
+                            SizedBox(width: 8),
+                            Text(
+                              'Mostrando datos en caché (sin conexión)',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                color: Color(0xFFD97706),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      Expanded(
+                      ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          setState(() => _future = _fetchTeam());
+                        },
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: members.length,
@@ -447,8 +447,8 @@ class _TeamScreenState extends State<TeamScreen> {
                           },
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               },
             ),

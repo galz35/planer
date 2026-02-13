@@ -891,7 +891,7 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
                 ],
               ),
             ),
-            const Icon(Icons.edit, size: 16, color: Color(0xFF94A3B8)),
+            const Icon(Icons.edit, size: 20, color: Color(0xFF94A3B8)),
           ],
         ),
       ),
@@ -903,7 +903,7 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: 500,
+        height: MediaQuery.of(context).size.height * 0.65,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

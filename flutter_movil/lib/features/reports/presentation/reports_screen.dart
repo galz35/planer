@@ -177,7 +177,7 @@ class _DashboardContent extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.3,
       children: [
         _buildStatCard('Total Tareas', resumen.total.toString(),
             Icons.layers_outlined, const Color(0xFF64748B), Colors.white),

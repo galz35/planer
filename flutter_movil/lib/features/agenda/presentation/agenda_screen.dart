@@ -310,130 +310,139 @@ class _PlanningViewState extends State<_PlanningView>
     final selectedCount = widget.controller.selectedMainTaskIds.length;
     final overdueCount = _overdueTasks.length;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: widget.controller.startDayLoading
-            ? null
-            : () => widget.controller.saveCheckin(widget.userId),
-        label: widget.controller.startDayLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
-            : Text(
-                'Confirmar Plan ($selectedCount)',
-                style:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    return Stack(
+      children: [
+        // Cuerpo Principal
+        Column(
+          children: [
+            // ── TAB BAR ──
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
               ),
-        icon: widget.controller.startDayLoading
-            ? null
-            : const Icon(Icons.rocket_launch_rounded, size: 18),
-        backgroundColor:
-            selectedCount > 0 ? MomentusTheme.slate900 : MomentusTheme.slate400,
-        foregroundColor: Colors.white,
-        elevation: selectedCount > 0 ? 6 : 0,
-      ),
-      body: Column(
-        children: [
-          // ── TAB BAR ──
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TabBar(
-              controller: _tabCtrl,
-              indicator: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+              child: TabBar(
+                controller: _tabCtrl,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorPadding: const EdgeInsets.all(3),
+                dividerHeight: 0,
+                labelColor: MomentusTheme.slate900,
+                unselectedLabelColor: const Color(0xFF94A3B8),
+                labelStyle: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+                tabs: [
+                  Tab(
+                    height: 40,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.track_changes_outlined, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                            'Tareas (${widget.controller.selectedMainTaskIds.length})'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 40,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.access_time_rounded, size: 18),
+                        const SizedBox(width: 4),
+                        const Text('Atrasadas'),
+                        if (overdueCount > 0) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: MomentusTheme.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$overdueCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.all(3),
-              dividerHeight: 0,
-              labelColor: MomentusTheme.slate900,
-              unselectedLabelColor: const Color(0xFF94A3B8),
-              labelStyle: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-              ),
-              tabs: [
-                Tab(
-                  height: 40,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('🎯', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 4),
-                      Text(
-                          'Tareas (${widget.controller.selectedMainTaskIds.length})'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  height: 40,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('⏰', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 4),
-                      const Text('Atrasadas'),
-                      if (overdueCount > 0) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: MomentusTheme.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '$overdueCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-          // ── TAB CONTENT ──
-          Expanded(
-            child: TabBarView(
-              controller: _tabCtrl,
-              children: [
-                // TAB 1: TAREAS
-                _buildFocoTab(),
-                // TAB 2: ATRASADAS
-                _buildPendientesTab(),
-              ],
+            // ── TAB CONTENT ──
+            Expanded(
+              child: TabBarView(
+                controller: _tabCtrl,
+                children: [
+                  // TAB 1: TAREAS
+                  _buildFocoTab(),
+                  // TAB 2: ATRASADAS
+                  _buildPendientesTab(),
+                ],
+              ),
             ),
+          ],
+        ),
+
+        // FAB Simulado (Posicionado manualmente para evitar Scaffold anidado)
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton.extended(
+            onPressed: widget.controller.startDayLoading
+                ? null
+                : () => widget.controller.saveCheckin(widget.userId),
+            label: widget.controller.startDayLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
+                : Text(
+                    'Confirmar Plan ($selectedCount)',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+            icon: widget.controller.startDayLoading
+                ? null
+                : const Icon(Icons.rocket_launch_rounded, size: 18),
+            backgroundColor: selectedCount > 0
+                ? MomentusTheme.slate900
+                : MomentusTheme.slate400,
+            foregroundColor: Colors.white,
+            elevation: selectedCount > 0 ? 6 : 0,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -887,13 +896,13 @@ class _SlotCard extends StatelessWidget {
               onRemove();
             },
             child: Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.close_rounded,
-                  size: 14, color: Color(0xFF94A3B8)),
+                  size: 18, color: Color(0xFF94A3B8)),
             ),
           ),
         ],
@@ -1388,7 +1397,8 @@ class _ExecutionView extends StatelessWidget {
       color: MomentusTheme.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

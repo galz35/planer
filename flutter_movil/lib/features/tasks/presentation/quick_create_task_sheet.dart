@@ -68,22 +68,22 @@ class _QuickCreateTaskSheetState extends State<QuickCreateTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Drag Handle
-            Center(
-              child: Container(
+    // Usamos DraggableScrollableSheet para manejar mejor el teclado y pantallas pequeñas
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Drag Handle (Fijo en el tope)
+              const SizedBox(height: 12),
+              Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
@@ -91,421 +91,445 @@ class _QuickCreateTaskSheetState extends State<QuickCreateTaskSheet> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-            // Header con icono
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(CupertinoIcons.add_circled_solid,
-                      color: Color(0xFF059669), size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nueva Tarea',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      Text(
-                        'Crea una tarea rápidamente',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Input Título
-            _buildLabel('Título *'),
-            TextField(
-              controller: _titleCtrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              style: const TextStyle(
-                  fontFamily: 'Inter', fontWeight: FontWeight.w500),
-              decoration: _inputDecoration('¿Qué hay que hacer?'),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Fecha y Tipo en Row
-            Row(
-              children: [
-                // Selector Fecha
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel('Fecha'),
-                      InkWell(
-                        onTap: _pickDate,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+              // Contenido Scrollable
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  children: [
+                    // Header con icono
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
+                            color: const Color(0xFFECFDF5),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: Row(
+                          child: const Icon(CupertinoIcons.add_circled_solid,
+                              color: Color(0xFF059669), size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(CupertinoIcons.calendar,
-                                  size: 18, color: Color(0xFF64748B)),
-                              const SizedBox(width: 8),
                               Text(
-                                _formatDate(_selectedDate),
-                                style: const TextStyle(
+                                'Nueva Tarea',
+                                style: TextStyle(
                                   fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                   color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              Text(
+                                'Crea una tarea rápidamente',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 13,
+                                  color: Color(0xFF64748B),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
+                      ],
+                    ),
 
-                // Selector Tipo
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel('Tipo'),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                    const SizedBox(height: 24),
+
+                    // Input Título
+                    _buildLabel('Título *'),
+                    TextField(
+                      controller: _titleCtrl,
+                      autofocus: true,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: const TextStyle(
+                          fontFamily: 'Inter', fontWeight: FontWeight.w500),
+                      decoration: _inputDecoration('¿Qué hay que hacer?'),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Fecha y Tipo en Row
+                    Row(
+                      children: [
+                        // Selector Fecha
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Fecha'),
+                              InkWell(
+                                onTap: _pickDate,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(CupertinoIcons.calendar,
+                                          size: 18, color: Color(0xFF64748B)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _formatDate(_selectedDate),
+                                        style: const TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Selector Tipo
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Tipo'),
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _tipo,
+                                    isExpanded: true,
+                                    icon: const Icon(
+                                        CupertinoIcons.chevron_down,
+                                        size: 16),
+                                    style: const TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F172A),
+                                        fontSize: 14),
+                                    items: const [
+                                      DropdownMenuItem(
+                                          value: 'Administrativa',
+                                          child: Text('Administrativa')),
+                                      DropdownMenuItem(
+                                          value: 'Logistica',
+                                          child: Text('Logística')),
+                                      DropdownMenuItem(
+                                          value: 'Estrategica',
+                                          child: Text('Estratégica')),
+                                      DropdownMenuItem(
+                                          value: 'AMX', child: Text('AMX')),
+                                      DropdownMenuItem(
+                                          value: 'Otros', child: Text('Otros')),
+                                    ],
+                                    onChanged: (v) =>
+                                        setState(() => _tipo = v!),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Prioridad y Esfuerzo
+                    Row(
+                      children: [
+                        // Prioridad
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Prioridad'),
+                              // Usar AnimatedContainer para feedback visual
+                              _buildChipRow(
+                                options: ['Alta', 'Media', 'Baja'],
+                                selected: _prioridad,
+                                colors: [
+                                  const Color(0xFFEF4444),
+                                  const Color(0xFFF59E0B),
+                                  const Color(0xFF10B981)
+                                ],
+                                onSelected: (v) =>
+                                    setState(() => _prioridad = v),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Esfuerzo
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Esfuerzo'),
+                              _buildChipRow(
+                                options: ['S', 'M', 'L'],
+                                selected: _esfuerzo,
+                                labels: ['Pequeño', 'Mediano', 'Grande'],
+                                onSelected: (v) =>
+                                    setState(() => _esfuerzo = v),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Toggle para mostrar descripción
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () =>
+                          setState(() => _showAdvanced = !_showAdvanced),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _showAdvanced
+                                ? CupertinoIcons.chevron_up
+                                : CupertinoIcons.chevron_down,
+                            size: 16,
+                            color: const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _showAdvanced
+                                ? 'Ocultar descripción'
+                                : 'Agregar descripción (opcional)',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Proyecto
+                    _buildLabel('Proyecto (Opcional)'),
+                    InkWell(
+                      onTap: () async {
+                        final selected =
+                            await showModalBottomSheet<Map<String, dynamic>>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => ProjectSearchSheet(
+                              onSelected: (p) => Navigator.pop(context, p)),
+                        );
+
+                        if (selected != null) {
+                          setState(() => _proyecto = selected);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _tipo,
-                            isExpanded: true,
-                            icon: const Icon(CupertinoIcons.chevron_down,
-                                size: 16),
-                            style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F172A),
-                                fontSize: 14),
-                            items: const [
-                              DropdownMenuItem(
-                                  value: 'Administrativa',
-                                  child: Text('Administrativa')),
-                              DropdownMenuItem(
-                                  value: 'Logistica', child: Text('Logística')),
-                              DropdownMenuItem(
-                                  value: 'Estrategica',
-                                  child: Text('Estratégica')),
-                              DropdownMenuItem(
-                                  value: 'AMX', child: Text('AMX')),
-                              DropdownMenuItem(
-                                  value: 'Otros', child: Text('Otros')),
-                            ],
-                            onChanged: (v) => setState(() => _tipo = v!),
+                        child: Row(
+                          children: [
+                            Icon(CupertinoIcons.folder,
+                                size: 18,
+                                color: _proyecto != null
+                                    ? Colors.purple
+                                    : const Color(0xFF64748B)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _proyecto != null
+                                    ? (_proyecto!['nombre'] ??
+                                        'Proyecto sin nombre')
+                                    : 'Asignar a proyecto',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontWeight: _proyecto != null
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: _proyecto != null
+                                      ? const Color(0xFF0F172A)
+                                      : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ),
+                            if (_proyecto != null)
+                              InkWell(
+                                onTap: () => setState(() => _proyecto = null),
+                                child: const Icon(
+                                    CupertinoIcons.xmark_circle_fill,
+                                    size: 18,
+                                    color: Color(0xFF64748B)),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Responsable
+                    _buildLabel('Asignar a'),
+                    InkWell(
+                      onTap: () async {
+                        final selected = await UserSearchSheet.show(context);
+                        if (selected != null) {
+                          setState(() => _responsable = selected);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(CupertinoIcons.person_2,
+                                size: 18,
+                                color: _responsable != null
+                                    ? const Color(0xFF0F172A)
+                                    : const Color(0xFF64748B)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _responsable?.nombreCompleto ??
+                                    'Asignar a mí (Automático)',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontWeight: _responsable != null
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: _responsable != null
+                                      ? const Color(0xFF0F172A)
+                                      : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ),
+                            if (_responsable != null)
+                              InkWell(
+                                onTap: () =>
+                                    setState(() => _responsable = null),
+                                child: const Icon(
+                                    CupertinoIcons.xmark_circle_fill,
+                                    size: 18,
+                                    color: Color(0xFF64748B)),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Descripción (expandible)
+                    if (_showAdvanced) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _descCtrl,
+                        maxLines: 3,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: const TextStyle(fontFamily: 'Inter'),
+                        decoration: _inputDecoration('Detalles adicionales...'),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Botones
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF64748B),
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Cancelar',
+                                style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w600)),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Prioridad y Esfuerzo
-            Row(
-              children: [
-                // Prioridad
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel('Prioridad'),
-                      _buildChipRow(
-                        options: ['Alta', 'Media', 'Baja'],
-                        selected: _prioridad,
-                        colors: [
-                          const Color(0xFFEF4444),
-                          const Color(0xFFF59E0B),
-                          const Color(0xFF10B981)
-                        ],
-                        onSelected: (v) => setState(() => _prioridad = v),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Esfuerzo
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel('Esfuerzo'),
-                      _buildChipRow(
-                        options: ['S', 'M', 'L'],
-                        selected: _esfuerzo,
-                        labels: ['Pequeño', 'Mediano', 'Grande'],
-                        onSelected: (v) => setState(() => _esfuerzo = v),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // Toggle para mostrar descripción
-            const SizedBox(height: 16),
-            InkWell(
-              onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-              child: Row(
-                children: [
-                  Icon(
-                    _showAdvanced
-                        ? CupertinoIcons.chevron_up
-                        : CupertinoIcons.chevron_down,
-                    size: 16,
-                    color: const Color(0xFF64748B),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _showAdvanced
-                        ? 'Ocultar descripción'
-                        : 'Agregar descripción (opcional)',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Proyecto
-            _buildLabel('Proyecto (Opcional)'),
-            InkWell(
-              onTap: () async {
-                // Aquí usamos ProjectSearchSheet como un modal directo, pero el widget espera un callback
-                // La forma correcta de usarlo según mi implementación static show es:
-                // ProjectSearchSheet.show(context).then(...)
-                // Pero ProjectSearchSheet.show retorna Future<Map?>
-                final selected =
-                    await showModalBottomSheet<Map<String, dynamic>>(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => ProjectSearchSheet(
-                      onSelected: (p) => Navigator.pop(context, p)),
-                );
-
-                if (selected != null) {
-                  setState(() => _proyecto = selected);
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(CupertinoIcons.folder,
-                        size: 18,
-                        color: _proyecto != null
-                            ? Colors.purple
-                            : const Color(0xFF64748B)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _proyecto != null
-                            ? (_proyecto!['nombre'] ?? 'Proyecto sin nombre')
-                            : 'Asignar a proyecto',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: _proyecto != null
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          color: _proyecto != null
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFF94A3B8),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _saveTask,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F172A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2))
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(CupertinoIcons.checkmark_alt,
+                                          size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Crear Tarea',
+                                          style: TextStyle(
+                                              fontFamily: 'Inter',
+                                              fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    if (_proyecto != null)
-                      InkWell(
-                        onTap: () => setState(() => _proyecto = null),
-                        child: const Icon(CupertinoIcons.xmark_circle_fill,
-                            size: 18, color: Color(0xFF64748B)),
-                      ),
+
+                    // Espacio para el teclado
+                    SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                   ],
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Responsable
-            _buildLabel('Asignar a'),
-            InkWell(
-              onTap: () async {
-                final selected = await UserSearchSheet.show(context);
-                if (selected != null) {
-                  setState(() => _responsable = selected);
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(CupertinoIcons.person_2,
-                        size: 18,
-                        color: _responsable != null
-                            ? const Color(0xFF0F172A)
-                            : const Color(0xFF64748B)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _responsable?.nombreCompleto ??
-                            'Asignar a mí (Automático)',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: _responsable != null
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          color: _responsable != null
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFF94A3B8),
-                        ),
-                      ),
-                    ),
-                    if (_responsable != null)
-                      InkWell(
-                        onTap: () => setState(() => _responsable = null),
-                        child: const Icon(CupertinoIcons.xmark_circle_fill,
-                            size: 18, color: Color(0xFF64748B)),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Toggle para mostrar descripción
-
-            // Descripción (expandible)
-            if (_showAdvanced) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _descCtrl,
-                maxLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-                style: const TextStyle(fontFamily: 'Inter'),
-                decoration: _inputDecoration('Detalles adicionales...'),
               ),
             ],
-
-            const SizedBox(height: 24),
-
-            // Botones
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Cancelar',
-                        style: TextStyle(
-                            fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : _saveTask,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(CupertinoIcons.checkmark_alt, size: 18),
-                              SizedBox(width: 8),
-                              Text('Crear Tarea',
-                                  style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -565,7 +589,8 @@ class _QuickCreateTaskSheetState extends State<QuickCreateTaskSheet> {
             child: InkWell(
               onTap: () => onSelected(opt),
               borderRadius: BorderRadius.circular(8),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected

@@ -294,7 +294,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
               ? MomentusTheme.primary.withValues(alpha: 0.1)
@@ -302,7 +302,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ),
         child: Icon(
           icon,
-          size: 20,
+          size: 24, // Aumentado ligeramente también
           color: isSelected ? MomentusTheme.primary : MomentusTheme.slate400,
         ),
       ),
@@ -421,15 +421,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           const SizedBox(height: 16),
           // Estadísticas Rápidas
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _statItem('Total', '${_allTasks.length}', Colors.black87),
-              _statItem('Atrasadas', '${_countTasks('atrasadas')}',
-                  MomentusTheme.error),
-              _statItem(
-                  'En Curso', '${_countTasks('curso')}', MomentusTheme.warning),
-              _statItem(
-                  'Hechas', '${_countTasks('hecha')}', MomentusTheme.success),
+              Expanded(
+                  child: _statItem(
+                      'Total', '${_allTasks.length}', Colors.black87)),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _statItem('Atrasadas', '${_countTasks('atrasadas')}',
+                      MomentusTheme.error)),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _statItem('En Curso', '${_countTasks('curso')}',
+                      MomentusTheme.warning)),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _statItem('Hechas', '${_countTasks('hecha')}',
+                      MomentusTheme.success)),
             ],
           ),
         ],
@@ -474,7 +481,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   Widget _statItem(String label, String value, Color color) {
     return Container(
-      width: 80,
+      // width: 80, // REMOVED fixed width
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC), // Slate 50
@@ -655,7 +662,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     Text(
                       fecha,
                       style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF64748B)),
+                          fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
                 )

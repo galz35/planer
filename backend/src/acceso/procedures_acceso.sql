@@ -225,7 +225,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_Usuarios_ListarActivos
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT * FROM dbo.p_Usuarios WHERE activo = 1 ORDER BY nombre ASC;
+    SELECT * FROM dbo.p_Usuarios WHERE activo = 1 ORDER BY nombreCompleto ASC;
 END
 GO
 
@@ -241,11 +241,11 @@ BEGIN
     FROM dbo.p_Usuarios
     WHERE activo = 1
       AND (
-           LOWER(nombre) LIKE LOWER(@t) OR
+           LOWER(nombreCompleto) LIKE LOWER(@t) OR
            carnet LIKE @t OR
            LOWER(correo) LIKE LOWER(@t)
       )
-    ORDER BY nombre ASC;
+    ORDER BY nombreCompleto ASC;
 END
 GO
 

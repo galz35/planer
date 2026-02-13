@@ -775,6 +775,23 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
         }
     }
 
+    // 4. Agrupar proyectos + Proyecto Virtual para tareas sin proyecto
+    const proyectosFinal = proyectos.map((p: any) => ({
+        ...p,
+        misTareas: tareasFiltradas.filter((t: any) => t.idProyecto === p.idProyecto)
+    })).filter((p: any) => p.misTareas.length > 0);
+
+    // Agregar tareas SIN PROYECTO (General) if any
+    const tareasSinProyecto = tareasFiltradas.filter((t: any) => !t.idProyecto);
+    if (tareasSinProyecto.length > 0) {
+        proyectosFinal.push({
+            idProyecto: 0, // ID virtual
+            nombre: 'General / Sin Proyecto',
+            progresoProyecto: 0,
+            misTareas: tareasSinProyecto
+        });
+    }
+
     // 4. Calcular resumen
     const tareasAtrasadas = tareasFiltradas.filter((t: any) => t.esAtrasada === 1 || t.esAtrasada === true).length;
     const tareasHoy = tareasFiltradas.filter((t: any) => {
@@ -785,12 +802,9 @@ export async function obtenerMiAsignacion(carnet: string, filtros?: { estado?: s
     }).length;
 
     return {
-        proyectos: proyectos.map((p: any) => ({
-            ...p,
-            misTareas: tareasFiltradas.filter((t: any) => t.idProyecto === p.idProyecto)
-        })).filter((p: any) => p.misTareas.length > 0), // Solo proyectos con tareas filtradas
+        proyectos: proyectosFinal,
         resumen: {
-            totalProyectos: proyectos.length,
+            totalProyectos: proyectos.length + (tareasSinProyecto.length > 0 ? 1 : 0),
             totalTareas: tareasFiltradas.length,
             tareasAtrasadas,
             tareasHoy,

@@ -1,0 +1,3 @@
+Keystore Pass: Mom3ntus_2026_Secure
+Key Alias: key
+Key Pass: Mom3ntus_2026_Secure

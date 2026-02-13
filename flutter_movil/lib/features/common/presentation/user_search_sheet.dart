@@ -5,6 +5,13 @@ import '../../common/domain/empleado.dart';
 import 'package:provider/provider.dart';
 import '../../auth/presentation/auth_controller.dart';
 
+/// ============================================
+/// USER SEARCH SHEET - Buscar y seleccionar persona
+/// ============================================
+/// Patrón igual a React CreateTaskModal:
+/// 1. Al abrir → Muestra empleados de MI GERENCIA (jerarquía)
+/// 2. Al escribir ≥ 2 chars → Busca en TODOS los empleados (cross-area)
+/// 3. Muestra nombre, cargo, área y carnet para identificación clara
 class UserSearchSheet extends StatefulWidget {
   final Function(Empleado) onSelected;
 
@@ -34,105 +41,88 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
   final _repo = UserRepository();
   final _searchCtrl = TextEditingController();
 
-  List<Empleado> _allEmployees = [];
-  List<Empleado> _filteredResults = [];
+  List<Empleado> _gerenciaUsers = []; // Mi jerarquía/gerencia
+  List<Empleado> _displayResults = []; // Lo que se muestra en pantalla
   bool _loading = false;
-  bool _hasError = false;
-  String _currentLabel = 'Todos los empleados';
+  bool _isSearchingAll = false; // true = buscando en todo el sistema
+  String _headerLabel = 'Mi Equipo';
 
   @override
   void initState() {
     super.initState();
-    _loadAllEmployees();
+    _loadMyTeam();
   }
 
-  /// Load ALL active employees from the API to populate the list immediately.
-  /// Falls back to gerencia-based loading if the full list fails.
-  void _loadAllEmployees() async {
-    setState(() {
-      _loading = true;
-      _hasError = false;
-    });
+  /// Paso 1: Cargar empleados de MI gerencia (jerarquía)
+  /// Esto es lo que ves por defecto, igual que React.
+  void _loadMyTeam() async {
+    setState(() => _loading = true);
+
+    List<Empleado> team = [];
 
     try {
-      // Strategy 1: Load all active employees from the API
-      final allUsers = await _repo.getAllEmployees();
+      // Intentar cargar por gerencia del usuario logueado
+      if (!mounted) return;
+      final auth = context.read<AuthController>();
+      final user = auth.user;
 
-      if (allUsers.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _allEmployees = allUsers;
-            _filteredResults = allUsers;
-            _currentLabel = 'Todos los empleados (${allUsers.length})';
-            _loading = false;
-          });
+      if (user != null) {
+        final g = user.gerencia.isNotEmpty
+            ? user.gerencia
+            : (user.departamento.isNotEmpty ? user.departamento : '');
+
+        if (g.isNotEmpty) {
+          team = await _repo.getEmployeesByDepartment(g);
         }
-        return;
+      }
+
+      // Si la gerencia no devolvió nada, cargar todos como fallback
+      if (team.isEmpty) {
+        team = await _repo.getAllEmployees();
       }
     } catch (e) {
-      debugPrint('⚠️ Could not load all employees: $e');
+      debugPrint('⚠️ Error loading team: $e');
     }
 
-    // Strategy 2: Fallback — load recents + gerencia
+    // Agregar recientes al inicio (sin duplicados)
     try {
       final recents = await _repo.getRecents();
-      List<Empleado> combined = [...recents];
+      final teamIds = team.map((e) => e.idUsuario).toSet();
+      final uniqueRecents =
+          recents.where((r) => !teamIds.contains(r.idUsuario)).toList();
+      team = [...uniqueRecents, ...team];
+    } catch (_) {}
 
-      if (mounted) {
-        final auth = context.read<AuthController>();
-        final user = auth.user;
-        if (user != null) {
-          final g = user.gerencia.isNotEmpty
-              ? user.gerencia
-              : (user.departamento.isNotEmpty ? user.departamento : '');
-
-          if (g.isNotEmpty) {
-            final mUsers = await _repo.getEmployeesByDepartment(g);
-            final existingIds = recents.map((e) => e.idUsuario).toSet();
-            for (final u in mUsers) {
-              if (!existingIds.contains(u.idUsuario)) {
-                combined.add(u);
-              }
-            }
-          }
-        }
-      }
-
-      if (mounted && _searchCtrl.text.isEmpty) {
-        setState(() {
-          _allEmployees = combined;
-          _filteredResults = combined;
-          _currentLabel = combined.isEmpty
-              ? 'Escribe para buscar'
-              : 'Sugeridos (${combined.length})';
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ Error loading fallback employees: $e');
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _hasError = true;
-        });
-      }
+    if (mounted && _searchCtrl.text.isEmpty) {
+      setState(() {
+        _gerenciaUsers = team;
+        _displayResults = team;
+        _isSearchingAll = false;
+        _headerLabel =
+            team.isEmpty ? 'Sin empleados' : 'Mi Equipo (${team.length})';
+        _loading = false;
+      });
     }
   }
 
+  /// Paso 2: Búsqueda — filtra local si es texto corto,
+  /// busca en TODO el sistema si >= 2 chars (como React)
   void _onSearch(String query) async {
     if (query.isEmpty) {
+      // Volver a mostrar mi equipo
       setState(() {
-        _filteredResults = _allEmployees;
-        _currentLabel = _allEmployees.isEmpty
-            ? 'Escribe para buscar'
-            : 'Todos los empleados (${_allEmployees.length})';
+        _displayResults = _gerenciaUsers;
+        _isSearchingAll = false;
+        _headerLabel = _gerenciaUsers.isEmpty
+            ? 'Sin empleados'
+            : 'Mi Equipo (${_gerenciaUsers.length})';
       });
       return;
     }
 
-    // Local filter first (instant)
+    // Filtro local sobre mi gerencia (instantáneo)
     final q = query.toLowerCase();
-    final local = _allEmployees.where((e) {
+    final localMatches = _gerenciaUsers.where((e) {
       return e.nombreCompleto.toLowerCase().contains(q) ||
           (e.cargo?.toLowerCase().contains(q) ?? false) ||
           (e.area?.toLowerCase().contains(q) ?? false) ||
@@ -140,30 +130,38 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
     }).toList();
 
     setState(() {
-      _filteredResults = local;
-      _currentLabel = 'Resultados (${local.length})';
+      _displayResults = localMatches;
+      _headerLabel = 'Mi Equipo (${localMatches.length})';
+      _isSearchingAll = false;
     });
 
-    // If local results are insufficient and query is >= 2 chars, also search API
-    if (local.length < 3 && query.length >= 2) {
+    // Si >= 2 chars, también buscar en todo el sistema (cross-area)
+    if (query.length >= 2) {
+      setState(() => _isSearchingAll = true);
+
       try {
         final apiResults = await _repo.search(query);
         if (mounted && _searchCtrl.text == query) {
-          // Merge API results with local, avoiding duplicates
-          final existingIds = local.map((e) => e.idUsuario).toSet();
-          final merged = [...local];
-          for (final r in apiResults) {
-            if (!existingIds.contains(r.idUsuario)) {
-              merged.add(r);
-            }
-          }
+          // Merge: local primero, luego API sin duplicados
+          final existingIds = localMatches.map((e) => e.idUsuario).toSet();
+          final fromApi = apiResults
+              .where((r) => !existingIds.contains(r.idUsuario))
+              .toList();
+          final merged = [...localMatches, ...fromApi];
+
           setState(() {
-            _filteredResults = merged;
-            _currentLabel = 'Resultados (${merged.length})';
+            _displayResults = merged;
+            _isSearchingAll = false;
+            _headerLabel = fromApi.isNotEmpty
+                ? 'Mi Equipo (${localMatches.length}) + Otros (${fromApi.length})'
+                : 'Resultados (${merged.length})';
           });
         }
       } catch (e) {
         debugPrint('Error in API search: $e');
+        if (mounted) {
+          setState(() => _isSearchingAll = false);
+        }
       }
     }
   }
@@ -210,13 +208,28 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
                       color: Color(0xFF7C3AED), size: 20),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'Asignar a persona',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Asignar a persona',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        'Busca por nombre para ver otras áreas',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -231,12 +244,23 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
               autofocus: true,
               onChanged: _onSearch,
               decoration: InputDecoration(
-                hintText: 'Buscar por nombre, cargo o área...',
+                hintText: 'Nombre, cargo, área o carnet...',
                 hintStyle: const TextStyle(
                   fontFamily: 'Inter',
                   color: Color(0xFF94A3B8),
                 ),
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
+                suffixIcon: _isSearchingAll
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Color(0xFF7C3AED)),
+                        ),
+                      )
+                    : null,
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(
@@ -253,170 +277,214 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
             ),
           ),
 
-          // Label
-          if (_filteredResults.isNotEmpty || _loading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  Icon(Icons.people_outline, size: 14, color: Colors.grey[500]),
-                  const SizedBox(width: 6),
-                  Text(_currentLabel,
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w600)),
+          // Section label
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Icon(
+                  _searchCtrl.text.length >= 2
+                      ? Icons.public
+                      : Icons.people_outline,
+                  size: 14,
+                  color: Colors.grey[500],
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _headerLabel,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (_searchCtrl.text.isEmpty) ...[
+                  const Spacer(),
+                  Text(
+                    'Escribe para buscar en todo',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 10,
+                      color: Colors.grey[400],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
+          ),
 
           // List
           Expanded(
             child: _loading
                 ? const Center(
                     child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(color: Color(0xFF7C3AED)),
-                      SizedBox(height: 12),
-                      Text('Cargando empleados...',
-                          style: TextStyle(
-                              fontFamily: 'Inter', color: Color(0xFF94A3B8))),
-                    ],
-                  ))
-                : _hasError
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Color(0xFF7C3AED)),
+                        SizedBox(height: 12),
+                        Text('Cargando equipo...',
+                            style: TextStyle(
+                                fontFamily: 'Inter', color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  )
+                : _displayResults.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.wifi_off,
+                            const Icon(Icons.search_off,
                                 size: 48, color: Color(0xFFCBD5E1)),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Error de conexión',
-                              style: TextStyle(
+                            Text(
+                              _searchCtrl.text.isEmpty
+                                  ? 'No se encontraron empleados en tu equipo'
+                                  : 'No se encontraron resultados para "${_searchCtrl.text}"',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
                                   fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B)),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'No se pudieron cargar los empleados',
-                              style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
                                   color: Color(0xFF94A3B8)),
                             ),
-                            const SizedBox(height: 16),
-                            TextButton.icon(
-                              onPressed: _loadAllEmployees,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Reintentar'),
-                            ),
+                            if (_searchCtrl.text.isNotEmpty &&
+                                _searchCtrl.text.length < 2)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 4),
+                                child: Text(
+                                  'Escribe al menos 2 letras para buscar en todo el sistema',
+                                  style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 11,
+                                      color: Color(0xFFBDC5D0)),
+                                ),
+                              ),
                           ],
                         ),
                       )
-                    : _filteredResults.isEmpty
-                        ? Center(
-                            child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.search_off,
-                                  size: 48, color: Color(0xFFCBD5E1)),
-                              const SizedBox(height: 8),
-                              Text(
-                                _searchCtrl.text.isEmpty
-                                    ? 'Escribe para buscar empleados'
-                                    : 'No se encontraron resultados',
-                                style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    color: Color(0xFF94A3B8)),
-                              ),
-                            ],
-                          ))
-                        : ListView.builder(
-                            itemCount: _filteredResults.length,
-                            itemBuilder: (context, index) {
-                              final user = _filteredResults[index];
-                              final initials = user.nombreCompleto.isNotEmpty
-                                  ? user.nombreCompleto[0].toUpperCase()
-                                  : '?';
-                              final colors = [
-                                const Color(0xFF7C3AED),
-                                const Color(0xFF059669),
-                                const Color(0xFF0284C7),
-                                const Color(0xFFD97706),
-                                const Color(0xFFDC2626),
-                              ];
-                              final color =
-                                  colors[user.idUsuario % colors.length];
+                    : ListView.separated(
+                        itemCount: _displayResults.length,
+                        separatorBuilder: (_, __) => Divider(
+                            height: 1, indent: 60, color: Colors.grey[100]),
+                        itemBuilder: (context, index) {
+                          final user = _displayResults[index];
+                          final initials = user.nombreCompleto.isNotEmpty
+                              ? user.nombreCompleto[0].toUpperCase()
+                              : '?';
 
-                              return InkWell(
-                                onTap: () {
-                                  _repo.saveRecent(user);
-                                  widget.onSelected(user);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 6),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 20,
-                                        backgroundColor:
-                                            color.withValues(alpha: 0.1),
-                                        child: Text(
-                                          initials,
-                                          style: TextStyle(
-                                              color: color,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                          // Detectar si es de mi equipo o de otra área
+                          final isFromMyTeam = _gerenciaUsers
+                              .any((g) => g.idUsuario == user.idUsuario);
+
+                          final colors = [
+                            const Color(0xFF7C3AED),
+                            const Color(0xFF059669),
+                            const Color(0xFF0284C7),
+                            const Color(0xFFD97706),
+                            const Color(0xFFDC2626),
+                          ];
+                          final color = colors[user.idUsuario % colors.length];
+
+                          return InkWell(
+                            onTap: () {
+                              _repo.saveRecent(user);
+                              widget.onSelected(user);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor:
+                                        color.withValues(alpha: 0.1),
+                                    child: Text(
+                                      initials,
+                                      style: TextStyle(
+                                          color: color,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           children: [
-                                            Text(
-                                              user.nombreCompleto,
-                                              style: const TextStyle(
-                                                fontFamily: 'Inter',
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                            ),
-                                            Text(
-                                              '${user.cargo ?? 'Sin cargo'} • ${user.area ?? 'Sin área'}',
-                                              style: const TextStyle(
-                                                fontFamily: 'Inter',
-                                                fontSize: 12,
-                                                color: Color(0xFF94A3B8),
-                                              ),
-                                            ),
-                                            if (user.carnet != null &&
-                                                user.carnet!.isNotEmpty)
-                                              Text(
-                                                'Carnet: ${user.carnet}',
+                                            Flexible(
+                                              child: Text(
+                                                user.nombreCompleto,
                                                 style: const TextStyle(
                                                   fontFamily: 'Inter',
-                                                  fontSize: 11,
-                                                  color: Color(0xFFBDC5D0),
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF0F172A),
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (!isFromMyTeam &&
+                                                _searchCtrl.text.isNotEmpty)
+                                              Container(
+                                                margin: const EdgeInsets.only(
+                                                    left: 6),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 1),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      const Color(0xFFFFF7ED),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                  border: Border.all(
+                                                      color: const Color(
+                                                          0xFFFFEDD5)),
+                                                ),
+                                                child: const Text(
+                                                  'Otra área',
+                                                  style: TextStyle(
+                                                    fontFamily: 'Inter',
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFFEA580C),
+                                                  ),
                                                 ),
                                               ),
                                           ],
                                         ),
-                                      ),
-                                      const Icon(Icons.chevron_right,
-                                          color: Color(0xFFCBD5E1)),
-                                    ],
+                                        Text(
+                                          '${user.cargo ?? 'Sin cargo'} • ${user.area ?? 'Sin área'}',
+                                          style: const TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 12,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                        if (user.carnet != null &&
+                                            user.carnet!.isNotEmpty)
+                                          Text(
+                                            'Carnet: ${user.carnet}',
+                                            style: const TextStyle(
+                                              fontFamily: 'Inter',
+                                              fontSize: 11,
+                                              color: Color(0xFFBDC5D0),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
+                                  const Icon(Icons.chevron_right,
+                                      color: Color(0xFFCBD5E1)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

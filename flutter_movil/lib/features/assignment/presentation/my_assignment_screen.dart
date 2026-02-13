@@ -107,6 +107,9 @@ class _MyAssignmentScreenState extends State<MyAssignmentScreen> {
           task['descripcion'] ?? '', // API might not return desc in summary
       'estado': task['estado'],
       'prioridad': task['prioridad'],
+      'progreso': task['progreso'],
+      'fechaObjetivo': task['fechaObjetivo'],
+      'linkEvidencia': task['linkEvidencia'],
       // Add other fields if available
     };
 
@@ -489,7 +492,7 @@ class _MyAssignmentScreenState extends State<MyAssignmentScreen> {
     if (fechaObjetivo != null) {
       try {
         final date = DateTime.parse(fechaObjetivo);
-        dateStr = DateFormat('d MMM yyyy', 'es').format(date);
+        dateStr = DateFormat('d MMM yyyy', 'es_ES').format(date);
       } catch (_) {}
     }
 

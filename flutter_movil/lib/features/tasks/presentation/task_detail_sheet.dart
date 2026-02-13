@@ -13,11 +13,13 @@ import '../../../core/theme/app_theme.dart';
 class TaskDetailSheet extends StatefulWidget {
   final Map<String, dynamic> task;
   final VoidCallback? onUpdated;
+  final ScrollController? scrollController;
 
   const TaskDetailSheet({
     super.key,
     required this.task,
     this.onUpdated,
+    this.scrollController,
   });
 
   static Future<bool?> show(BuildContext context, Map<String, dynamic> task,
@@ -33,6 +35,7 @@ class TaskDetailSheet extends StatefulWidget {
         builder: (context, scrollController) => TaskDetailSheet(
           task: task,
           onUpdated: onUpdated,
+          scrollController: scrollController,
         ),
       ),
     );
@@ -331,6 +334,7 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
           // Scrollable Content
           Expanded(
             child: ListView(
+              controller: widget.scrollController,
               padding: const EdgeInsets.all(20),
               children: [
                 if (_isLoadingFull)
@@ -558,9 +562,16 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
   }
 
   Widget _buildDateInput(String label, DateTime? value, VoidCallback onTap) {
-    final text = value == null
-        ? 'Seleccionar'
-        : DateFormat('d MMM yyyy', 'es').format(value);
+    String text = 'Seleccionar';
+    if (value != null) {
+      try {
+        // Usar 'es_ES' que es lo que inicializamos en main.dart
+        text = DateFormat('d MMM yyyy', 'es_ES').format(value);
+      } catch (e) {
+        // Fallback si falla locale
+        text = "${value.day}/${value.month}/${value.year}";
+      }
+    }
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -793,10 +804,15 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
   Widget _buildCommentItem(dynamic c) {
     // c is Map: { mensaje, fecha, usuarioNombre ... }
     final msg = c['mensaje'] ?? '';
-    final date = c['fecha'] != null
-        ? DateFormat('d MMM HH:mm', 'es')
-            .format(DateTime.parse(c['fecha'].toString()))
-        : '';
+    String date = '';
+    if (c['fecha'] != null) {
+      try {
+        date = DateFormat('d MMM HH:mm', 'es_ES')
+            .format(DateTime.parse(c['fecha'].toString()));
+      } catch (_) {
+        date = c['fecha'].toString();
+      }
+    }
     final author = c['usuarioNombre'] ?? 'Usuario';
 
     return Container(
